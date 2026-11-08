@@ -1,5 +1,5 @@
 /* ---------- site settings (admin) ---------- */
-const COLORS=[['bg','cBg','--bg'],['surface','cSurface','--surface'],['ink','cInk','--ink'],['accent','cAccent','--accent'],['side','cSide','--side'],['fxc','cFx','--fx-color'],['tnow','cTurnNow','--turn-now'],['tnext','cTurnNext','--turn-next'],['tdone','cTurnDone','--turn-done']];
+const COLORS=[['bg','cBg','--bg'],['surface','cSurface','--surface'],['ink','cInk','--ink'],['accent','cAccent','--accent'],['side','cSide','--side'],['fxc','cFx','--fx-color'],['tnow','cTurnNow','--turn-now'],['tnext','cTurnNext','--turn-next'],['tdone','cTurnDone','--turn-done'],['navb','cNavb','--nav-edge']];
 const hexOf=v=>/^#[0-9a-f]{6}$/i.test(v)?v.toLowerCase():'#000000';
 function mediaBlock(k,label){
   const d=siteDraft,has=!!d[k];
@@ -9,17 +9,17 @@ function mediaBlock(k,label){
    ${has?`<button class="btn small" data-act="simg-rm" data-k="${k}">${t('sRemove')}</button>`:''}</div></div>`;
 }
 function renderSite(){
-  const d=siteDraft||(siteDraft=clone(SITE)),cs=getComputedStyle(document.documentElement);
+  const adm=isAdmin(),d=siteDraft||(siteDraft=siteInit()),cs=getComputedStyle(document.documentElement);
   const rows=COLORS.map(([k,lab,v])=>{const hex=hexOf(d[k]||cs.getPropertyValue(v).trim());
     return`<div class="crow"><label for="k_${k}">${t(lab)}</label><input type="color" id="k_${k}" data-sk="${k}" value="${hex}"><code id="hx_${k}">${hex}</code>
      ${d[k]?`<button class="btn small" data-act="sc-reset" data-k="${k}">${t('sDefault')}</button>`:`<span class="pill">${t('sDefault')}</span>`}</div>`}).join('');
   const radius=d.radius===undefined||d.radius===''||d.radius===null?parseInt(cs.getPropertyValue('--r'))||8:d.radius;
-  return head(t('site'),t('siteSub'))+`
-  <section class="panel"><div class="ph"><h2>${t('sIdentity')}</h2></div><div class="grid wide">
+  return head(t('site'),adm?t('siteSub'):t('siteSubP'))+`
+  ${adm?`<section class="panel"><div class="ph"><h2>${t('sIdentity')}</h2><span class="note">${t('sSharedNote')}</span></div><div class="grid wide">
     <div class="field"><label for="s_name">${t('sName')}</label><input id="s_name" data-s="name" value="${esc(d.name||'')}" placeholder="${esc(t('brand'))}"></div>
     <div class="field"><label for="s_tag">${t('sTagline')}</label><input id="s_tag" data-s="tagline" value="${esc(d.tagline||'')}"></div></div>
    <div class="medias">${mediaBlock('logo',t('sLogo'))}${mediaBlock('cover',t('sCover'))}</div>
-   <div class="err" style="padding:0 16px 12px">${esc(siteErr)}</div></section>
+   <div class="err" style="padding:0 16px 12px">${esc(siteErr)}</div></section>`:`<p class="note" style="margin:0 0 4px">${t('sPlayerNote')}</p>`}
   <section class="panel"><div class="ph"><h2>${t('sColors')}</h2><span class="note">${t('sNote')}</span></div><div class="crows">${rows}</div></section>
   <section class="panel"><div class="ph"><h2>${t('sFx')}</h2></div><div class="grid wide">
     <div class="field"><label for="s_fx">${t('fxStyle')}</label><select id="s_fx" data-s="fx">${['lift','glow','shine','bounce','none'].map(o=>`<option value="${o}" ${(d.fx||'lift')===o?'selected':''}>${t('fx_'+o)}</option>`).join('')}</select></div>
@@ -28,7 +28,8 @@ function renderSite(){
    <div class="fxprev"><span class="note">${t('fxPreview')}</span><button class="btn primary" type="button">${t('save')}</button><button class="btn" type="button">${t('edit')}</button><button class="btn small danger" type="button">${t('del')}</button></div></section>
   <section class="panel"><div class="ph"><h2>${t('sShape')}</h2></div><div class="grid wide">
     <div class="field"><label for="s_radius">${t('sRadius')}: <span id="rv">${radius}</span>px</label><input id="s_radius" data-s="radius" type="range" min="0" max="20" step="1" value="${radius}" style="padding:0"></div>
-    <div class="field"><label for="s_font">${t('sFont')}</label><select id="s_font" data-s="font"><option value="" ${d.font?'':'selected'}>${t('sDefault')} (Alegreya)</option>${Object.keys(FONTS).filter(f=>f!=='Alegreya').map(f=>`<option value="${f}" ${d.font===f?'selected':''}>${f==='Plex'?'IBM Plex Mono':f}</option>`).join('')}</select></div></div></section>
+    <div class="field"><label for="s_font">${t('sFont')}</label><select id="s_font" data-s="font"><option value="" ${d.font?'':'selected'}>${t('sDefault')} (Alegreya)</option>${Object.keys(FONTS).filter(f=>f!=='Alegreya').map(f=>`<option value="${f}" ${d.font===f?'selected':''}>${f==='Plex'?'IBM Plex Mono':f}</option>`).join('')}</select></div>
+    <div class="field"><label for="s_pg">${t('sPage')}</label><select id="s_pg" data-s="pg">${[5,10,15,20,30,50].map(n=>`<option value="${n}" ${(Number(d.pg)||10)===n?'selected':''}>${n}</option>`).join('')}</select></div></div></section>
   <div class="bar" style="padding:0"><div style="display:flex;gap:10px;flex-wrap:wrap"><button class="btn" data-act="srevert">${t('sRevert')}</button><button class="btn danger" data-act="sresetall">${dataArm==='siteReset'?t('sResetSure'):t('sResetAll')}</button></div>
-   <div style="display:flex;gap:12px;align-items:center"><span class="note" role="status">${esc(siteMsg)}</span><button class="btn primary" data-act="ssave">${t('sSave')}</button></div></div>${bkPanel()}`;
+   <div style="display:flex;gap:12px;align-items:center"><span class="note" role="status">${esc(siteMsg)}</span><button class="btn primary" data-act="ssave">${t('sSave')}</button></div></div>${adm?bkPanel():''}`;
 }

@@ -41,6 +41,12 @@ class H(Routes, BaseHTTPRequestHandler):
     def send(self, code, body, ctype="application/json", extra=None, cache="no-store"):
         if not isinstance(body, (bytes, bytearray)):
             body = json.dumps(body).encode()
+        try:
+            self._reply(code, body, ctype, extra, cache)
+        except (BrokenPipeError, ConnectionResetError):
+            pass  # the browser went away (closed the tab, reloaded); nothing to do
+
+    def _reply(self, code, body, ctype, extra, cache):
         self.send_response(code)
         self.send_header("Content-Type", ctype + ("; charset=utf-8" if ctype.startswith("text") or ctype in ("application/json", "application/javascript") else ""))
         self.send_header("Content-Length", str(len(body)))

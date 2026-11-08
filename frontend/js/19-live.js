@@ -4,9 +4,9 @@
    and nobody is typing, so the page never jumps under a finger. */
 const LIVE={v:null,run:false,ac:null,fails:0,dirty:false,timer:0};
 const liveSleep=ms=>new Promise(r=>setTimeout(r,ms));
-const liveSig=()=>JSON.stringify([users,pcs,npcs,rooms,prooms,SITE,CAT]);
+const liveSig=()=>JSON.stringify([users,pcs,npcs,rooms,prooms,SITE,PREFS,CAT]);
 function liveBusy(){
-  if(edit||dedit||roomEdit||siteDraft||inflight)return true;
+  if(edit||dedit||roomEdit||inflight)return true;
   const a=document.activeElement;
   return !!(a&&a!==document.body&&/^(INPUT|TEXTAREA|SELECT)$/.test(a.tagName)&&a.closest&&a.closest('#root'));
 }
@@ -14,11 +14,11 @@ function liveLater(){clearTimeout(LIVE.timer);LIVE.timer=setTimeout(()=>{if(LIVE
 async function livePull(){
   if(!REMOTE||!session)return;
   if(liveBusy()){LIVE.dirty=true;return liveLater()}
-  const before=liveSig(),siteBefore=JSON.stringify(SITE);
+  const before=liveSig(),siteBefore=JSON.stringify([SITE,PREFS]);
   let j;try{j=await api('GET','api/boot')}catch(e){if(e.status===401)netErr(e);return}
   if(liveBusy()){LIVE.dirty=true;return liveLater()}  /* the user started typing while we were loading */
   applyBoot(j);
-  if(JSON.stringify(SITE)!==siteBefore)applySite(SITE);
+  if(JSON.stringify([SITE,PREFS])!==siteBefore){applySite(curTheme());const bd=document.querySelector('.side .brand');if(bd)bd.innerHTML=brandHtml()}
   if(liveSig()===before)return;
   if(!session||['players','npcs','adventure','data'].includes(view))render();
 }

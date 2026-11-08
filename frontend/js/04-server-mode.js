@@ -16,7 +16,7 @@ let syncChain=Promise.resolve(),inflight=0;const kvTimers={};
 function resetSynced(){synced.pc=new Map(pcs.map(r=>[r.id,JSON.stringify(r)]));synced.npc=new Map(npcs.map(r=>[r.id,JSON.stringify(r)]))}
 function applyBoot(j){
   REMOTE=true;SITE=Object.assign({},j.site||{});firstRun=!j.hasUsers;
-  if(j.me){users=j.users||[j.me];session=j.me.id;pcs=j.pcs||[];npcs=j.npcs||[];rooms=j.rooms||[];prooms=j.prooms||[];CAT=j.cat||clone(SEED);normCat();
+  if(j.me){users=j.users||[j.me];session=j.me.id;PREFS=j.prefs||{};put('dd_theme',PREFS);pcs=j.pcs||[];npcs=j.npcs||[];rooms=j.rooms||[];prooms=j.prooms||[];CAT=j.cat||clone(SEED);normCat();
     if(!j.cat&&j.me.role==='admin')api('POST','api/kv/cat',{value:CAT}).catch(netErr)}
   else{users=[];session=null;pcs=[];npcs=[];rooms=[];prooms=[]}
   resetSynced();
@@ -59,9 +59,21 @@ const pick=(arr,pref)=>arr.includes(pref)?pref:(arr[0]||'');
 let session=load('dd_session',null);
 let view='players', edit=null, authTab='signin', authErr='', delArm=null, flashMsg='';
 let dataTab='races', dedit=null, dataArm=null, dataErr='';
-let SITE=Object.assign({},load('dd_site',{})), siteDraft=null, siteMsg='';
+let SITE=Object.assign({},load('dd_site',{})), siteDraft=null, siteMsg='';  /* SITE: name, tagline, logo, cover (shared by everyone, admin edits) */
+let PREFS=load('dd_theme',{}), prefsFor;  /* PREFS: this user's own colors, effects, shape, rows per page */
+const GLOBAL_KEYS=['name','tagline','logo','cover'],PREF_KEYS=['bg','surface','ink','accent','side','fxc','tnow','tnext','tdone','navb','fx','fxms','fxamt','radius','font','pg'];
+const THEME_DEF={bg:'#050505',surface:'#1e1e20',ink:'#dcdcdf',accent:'#121213',side:'#000000',fxc:'#000000',tnow:'#ffffff',tnext:'#999999',tdone:'#1e1e20',navb:'#999999'};
+const siteInit=()=>Object.assign({},clone(SITE),clone(PREFS));
+const curTheme=()=>(view==='site'&&siteDraft&&me())?siteDraft:PREFS;
+const pageSize=()=>Math.max(3,Math.min(100,Math.round(Number(PREFS.pg))||10));
+function syncPrefsUser(){if(!REMOTE&&session&&prefsFor!==session){prefsFor=session;PREFS=load('dd_prefs_'+session,{})}}
+function savePrefs(){
+  let ok=put('dd_theme',PREFS);
+  if(REMOTE){inflight++;syncChain=syncChain.then(async()=>{try{await api('POST','api/prefs',{value:PREFS});netBar('')}catch(e){netErr(e)}finally{inflight--}});return ok}
+  return put('dd_prefs_'+session,PREFS)&&ok;
+}
 let rooms=load('dd_rooms',[]), roomOpen=null, roomEdit=null, roomErr='', advGame='dice';
-const curSite=()=>(view==='site'&&siteDraft&&me())?siteDraft:SITE;
+const curSite=()=>(view==='site'&&siteDraft&&isAdmin())?siteDraft:SITE;
 const brandName=()=>(curSite().name||'').trim()||t('brand');
 const brandMark=()=>curSite().logo?`<img class="logo" src="${esc(curSite().logo)}" alt="">`:ICON.d20;
 const brandHtml=()=>`${brandMark()}<span>${esc(brandName())}</span>`;
@@ -71,7 +83,8 @@ function hexRgb(h){h=String(h).replace('#','');if(h.length===3)h=[...h].map(c=>c
 const onColor=h=>{const L=lum(h)+.05;return L/0.062>1.05/L?'#14201d':'#ffffff'};
 const FONT_URL={Cinzel:'https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700&display=swap',Plex:'https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@500&display=swap'},fontOn={};
 function ensureFont(n){const u=FONT_URL[n];if(!u||fontOn[n])return;fontOn[n]=1;const l=document.createElement('link');l.rel='stylesheet';l.href=u;document.head.appendChild(l)}
-function applySite(s){
+function applySite(s0){
+  const s=Object.assign({},THEME_DEF);for(const k in s0||{})if(s0[k]!==undefined&&s0[k]!==''&&s0[k]!==null)s[k]=s0[k];
   const st=document.documentElement.style,set=(k,v)=>v?st.setProperty(k,v):st.removeProperty(k);
   set('--bg',s.bg);set('--surface',s.surface);set('--ink',s.ink);
   const base=s.bg||s.surface||s.ink;
@@ -85,7 +98,7 @@ function applySite(s){
   set('--side-active',s.side?'color-mix(in srgb,var(--side-ink) 12%,var(--side))':'');
   document.documentElement.dataset.fx=s.fx||'lift';ensureFont(s.font);
   set('--fx-ms',s.fxms?s.fxms+'ms':'');set('--fx-amt',s.fxamt!==undefined&&s.fxamt!==''?String(s.fxamt):'');set('--fx-color',s.fxc);
-  set('--turn-now',s.tnow);set('--turn-next',s.tnext);set('--turn-done',s.tdone);
+  set('--nav-edge',s.navb);set('--turn-now',s.tnow);set('--turn-next',s.tnext);set('--turn-done',s.tdone);
   set('--r',s.radius!==undefined&&s.radius!==''&&s.radius!==null?s.radius+'px':'');
   set('--display',FONTS[s.font]||'');
 }

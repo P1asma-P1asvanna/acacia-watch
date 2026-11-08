@@ -68,6 +68,7 @@ def boot_state(c, me):
         return out
     out["me"] = user_pub(me)
     out["cat"] = kv_get(c, "cat")
+    out["prefs"] = kv_get(c, "prefs:" + me["id"]) or {}
     if me["role"] == "admin":
         out["users"] = [user_pub(r) for r in c.execute("SELECT * FROM users ORDER BY created")]
         out["pcs"] = [json.loads(r["data"]) for r in c.execute("SELECT data FROM docs WHERE kind='pc'")]

@@ -8,9 +8,9 @@ function bkApply(text){
   const d=o.data,str=v=>typeof v==='string';
   if(!bkOkArr(d.users,u=>str(u.id)&&str(u.name)&&str(u.salt)&&str(u.hash)&&(u.role==='admin'||u.role==='player'))||!bkOkArr(d.pcs,c=>str(c.id)&&c.abil&&typeof c.abil==='object')||!bkOkArr(d.npcs,c=>str(c.id)&&c.abil&&typeof c.abil==='object')||!bkOkArr(d.rooms,r=>str(r.id)&&Array.isArray(r.assign))||!d.cat||typeof d.cat!=='object'||Array.isArray(d.cat)||!d.site||typeof d.site!=='object'||Array.isArray(d.site))return{err:t('bkBad')};
   if(!d.users.some(u=>u.role==='admin'))return{err:t('bkNoAdmin')};
-  if(REMOTE)return api('POST','api/import',d).then(async()=>{applyBoot(await api('GET','api/boot'));siteDraft=clone(SITE);edit=null;dedit=null;roomOpen=null;roomEdit=null;return{ok:true}}).catch(()=>({err:t('netSaveFail')}));
+  if(REMOTE)return api('POST','api/import',d).then(async()=>{applyBoot(await api('GET','api/boot'));siteDraft=siteInit();edit=null;dedit=null;roomOpen=null;roomEdit=null;return{ok:true}}).catch(()=>({err:t('netSaveFail')}));
   users=d.users;pcs=d.pcs;npcs=d.npcs;CAT=d.cat;SITE=d.site;rooms=d.rooms;
-  normCat();siteDraft=clone(SITE);edit=null;dedit=null;roomOpen=null;roomEdit=null;
+  normCat();siteDraft=siteInit();edit=null;dedit=null;roomOpen=null;roomEdit=null;
   const ok=[put('dd_users',users),put('dd_pcs',pcs),put('dd_npcs',npcs),put('dd_cat',CAT),put('dd_site',SITE),put('dd_rooms',rooms)].every(Boolean);
   return{ok};
 }

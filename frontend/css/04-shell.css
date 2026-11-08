@@ -6,7 +6,7 @@
 .nav button{display:flex;align-items:center;gap:.7rem;text-align:left;padding:.6rem .7rem;border:0;border-radius:calc(var(--r)*.75);background:transparent;color:var(--side-muted);cursor:pointer;font-weight:500}
 .nav button svg{width:18px;height:18px;flex:none}
 .nav button:hover{color:var(--side-ink)}
-.nav button[aria-current="page"]{background:var(--side-active);color:var(--side-ink);box-shadow:inset 3px 0 0 var(--brass)}
+.nav button[aria-current="page"]{background:var(--side-active);color:var(--side-ink);box-shadow:inset 3px 0 0 var(--nav-edge,var(--brass))}
 .side-foot{margin-top:auto;display:flex;flex-direction:column;gap:12px;border-top:1px solid var(--side-line);padding-top:14px}
 .me{display:flex;flex-direction:column}
 .me b{font-weight:700}

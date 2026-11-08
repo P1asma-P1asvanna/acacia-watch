@@ -1,8 +1,8 @@
 /* ---------- views ---------- */
 function renderApp(){
   const u=me(), adm=isAdmin();
-  const items=adm?[['players','players'],['npcs','npcs'],['data','data'],['adventure','adventure'],['games','games'],['site','site']]:[['players','players'],['adventure','adventure']];
-  if(!adm&&view!=='players'&&view!=='adventure')view='players';
+  const items=adm?[['players','players'],['npcs','npcs'],['data','data'],['adventure','adventure'],['games','games'],['site','site']]:[['players','players'],['adventure','adventure'],['site','site']];
+  if(!adm&&!['players','adventure','site'].includes(view))view='players';
   const stage=inStage();
   return`<div class="app${stage?' stagemode':''}"><aside class="side">
    <div class="brand">${brandHtml()}</div>

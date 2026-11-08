@@ -27,14 +27,16 @@ const pickKey={languages:'lang',tools:'tool',vehicles:'veh'};
 const usage=(c,it)=>usageKey[c]?[...pcs,...npcs].filter(r=>r[usageKey[c]]===it.name).length:pickKey[c]?[...pcs,...npcs].filter(r=>(r.pick&&r.pick[pickKey[c]]||[]).includes(it.name)).length:0;
 function blankItem(c){const o={id:uid()};SCHEMA[c].f.forEach(([k,ty])=>o[k]=ty==='b'?0:(ty==='n'&&/^n[A-Z]/.test(k)?0:''));if(c==='classes'){o.subs=[];o.feats=[]}if(c==='backgrounds'){o.sk=[];o.feats=[]}return o}
 const cell=v=>{const s=String(v??'').replace(/\s+/g,' ').trim();return s?esc(s.length>60?s.slice(0,57)+'…':s):'<span class="muted">—</span>'};
+let dataPage=0;
 function renderData(){
   if(dedit)return renderDataEditor();
-  const sc=SCHEMA[dataTab],L=CAT[dataTab];
+  const sc=SCHEMA[dataTab],L=CAT[dataTab],ps=pageSize(),pages=Math.max(1,Math.ceil(L.length/ps));
+  dataPage=Math.min(Math.max(0,dataPage),pages-1);const shown=L.slice(dataPage*ps,dataPage*ps+ps);
   const tabs=Object.keys(SCHEMA).map(k=>`<button role="tab" data-act="dtab" data-v="${k}" aria-selected="${k===dataTab}">${t(k)} <span class="cnt">${CAT[k].length}</span></button>`).join('');
   const body=L.length?`<div class="scroll"><table><thead><tr>${sc.cols.map(c=>`<th>${flFor(dataTab,c)}</th>`).join('')}<th></th></tr></thead><tbody>
-   ${L.map(r=>{const n=usage(dataTab,r);return`<tr>${sc.cols.map(c=>c==='subs'?`<td>${r.subs.length?esc(r.subs.map(s=>s.name).join(', ')):'<span class="muted">'+t('noSub')+'</span>'}</td>`:c==='name'?`<td><b>${cell(r.name)}</b></td>`:c==='sk'?`<td>${(r.sk||[]).length?esc(r.sk.map(skName).join(', ')):'<span class="muted">—</span>'}</td>`:`<td>${cell(r[c])}</td>`).join('')}
+   ${shown.map(r=>{const n=usage(dataTab,r);return`<tr>${sc.cols.map(c=>c==='subs'?`<td>${r.subs.length?esc(r.subs.map(s=>s.name).join(', ')):'<span class="muted">'+t('noSub')+'</span>'}</td>`:c==='name'?`<td><b>${cell(r.name)}</b></td>`:c==='sk'?`<td>${(r.sk||[]).length?esc(r.sk.map(skName).join(', ')):'<span class="muted">—</span>'}</td>`:`<td>${cell(r[c])}</td>`).join('')}
    <td><div class="acts"><button class="btn small" data-act="dedit" data-id="${r.id}">${t('edit')}</button><button class="btn small danger" data-act="ddel" data-id="${r.id}">${dataArm===r.id?(n?t('delInUse').replace('{n}',n):t('delSure')):t('del')}</button></div></td></tr>`}).join('')}
-   </tbody></table></div>`:`<div class="empty"><div>${t('noRows')}</div></div>`;
+   </tbody></table></div>${pages>1?`<div class="pager"><button class="btn small" data-act="dpage" data-v="-1" ${dataPage?'':'disabled'}>‹ ${t('pgPrev')}</button><span class="note" role="status">${t('pgInfo').replace('{p}',dataPage+1).replace('{n}',pages).replace('{c}',L.length)}</span><button class="btn small" data-act="dpage" data-v="1" ${dataPage<pages-1?'':'disabled'}>${t('pgNext')} ›</button></div>`:''}`:`<div class="empty"><div>${t('noRows')}</div></div>`;
   return head(t('data'),t('dataSub'),`<button class="btn primary" data-act="dnew">+ ${t('addItem')}</button>`)
    +`<div class="tabs2" role="tablist">${tabs}</div><section class="panel">${body}<div class="bar"><span class="note">${t('dataNote')}</span><button class="btn small" data-act="dreset">${dataArm==='reset'?t('resetSure'):t('resetDefaults')}</button></div></section>`;
 }

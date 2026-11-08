@@ -16,7 +16,7 @@ document.addEventListener('click',e=>{
   if(a==='lang'){lang=v;put('dd_lang',lang);render()}
   else if(a==='tab'){authTab=v;authErr='';render()}
   else if(a==='logout'){if(REMOTE){api('POST','api/logout',{}).catch(()=>{});users=[];pcs=[];npcs=[];rooms=[];netBar('')}session=null;put('dd_session',null);edit=null;dedit=null;siteDraft=null;roomOpen=null;roomEdit=null;authTab='signin';render()}
-  else if(a==='nav'){view=v;edit=null;dedit=null;delArm=null;dataArm=null;flashMsg='';siteDraft=v==='site'?clone(SITE):null;siteMsg='';siteErr='';roomOpen=null;roomEdit=null;location.hash=v;render();pull()}
+  else if(a==='nav'){view=v;edit=null;dedit=null;delArm=null;dataArm=null;flashMsg='';siteDraft=v==='site'?siteInit():null;siteMsg='';siteErr='';roomOpen=null;roomEdit=null;location.hash=v;render();pull()}
   else if(a==='new'){edit={kind:k,draft:blank(k),isNew:true};delArm=null;render()}
   else if(a==='edit'){const r=list(k).find(x=>x.id===id);edit={kind:k,draft:JSON.parse(JSON.stringify(r)),isNew:false};delArm=null;render()}
   else if(a==='back'){edit=null;delArm=null;render()}
@@ -50,10 +50,15 @@ document.addEventListener('click',e=>{
   else if(a==='rgame'){advGame=v;render()}
   else if(a==='simg-rm'){siteDraft[k]='';siteErr='';render()}
   else if(a==='sc-reset'){delete siteDraft[k];render()}
-  else if(a==='srevert'){siteDraft=clone(SITE);siteMsg='';siteErr='';render()}
-  else if(a==='ssave'){SITE=clone(siteDraft);for(const x in SITE)if(SITE[x]===''||SITE[x]===undefined)delete SITE[x];siteMsg=put('dd_site',SITE)?t('sSaved'):t('sSavedTemp');siteDraft=clone(SITE);render()}
-  else if(a==='sresetall'){if(dataArm!=='siteReset'){dataArm='siteReset';render();return}SITE={};siteDraft={};put('dd_site',SITE);dataArm=null;siteMsg=t('sSaved');render()}
-  else if(a==='dtab'){dataTab=v;dataArm=null;render()}
+  else if(a==='srevert'){siteDraft=siteInit();siteMsg='';siteErr='';render()}
+  else if(a==='ssave'){
+    const d=siteDraft,g={},p={};
+    GLOBAL_KEYS.forEach(x=>{if(d[x])g[x]=d[x]});PREF_KEYS.forEach(x=>{if(d[x]!==undefined&&d[x]!==''&&d[x]!==null)p[x]=d[x]});
+    let ok=true;if(isAdmin()){SITE=g;ok=put('dd_site',SITE)}
+    PREFS=p;ok=savePrefs()&&ok;siteMsg=ok?t('sSaved'):t('sSavedTemp');siteDraft=siteInit();render()}
+  else if(a==='sresetall'){if(dataArm!=='siteReset'){dataArm='siteReset';render();return}PREFS={};savePrefs();siteDraft=siteInit();dataArm=null;siteMsg=t('sSaved');render()}
+  else if(a==='dtab'){dataTab=v;dataPage=0;dataArm=null;render()}
+  else if(a==='dpage'){dataPage+=Number(v)||0;render()}
   else if(a==='dnew'){dedit={cat:dataTab,draft:blankItem(dataTab),isNew:true};dataErr='';dataArm=null;render()}
   else if(a==='dedit'){dedit={cat:dataTab,draft:clone(CAT[dataTab].find(x=>x.id===id)),isNew:false};dataErr='';dataArm=null;render()}
   else if(a==='dback'){dedit=null;dataErr='';dataArm=null;render()}
@@ -129,7 +134,7 @@ document.addEventListener('change',e=>{
   if(f==='bg'){syncBgItems(d);render()}
   if(f==='cls'||f==='sub'||f==='race'){refreshHp();refreshExtra()}
 });
-window.addEventListener('hashchange',()=>{const h=location.hash.slice(1);if(me()&&['players','npcs','data','games','site','adventure'].includes(h)&&h!==view&&(isAdmin()||h==='players'||h==='adventure')){view=h;edit=null;dedit=null;roomOpen=null;roomEdit=null;siteDraft=h==='site'?clone(SITE):null;render()}});
+window.addEventListener('hashchange',()=>{const h=location.hash.slice(1);if(me()&&['players','npcs','data','games','site','adventure'].includes(h)&&h!==view&&(isAdmin()||h==='players'||h==='adventure'||h==='site')){view=h;edit=null;dedit=null;roomOpen=null;roomEdit=null;siteDraft=h==='site'?siteInit():null;render()}});
 document.addEventListener('visibilitychange',()=>{if(!document.hidden)pull()});
 async function boot(){
   const served=!!document.querySelector('meta[name=dd-server]');

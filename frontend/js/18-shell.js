@@ -2,7 +2,8 @@
 const $=s=>document.querySelector(s);
 function render(){
   document.documentElement.lang=lang;
-  applySite(curSite());
+  syncPrefsUser();
+  applySite(curTheme());
   const root=$('#root');
   root.innerHTML=me()?renderApp():renderLogin();
 }

@@ -6,6 +6,28 @@ from .rules import ac_calc, eff_ac, eff_max, hp_calc
 
 
 ID_RE = re.compile(r"^[A-Za-z0-9_-]{3,40}$")
+PREF_COLORS = ("bg", "surface", "ink", "accent", "side", "fxc", "tnow", "tnext", "tdone", "navb")
+
+
+def clean_prefs(v):
+    """Personal look-and-feel settings (colors, effects, shape, rows per page). Unknown keys are dropped."""
+    out = {}
+    if not isinstance(v, dict):
+        return out
+    for k in PREF_COLORS:
+        s = v.get(k)
+        if isinstance(s, str) and re.match(r"^#[0-9a-fA-F]{6}$", s):
+            out[k] = s.lower()
+    if v.get("fx") in ("lift", "glow", "shine", "bounce", "none"):
+        out["fx"] = v["fx"]
+    if v.get("font") in ("Alegreya", "Cinzel", "Sarabun", "Plex"):
+        out["font"] = v["font"]
+    for k, lo, hi in (("fxms", 60, 500), ("fxamt", 0, 10), ("radius", 0, 20), ("pg", 3, 100)):
+        if v.get(k) not in (None, ""):
+            out[k] = clampi(v[k], lo, hi, lo)
+    return out
+
+
 ADMIN_ONLY = ("hpMode", "hpManual", "acMode", "acManual")
 
 

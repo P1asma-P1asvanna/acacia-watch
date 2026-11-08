@@ -10,7 +10,7 @@ from .config import COOKIE, FAILS
 from .errors import Err
 from .security import check_pw, hash_pw, new_user_row
 from .store import boot_state, kv_get, kv_set, user_pub
-from .validation import ID_RE, clean_record, ADMIN_ONLY
+from .validation import ID_RE, clean_prefs, clean_record, ADMIN_ONLY
 
 
 class Routes:
@@ -81,6 +81,11 @@ class Routes:
             salt = secrets.token_hex(16)
             c.execute("UPDATE users SET algo='pbkdf2', salt=?, hash=? WHERE id=?", (salt, hash_pw(pw, salt), me["id"]))
             return {"ok": True}
+
+        if path == "/api/prefs":  # every user keeps their own look; nobody else's screen changes
+            val = clean_prefs(b.get("value"))
+            kv_set(c, "prefs:" + me["id"], val)
+            return {"ok": True, "value": val}
 
         if path == "/api/sync":
             kind = b.get("kind")
@@ -153,6 +158,7 @@ class Routes:
                 if u["role"] == "admin" and admins < 2:
                     raise Err(409, "last_admin")
                 c.execute("DELETE FROM users WHERE id=?", (uid,))
+                c.execute("DELETE FROM kv WHERE k=?", ("prefs:" + uid,))
                 c.execute("DELETE FROM sessions WHERE uid=?", (uid,))
                 for r in c.execute("SELECT id,data FROM docs WHERE kind='pc' AND owner=?", (uid,)).fetchall():
                     d = json.loads(r["data"])
