@@ -28,12 +28,13 @@ function table(kind){
 function renderPlayers(){
   if(edit&&edit.kind==='pc')return renderEditor();
   const adm=isAdmin();
-  let h=head(t('players'),adm?t('playersSub'):t('playersSubMine'),`<button class="btn primary" data-act="new" data-k="pc">+ ${t('add')}</button>`);
-  h+=`<section class="panel">${table('pc')}</section>`;
-  if(adm)h+=`<section class="panel"><div class="ph"><div><h2>${t('accounts')}</h2><div class="note">${t('accSub')}</div></div></div><div class="scroll"><table><thead><tr><th>${t('user')}</th><th>${t('disp')}</th><th>${t('role')}</th>${REMOTE?`<th>${t('colAct')}</th>`:''}</tr></thead><tbody>
+  let h=head(t('players'),adm?t('playersSub'):t('playersSubMine'),`<div class="acts">${arrangeBtn('players')}<button class="btn primary" data-act="new" data-k="pc">+ ${t('add')}</button></div>`);
+  const list=`<section class="panel">${table('pc')}</section>`;
+  let acc='';
+  if(adm)acc=`<section class="panel"><div class="ph"><div><h2>${t('accounts')}</h2><div class="note">${t('accSub')}</div></div></div><div class="scroll"><table><thead><tr><th>${t('user')}</th><th>${t('disp')}</th><th>${t('role')}</th>${REMOTE?`<th>${t('colAct')}</th>`:''}</tr></thead><tbody>
    ${users.map(u=>`<tr><td>${esc(u.name)}</td><td>${esc(u.disp)}</td><td><label class="field" style="max-width:170px"><span class="lbl" style="display:none">${t('role')}</span><select data-act="role" data-id="${u.id}" aria-label="${t('role')} ${esc(u.name)}"><option value="player" ${u.role==='player'?'selected':''}>${t('player')}</option><option value="admin" ${u.role==='admin'?'selected':''}>${t('admin')}</option></select></label></td>${REMOTE?`<td><div class="pwrow"><input type="password" id="pw_${u.id}" autocomplete="new-password" placeholder="${t('pwNew')}" aria-label="${t('pwNew')} ${esc(u.name)}"><button type="button" class="btn small" data-act="pwset" data-id="${u.id}">${t('pwSet')}</button>${u.id!==session?`<button type="button" class="btn small danger" data-act="userdel" data-id="${u.id}">${dataArm==='udel_'+u.id?t('userDelSure'):t('userDel')}</button>`:''}</div></td>`:''}</tr>`).join('')}
    </tbody></table></div><div class="err" id="accErr" style="padding:0 16px 12px">${flashMsg}</div></section>`;
-  return h;
+  return h+arrangeBar('players')+wgrid('players',[['list',list],['accounts',acc]]);
 }
 function renderNpcs(){
   if(edit&&edit.kind==='npc')return renderEditor();

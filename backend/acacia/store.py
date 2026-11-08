@@ -13,6 +13,25 @@ def kv_set(c, key, value):
     c.execute("INSERT INTO kv(k,v) VALUES(?,?) ON CONFLICT(k) DO UPDATE SET v=excluded.v", (key, json.dumps(value)))
 
 
+def clean_site(c, v):
+    """The shared look: name, tagline, logo, cover. A picture must be one stored for the site (or an old inline picture)."""
+    import re
+    from . import images
+    own = images.owned_ids(c, "site")
+    out = {}
+    for k, n in (("name", 80), ("tagline", 200)):
+        if isinstance(v.get(k), str) and v[k].strip():
+            out[k] = v[k].strip()[:n]
+    for k in ("logo", "cover"):
+        s = v.get(k)
+        if not isinstance(s, str) or not s:
+            continue
+        m = images.URL_RE.match(s)
+        if (m and m.group(1) in own) or (re.match(r"^data:image/(png|jpeg|webp|gif);base64,[A-Za-z0-9+/=]+$", s) and len(s) < 1_500_000):
+            out[k] = s
+    return out
+
+
 def user_pub(r):
     return {"id": r["id"], "name": r["name"], "disp": r["disp"], "role": r["role"]}
 

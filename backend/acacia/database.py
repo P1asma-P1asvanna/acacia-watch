@@ -92,6 +92,10 @@ SCHEMA = [
         kind TEXT NOT NULL, id TEXT NOT NULL, owner TEXT NOT NULL DEFAULT '', data TEXT NOT NULL,
         PRIMARY KEY(kind, id))""",
     "CREATE TABLE IF NOT EXISTS kv(k TEXT PRIMARY KEY, v TEXT NOT NULL)",
+    """CREATE TABLE IF NOT EXISTS images(
+        id TEXT PRIMARY KEY, owner TEXT NOT NULL, mime TEXT NOT NULL, w INTEGER NOT NULL, h INTEGER NOT NULL,
+        size INTEGER NOT NULL, data TEXT NOT NULL, created DOUBLE PRECISION NOT NULL)""",
+    "CREATE INDEX IF NOT EXISTS images_owner ON images(owner)",
 ]
 
 

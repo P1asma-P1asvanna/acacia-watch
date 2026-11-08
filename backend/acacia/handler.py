@@ -3,6 +3,7 @@ import gzip
 import hashlib
 import json
 import os
+import re
 import secrets
 import sys
 import time
@@ -10,7 +11,7 @@ from http import cookies
 from http.server import BaseHTTPRequestHandler
 from urllib.parse import parse_qs, unquote, urlparse
 
-from . import live
+from . import images, live
 from .config import COOKIE, FRONTEND_DIR, LOCK, MAX_BODY, POLL_SECONDS, SESSION_DAYS
 from .database import run
 from .errors import Err
@@ -109,9 +110,30 @@ class H(Routes, BaseHTTPRequestHandler):
                 return self.poll()
             if path.startswith("/api/"):
                 return self.send(404, {"error": "not_found"})
+            if path.startswith("/img/"):
+                return self.picture(path[5:])
             return self.static(path)
         except Err as e:
             return self.send(e.code, {"error": e.msg})
+
+    def picture(self, iid):
+        """Serve an uploaded picture. The id never changes, so the browser may keep it for a year."""
+        iid = iid.split(".")[0]
+        if not re.match(r"^[0-9a-f]{24}$", iid):
+            return self.send(404, {"error": "not_found"})
+        with LOCK:
+            hit = run(lambda c: images.fetch(c, iid))
+        if not hit:
+            return self.send(404, {"error": "not_found"})
+        mime, raw = hit
+        etag = '"%s"' % iid
+        if self.headers.get("If-None-Match") == etag:
+            self.send_response(304)
+            self.send_header("ETag", etag)
+            self.end_headers()
+            return
+        self.send(200, raw, mime, extra=[("ETag", etag), ("Content-Security-Policy", "default-src 'none'")],
+                  cache="public, max-age=31536000, immutable")
 
     def poll(self):
         """Live updates: answer when the data version differs from ?v=, or after POLL_SECONDS (see live.py)."""

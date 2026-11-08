@@ -18,8 +18,7 @@ function renderEditor(){
   d.items=d.items||[];d.weapons=d.weapons||[];d.profOther=d.profOther||'';d.speeds=d.speeds||'';
   normHp(d);normAc(d);
   const owners=users.map(u=>`<option value="${u.id}" ${u.id===d.owner?'selected':''}>${esc(u.disp)} (${esc(u.name)})</option>`).join('');
-  return`${head(esc(d.name)||t('add'),pc?t('players'):t('npcs'),`<button class="btn" data-act="back">← ${t('back')}</button>`)}
-  <section class="panel"><div class="ph"><h2>${t('secBasic')}</h2></div><div class="grid wide">
+  const basic=`<section class="panel"><div class="ph"><h2>${t('secBasic')}</h2></div><div class="grid wide">
    <div class="field"><label for="e_name">${t('fName')}</label><input id="e_name" data-f="name" value="${esc(d.name)}"></div>
    ${pc?`<div class="field"><label for="e_owner">${t('fPlayer')}</label><select id="e_owner" data-f="owner" ${adm?'':'disabled'}><option value="">${t('unassigned')}</option>${owners}</select></div>`
        :`<div class="field"><label for="e_type">${t('fType')}</label><select id="e_type" data-f="type"><option value="ally" ${d.type==='ally'?'selected':''}>${t('tAlly')}</option><option value="neutral" ${d.type==='neutral'?'selected':''}>${t('tNeutral')}</option><option value="villain" ${d.type==='villain'?'selected':''}>${t('tVillain')}</option></select></div>`}
@@ -30,22 +29,16 @@ function renderEditor(){
    <div class="field"><label for="e_xp">${t('fXp')}</label><input id="e_xp" data-f="xp" type="number" min="0" value="${d.xp}"></div>
    <div class="field"><label for="e_bg">${t('fBg')}</label><select id="e_bg" data-f="bg"><option value="">${t('none')}</option>${optCur(names('backgrounds'),d.bg)}</select></div>
    <div class="field"><label for="e_align">${t('fAlign')}</label><select id="e_align" data-f="align">${optCur(names('alignments'),d.align)}</select></div>
-  </div></section>
-  ${bgPanel(d)}
-  <section class="panel"><div class="ph"><h2>${t('secAbil')}</h2></div><div class="abilities">
+  </div></section>`,
+   abil=`<section class="panel"><div class="ph"><h2>${t('secAbil')}</h2></div><div class="abilities">
    ${ABS.map(k=>`<div class="ab"><span class="k">${k.toUpperCase()}</span><div class="mod" id="m_${k}">${sgn(mod(d.abil[k]))}</div><input id="e_${k}" aria-label="${k.toUpperCase()}" data-a="${k}" type="number" min="1" max="30" value="${d.abil[k]}"></div>`).join('')}
-  </div><div class="derived" id="derived">${derived(d)}</div></section>
-  ${profPanel(d)}
-  ${hpPanel(d)}
-  ${weaponsPanel(d)}
-  ${profsPanel(d)}
-  ${itemsPanel(d)}
-  ${acPanel(d)}
-  ${featPanel(d)}
-  <section class="panel"><div class="ph"><h2>${t('secCombat')}</h2></div><div class="grid">
+  </div><div class="derived" id="derived">${derived(d)}</div></section>`,
+   combat=`<section class="panel"><div class="ph"><h2>${t('secCombat')}</h2></div><div class="grid">
    <div class="field"><label for="e_speed">${t('fSpeed')}</label><input id="e_speed" data-f="speed" type="number" min="0" value="${d.speed}"></div>
    <div class="field"><label for="e_insp">${t('fInsp')}</label><select id="e_insp" data-f="insp"><option value="0" ${d.insp?'':'selected'}>—</option><option value="1" ${d.insp?'selected':''}>✓</option></select></div>
-  </div><div class="grid wide" style="padding-top:0"><div class="field"><label for="e_notes">${t('fNotes')}</label><textarea id="e_notes" data-f="notes">${esc(d.notes)}</textarea></div></div>
-  <div class="bar"><button class="btn danger" data-act="del-edit">${delArm===d.id?t('delSure'):t('del')}</button><button class="btn primary" data-act="save">${t('save')}</button></div></section>`;
+  </div><div class="grid wide" style="padding-top:0"><div class="field"><label for="e_notes">${t('fNotes')}</label><textarea id="e_notes" data-f="notes">${esc(d.notes)}</textarea></div></div></section>`;
+  return`${head(esc(d.name)||t('add'),pc?t('players'):t('npcs'),`<div class="acts">${arrangeBtn('sheet')}<button class="btn" data-act="back">← ${t('back')}</button></div>`)}
+  ${arrangeBar('sheet')}${wgrid('sheet',[['basic',basic],['bgpick',bgPanel(d)],['abil',abil],['prof',profPanel(d)],['hp',hpPanel(d)],['weapons',weaponsPanel(d)],['profs',profsPanel(d)],['items',itemsPanel(d)],['ac',acPanel(d)],['feat',featPanel(d)],['combat',combat]])}
+  <section class="panel"><div class="bar"><button class="btn danger" data-act="del-edit">${delArm===d.id?t('delSure'):t('del')}</button><button class="btn primary" data-act="save">${t('save')}</button></div></section>`;
 }
 

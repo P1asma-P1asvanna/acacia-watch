@@ -37,7 +37,7 @@ async function bkAction(a){
     render()}
 }
 function bkPanel(){
-  return`<section class="panel" style="margin-top:18px"><div class="ph"><h2>${t('bkTitle')}</h2><span class="note">${t('bkNote')}</span></div><div class="bkbody">
+  return`<section class="panel" data-w="backup">${wc('site','backup')}<div class="ph"><h2>${t('bkTitle')}</h2><span class="note">${t('bkNote')}</span></div><div class="bkbody">
    <div class="bkrow"><button class="btn primary" data-act="bk-dl">${t('bkDownload')}</button><button class="btn" data-act="bk-copy">${t('bkCopy')}</button><button class="btn" data-act="bk-show">${bkShow?t('bkHide'):t('bkShowText')}</button></div>
    ${bkShow?`<textarea class="bktext" readonly id="bk_out" aria-label="${t('bkTitle')}">${esc(bkBuild())}</textarea>`:''}
    <h3 style="margin:8px 0 0">${t('bkImport')}</h3><p class="note" style="margin:0">${t('bkImportNote')}</p>

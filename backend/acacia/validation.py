@@ -1,16 +1,34 @@
 """Cleaning of character records sent by the browser (clamping, ownership, admin-only fields)."""
 import re
 
+from .images import URL_RE
 from .numbers import clampi, num
 from .rules import ac_calc, eff_ac, eff_max, hp_calc
 
 
 ID_RE = re.compile(r"^[A-Za-z0-9_-]{3,40}$")
 PREF_COLORS = ("bg", "surface", "ink", "accent", "side", "fxc", "tnow", "tnext", "tdone", "navb")
+IMG_KEYS = ("imgBg", "imgPanel", "imgDeco")
+WID_RE = re.compile(r"^[a-z0-9_]{1,24}$")
 
 
-def clean_prefs(v):
-    """Personal look-and-feel settings (colors, effects, shape, rows per page). Unknown keys are dropped."""
+def clean_lay(v):
+    """Where the person put the boxes of each page: {"sheet": {"o": [order], "h": [hidden], "s": {id: 1 for half width}}}."""
+    out = {}
+    if not isinstance(v, dict):
+        return out
+    for page, spec in list(v.items())[:16]:
+        if not (isinstance(page, str) and WID_RE.match(page) and isinstance(spec, dict)):
+            continue
+        ids = lambda a: [x for x in (a if isinstance(a, list) else [])[:40] if isinstance(x, str) and WID_RE.match(x)]
+        s = spec.get("s") if isinstance(spec.get("s"), dict) else {}
+        out[page] = {"o": ids(spec.get("o")), "h": ids(spec.get("h")),
+                     "s": {k: 1 for k, val in list(s.items())[:40] if WID_RE.match(str(k)) and val == 1}}
+    return out
+
+
+def clean_prefs(v, own_imgs=()):
+    """Personal look-and-feel settings. Unknown keys are dropped; pictures must be the person's own."""
     out = {}
     if not isinstance(v, dict):
         return out
@@ -22,9 +40,22 @@ def clean_prefs(v):
         out["fx"] = v["fx"]
     if v.get("font") in ("Alegreya", "Cinzel", "Sarabun", "Plex"):
         out["font"] = v["font"]
-    for k, lo, hi in (("fxms", 60, 500), ("fxamt", 0, 10), ("radius", 0, 20), ("pg", 3, 100)):
+    if v.get("decoPos") in ("tl", "tr", "bl", "br"):
+        out["decoPos"] = v["decoPos"]
+    if v.get("anim") in ("on", "off"):
+        out["anim"] = v["anim"]
+    for k, lo, hi in (("fxms", 60, 500), ("fxamt", 0, 10), ("radius", 0, 20), ("pg", 3, 100), ("dim", 0, 90),
+                      ("pdim", 0, 100), ("decoSize", 48, 320), ("decoOp", 10, 100)):
         if v.get(k) not in (None, ""):
             out[k] = clampi(v[k], lo, hi, lo)
+    for k in IMG_KEYS:
+        s = v.get(k)
+        m = isinstance(s, str) and URL_RE.match(s)
+        if m and m.group(1) in own_imgs:
+            out[k] = s
+    lay = clean_lay(v.get("lay"))
+    if lay:
+        out["lay"] = lay
     return out
 
 

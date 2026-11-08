@@ -61,8 +61,9 @@ let view='players', edit=null, authTab='signin', authErr='', delArm=null, flashM
 let dataTab='races', dedit=null, dataArm=null, dataErr='';
 let SITE=Object.assign({},load('dd_site',{})), siteDraft=null, siteMsg='';  /* SITE: name, tagline, logo, cover (shared by everyone, admin edits) */
 let PREFS=load('dd_theme',{}), prefsFor;  /* PREFS: this user's own colors, effects, shape, rows per page */
-const GLOBAL_KEYS=['name','tagline','logo','cover'],PREF_KEYS=['bg','surface','ink','accent','side','fxc','tnow','tnext','tdone','navb','fx','fxms','fxamt','radius','font','pg'];
+const GLOBAL_KEYS=['name','tagline','logo','cover'],PREF_KEYS=['bg','surface','ink','accent','side','fxc','tnow','tnext','tdone','navb','fx','fxms','fxamt','radius','font','pg','imgBg','imgPanel','imgDeco','dim','pdim','decoPos','decoSize','decoOp','anim','lay'];
 const THEME_DEF={bg:'#050505',surface:'#1e1e20',ink:'#dcdcdf',accent:'#121213',side:'#000000',fxc:'#000000',tnow:'#ffffff',tnext:'#999999',tdone:'#1e1e20',navb:'#999999'};
+const IMG_KEYS=['imgBg','imgPanel','imgDeco'];
 const siteInit=()=>Object.assign({},clone(SITE),clone(PREFS));
 const curTheme=()=>(view==='site'&&siteDraft&&me())?siteDraft:PREFS;
 const pageSize=()=>Math.max(3,Math.min(100,Math.round(Number(PREFS.pg))||10));
@@ -101,10 +102,8 @@ function applySite(s0){
   set('--nav-edge',s.navb);set('--turn-now',s.tnow);set('--turn-next',s.tnext);set('--turn-done',s.tdone);
   set('--r',s.radius!==undefined&&s.radius!==''&&s.radius!==null?s.radius+'px':'');
   set('--display',FONTS[s.font]||'');
+  applyDecor(s);
 }
-function readImage(file,max,type,q){return new Promise((res,rej)=>{const fr=new FileReader();fr.onerror=rej;fr.onload=()=>{const img=new Image();img.onerror=rej;img.onload=()=>{
-  const sc=Math.min(1,max/Math.max(img.width,img.height)),c=document.createElement('canvas');c.width=Math.max(1,Math.round(img.width*sc));c.height=Math.max(1,Math.round(img.height*sc));
-  const x=c.getContext('2d');if(type==='image/jpeg'){x.fillStyle='#fff';x.fillRect(0,0,c.width,c.height)}x.drawImage(img,0,0,c.width,c.height);res(c.toDataURL(type,q))};img.src=fr.result};fr.readAsDataURL(file)})}
 let diceSides=20, diceCount=1, diceMod=0, diceMode='normal', rolls=[], lastRoll=null;
 const t=k=>TX[lang][k];
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));

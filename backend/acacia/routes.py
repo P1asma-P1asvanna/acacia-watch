@@ -9,7 +9,9 @@ from http import cookies
 from .config import COOKIE, FAILS
 from .errors import Err
 from .security import check_pw, hash_pw, new_user_row
-from .store import boot_state, kv_get, kv_set, user_pub
+from .store import boot_state, clean_site, kv_get, kv_set, user_pub
+from . import images
+from .config import IMG_SLOTS
 from .validation import ID_RE, clean_prefs, clean_record, ADMIN_ONLY
 
 
@@ -83,9 +85,19 @@ class Routes:
             return {"ok": True}
 
         if path == "/api/prefs":  # every user keeps their own look; nobody else's screen changes
-            val = clean_prefs(b.get("value"))
+            val = clean_prefs(b.get("value"), images.owned_ids(c, me["id"]))
             kv_set(c, "prefs:" + me["id"], val)
+            images.purge(c, me["id"])
             return {"ok": True, "value": val}
+
+        if path == "/api/img":  # upload one picture for a slot (see IMG_SLOTS in config.py for the rules)
+            slot = str(b.get("slot") or "")
+            if slot not in IMG_SLOTS:
+                raise Err(400, "bad_slot")
+            if IMG_SLOTS[slot]["scope"] == "site" and not admin:
+                raise Err(403, "forbidden")
+            owner = "site" if IMG_SLOTS[slot]["scope"] == "site" else me["id"]
+            return images.store(c, slot, owner, b.get("data"))
 
         if path == "/api/sync":
             kind = b.get("kind")
@@ -128,7 +140,11 @@ class Routes:
                 raise Err(400, "bad_site")
             if key == "rooms" and not isinstance(v, list):
                 raise Err(400, "bad_rooms")
+            if key == "site":
+                v = clean_site(c, v)
             kv_set(c, key, v)
+            if key == "site":
+                images.purge(c, "site")
             return {"ok": True}
 
         m = re.match(r"^/api/users/([A-Za-z0-9]+)/(role|password|delete)$", path)
@@ -159,6 +175,7 @@ class Routes:
                     raise Err(409, "last_admin")
                 c.execute("DELETE FROM users WHERE id=?", (uid,))
                 c.execute("DELETE FROM kv WHERE k=?", ("prefs:" + uid,))
+                images.delete_owner(c, uid)
                 c.execute("DELETE FROM sessions WHERE uid=?", (uid,))
                 for r in c.execute("SELECT id,data FROM docs WHERE kind='pc' AND owner=?", (uid,)).fetchall():
                     d = json.loads(r["data"])
