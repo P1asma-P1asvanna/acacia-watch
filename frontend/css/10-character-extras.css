@@ -1,0 +1,47 @@
+/* background and class extras, items, weapons, proficiencies */
+.featrow{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:10px;align-items:end;border:1px solid var(--line);border-radius:var(--r);padding:12px}
+.featrow.withlvl{grid-template-columns:minmax(0,1fr) 110px auto}
+.featrow .field.full{grid-column:1/-1}
+.chkgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:6px 12px;padding:14px 16px}
+.chk{display:flex;gap:8px;align-items:center;min-height:36px;cursor:pointer}
+.chk input{width:18px;height:18px;flex:none}
+.chk .pa,.pa{margin-left:auto;font-family:var(--mono);font-size:.7rem;color:var(--muted)}
+.items{list-style:none;margin:0;padding:0 16px 8px;display:flex;flex-direction:column;gap:8px}
+.irow{display:grid;grid-template-columns:minmax(0,1fr) 72px auto auto;gap:8px;align-items:center}
+.irow input,.wb{min-height:36px;border:1px solid var(--line);border-radius:calc(var(--r)*.75);background:var(--surface);padding:0 .6rem;width:100%}
+.iqty,.wb{text-align:center}
+.bkbody{padding:16px;display:flex;flex-direction:column;gap:12px}
+.bkrow{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+.bktext{width:100%;min-height:120px;font-family:var(--mono);font-size:.8rem;border:1px solid var(--line);border-radius:calc(var(--r)*.75);background:var(--surface);color:var(--ink);padding:8px;resize:vertical}
+.icell{display:flex;gap:8px;align-items:center;white-space:nowrap}
+.eqw{display:flex;gap:6px;align-items:center;font-size:.9rem;cursor:pointer}
+.irow .eqw input{width:18px;height:18px;min-height:0;padding:0}
+.wlist{list-style:none;margin:0;padding:0}
+.whead,.wrow{display:grid;grid-template-columns:minmax(0,1.6fr) 64px minmax(0,1.4fr) auto 64px auto;gap:10px;align-items:center;padding:8px 16px;border-top:1px solid var(--line)}
+.whead{font-size:.72rem;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);border-top:0}
+.wn b{display:block;overflow:hidden;text-overflow:ellipsis}
+.wn small,.wa small{display:block;color:var(--muted);font-size:.78rem}
+.wa{text-align:center;font-family:var(--display);font-weight:700;font-size:1.25rem;font-variant-numeric:tabular-nums}
+.wd{font-family:var(--mono);font-size:.85rem}
+.wp{display:flex;gap:6px;align-items:center;white-space:nowrap;font-size:.85rem}
+.wp input{width:18px;height:18px}
+.kvr{display:grid;grid-template-columns:140px minmax(0,1fr);gap:12px;padding:7px 16px;border-top:1px solid var(--line)}
+.kvr .k{color:var(--muted);text-align:right;font-size:.9rem}
+.featwrap{padding:0 16px 14px;display:flex;flex-direction:column;gap:8px}
+details.feat{border:1px solid var(--line);border-radius:calc(var(--r)*.75);padding:8px 12px}
+details.feat summary{cursor:pointer;display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.featd{margin-top:8px;font-size:.92rem}
+@media(max-width:700px){
+ input,select,textarea{font-size:16px}
+ .whead{display:none}
+ .wrow{grid-template-columns:minmax(0,1fr) 64px}
+ .wrow>.wd{grid-column:1/-1}
+ .kvr{grid-template-columns:1fr;gap:2px}.kvr .k{text-align:left}
+ .featrow.withlvl{grid-template-columns:minmax(0,1fr) 90px auto}
+}
+.stagemain,.scroll{overscroll-behavior:contain}
+.panel{contain:layout style}
+#acbody,#profbody,#hpbody,#wbody,#featbody,#profsrows,#itbody{contain:layout style}
+.netbar{position:fixed;left:12px;right:12px;bottom:12px;z-index:50;background:var(--danger);color:#fff;padding:10px 14px;border-radius:var(--r);font-weight:600;box-shadow:0 4px 16px rgba(0,0,0,.3)}
+.pwrow{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.pwrow input{min-height:36px;width:150px;border:1px solid var(--line);border-radius:calc(var(--r)*.75);background:var(--surface);padding:0 .6rem}

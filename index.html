@@ -1,0 +1,1355 @@
+<!doctype html>
+<html lang="th"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"></head><body style="margin:0"><title>Acacia Watch</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Alegreya:wght@600;700&family=Sarabun:wght@400;500;700&display=swap">
+<style>
+/* Layout: split screen. Dark ink sidebar on the left, working area on the right; on phones the sidebar becomes a scrolling top bar.
+   Palette: verdigris accent on cool stone, brass kept for dice and highlights only. */
+:root{
+  --bg:#eceff0; --surface:#fafbfb; --ink:#1b2422; --muted:#5a6a66; --line:#d2d9d7;
+  --accent:#1d6b64; --accent-ink:#ffffff; --brass:#8f6212; --gold:#c8901a; --temp:#2f6aa8; --turn-now:#c8901a; --turn-next:#4f86b3; --turn-done:#8b9590; --danger:#a3322a;
+  --side:#16201e; --side-ink:#e4ebe8; --side-muted:#8fa19c; --side-line:#2a3935; --side-active:#24342f;
+  --r:8px; --display:'Alegreya','Sarabun',Georgia,serif; --body:'Sarabun','Segoe UI',system-ui,sans-serif; --mono:'IBM Plex Mono',ui-monospace,monospace;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#101614; --surface:#18211e; --ink:#e5ece9; --muted:#94a5a0; --line:#2b3935;
+  --accent:#4fb3a9; --accent-ink:#09130f; --brass:#d6a54b; --gold:#e3b449; --temp:#6aa6e6; --turn-now:#e3b449; --turn-next:#6aa6d4; --turn-done:#6c7873; --danger:#e57d72;
+  --side:#0b100f; --side-ink:#e4ebe8; --side-muted:#8fa19c; --side-line:#22302c; --side-active:#1b2926; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#101614; --surface:#18211e; --ink:#e5ece9; --muted:#94a5a0; --line:#2b3935;
+  --accent:#4fb3a9; --accent-ink:#09130f; --brass:#d6a54b; --gold:#e3b449; --temp:#6aa6e6; --turn-now:#e3b449; --turn-next:#6aa6d4; --turn-done:#6c7873; --danger:#e57d72;
+  --side:#0b100f; --side-ink:#e4ebe8; --side-muted:#8fa19c; --side-line:#22302c; --side-active:#1b2926; color-scheme:dark}
+*{box-sizing:border-box}
+html,body{min-height:100%}
+body{background:var(--bg);color:var(--ink);font-family:var(--body);font-size:15px;line-height:1.5}
+h1,h2,h3{font-family:var(--display);line-height:1.2;margin:0;text-wrap:balance}
+button,input,select,textarea{font:inherit;color:inherit}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+
+/* shared controls */
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:.4rem;min-height:38px;padding:0 .95rem;border-radius:calc(var(--r)*.75);border:1px solid var(--line);background:var(--surface);cursor:pointer;font-weight:500}
+.btn:hover{border-color:var(--accent)}
+.btn.primary{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+.btn.danger{color:var(--danger);border-color:var(--danger)}
+.btn.small{min-height:30px;padding:0 .6rem;font-size:.85rem}
+.btn[disabled]{opacity:.5;cursor:not-allowed}
+.field{display:flex;flex-direction:column;gap:.3rem;min-width:0}
+.field>label,.lbl{font-size:.78rem;letter-spacing:.04em;text-transform:uppercase;color:var(--muted);font-weight:500}
+.field input,.field select,.field textarea{width:100%;min-height:38px;padding:.4rem .6rem;border:1px solid var(--line);border-radius:calc(var(--r)*.75);background:var(--surface)}
+.field textarea{min-height:90px;resize:vertical}
+.err{color:var(--danger);font-size:.9rem;min-height:1.3em}
+.muted{color:var(--muted)}
+.lang{display:inline-flex;border:1px solid var(--line);border-radius:calc(var(--r)*.75);overflow:hidden}
+.lang button{border:0;background:transparent;padding:.2rem .6rem;cursor:pointer;font-size:.82rem;font-weight:500}
+.lang button[aria-pressed="true"]{background:var(--accent);color:var(--accent-ink)}
+
+/* login */
+.login{min-height:100vh;display:grid;place-items:center;padding:24px max(16px,env(safe-area-inset-left,0px)) 24px max(16px,env(safe-area-inset-right,0px))}
+.login-card{width:100%;max-width:400px;background:var(--surface);border:1px solid var(--line);border-radius:calc(var(--r)*1.25);padding:28px 26px;display:flex;flex-direction:column;gap:16px}
+.login-top{display:flex;justify-content:space-between;align-items:center}
+.brand{display:flex;align-items:center;gap:.6rem;font-family:var(--display);font-weight:700;font-size:1.45rem}
+.brand svg{width:30px;height:30px;color:var(--brass)}
+.tabs{display:grid;grid-template-columns:1fr 1fr;border-bottom:1px solid var(--line)}
+.tabs button{background:none;border:0;padding:.6rem;cursor:pointer;color:var(--muted);border-bottom:2px solid transparent;font-weight:500}
+.tabs button[aria-selected="true"]{color:var(--ink);border-bottom-color:var(--accent)}
+form.stack{display:flex;flex-direction:column;gap:12px}
+.note{font-size:.85rem;color:var(--muted)}
+
+/* app shell */
+.app{display:grid;grid-template-columns:240px minmax(0,1fr);min-height:100vh}
+.side{background:var(--side);color:var(--side-ink);display:flex;flex-direction:column;gap:20px;padding:20px 16px;position:sticky;top:0;height:100vh}
+.side .brand{color:var(--side-ink)}
+.nav{display:flex;flex-direction:column;gap:4px}
+.nav button{display:flex;align-items:center;gap:.7rem;text-align:left;padding:.6rem .7rem;border:0;border-radius:calc(var(--r)*.75);background:transparent;color:var(--side-muted);cursor:pointer;font-weight:500}
+.nav button svg{width:18px;height:18px;flex:none}
+.nav button:hover{color:var(--side-ink)}
+.nav button[aria-current="page"]{background:var(--side-active);color:var(--side-ink);box-shadow:inset 3px 0 0 var(--brass)}
+.side-foot{margin-top:auto;display:flex;flex-direction:column;gap:12px;border-top:1px solid var(--side-line);padding-top:14px}
+.me{display:flex;flex-direction:column}
+.me b{font-weight:700}
+.me span{font-size:.8rem;color:var(--side-muted)}
+.side .lang{border-color:var(--side-line);align-self:flex-start}
+.side .lang button{color:var(--side-muted)}
+.side .lang button[aria-pressed="true"]{color:var(--accent-ink)}
+.side .btn{background:transparent;border-color:var(--side-line);color:var(--side-ink)}
+.main{padding:28px max(16px,env(safe-area-inset-right,0px)) 48px 32px;min-width:0;display:flex;flex-direction:column;gap:22px}
+.head{display:flex;flex-wrap:wrap;gap:12px;justify-content:space-between;align-items:flex-end}
+.head h1{font-size:1.9rem}
+.head p{margin:.2rem 0 0;color:var(--muted)}
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);min-width:0}
+.panel>.ph{padding:14px 16px;border-bottom:1px solid var(--line);display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap}
+.panel>.ph h2{font-size:1.2rem}
+.scroll{overflow-x:auto}
+table{width:100%;border-collapse:collapse;min-width:620px}
+th{text-align:left;font-size:.75rem;letter-spacing:.05em;text-transform:uppercase;color:var(--muted);font-weight:500;padding:10px 16px;border-bottom:1px solid var(--line);white-space:nowrap}
+td{padding:11px 16px;border-bottom:1px solid var(--line);vertical-align:middle}
+tr:last-child td{border-bottom:0}
+td.num,th.num{text-align:right;font-variant-numeric:tabular-nums}
+td .sub{display:block;font-size:.82rem;color:var(--muted)}
+.acts{display:flex;gap:6px;justify-content:flex-end}
+.pill{display:inline-block;padding:.1rem .55rem;border:1px solid var(--line);border-radius:999px;font-size:.78rem;color:var(--muted)}
+.pill.admin{border-color:var(--brass);color:var(--brass)}
+.empty{padding:34px 18px;text-align:center;display:flex;flex-direction:column;gap:12px;align-items:center;color:var(--muted)}
+
+/* editor */
+.grid{display:grid;gap:14px;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));padding:16px}
+.grid.wide{grid-template-columns:repeat(auto-fit,minmax(240px,1fr))}
+.abilities{display:grid;grid-template-columns:repeat(auto-fit,minmax(104px,1fr));gap:12px;padding:16px}
+.ab{border:1px solid var(--line);border-radius:var(--r);padding:10px;display:flex;flex-direction:column;align-items:center;gap:6px}
+.ab .k{font-family:var(--mono);font-size:.8rem;color:var(--muted)}
+.ab input{text-align:center;width:100%;min-height:36px;border:1px solid var(--line);border-radius:calc(var(--r)*.75);background:var(--surface);font-variant-numeric:tabular-nums}
+.ab .mod{font-family:var(--display);font-weight:700;font-size:1.5rem;font-variant-numeric:tabular-nums}
+.derived{display:flex;flex-wrap:wrap;gap:10px;padding:0 16px 16px}
+.chip{border:1px solid var(--line);border-radius:var(--r);padding:8px 12px;display:flex;flex-direction:column;min-width:110px}
+.chip span{font-size:.72rem;letter-spacing:.05em;text-transform:uppercase;color:var(--muted)}
+.chip b{font-family:var(--display);font-size:1.3rem;font-variant-numeric:tabular-nums}
+.bar{display:flex;gap:10px;flex-wrap:wrap;justify-content:space-between;padding:14px 16px}
+
+/* minigames */
+.games{display:grid;gap:18px;grid-template-columns:minmax(0,1.4fr) minmax(0,1fr)}
+.dice{display:flex;flex-wrap:wrap;gap:8px;padding:16px 16px 4px}
+.dice button{min-width:52px;min-height:44px;border-radius:calc(var(--r)*.75);border:1px solid var(--line);background:var(--surface);cursor:pointer;font-family:var(--mono)}
+.dice button[aria-pressed="true"]{border-color:var(--brass);color:var(--brass);box-shadow:inset 0 0 0 1px var(--brass)}
+.roll-ctl{display:flex;gap:12px;flex-wrap:wrap;align-items:flex-end;padding:12px 16px}
+.roll-ctl .field{width:92px}
+.result{margin:4px 16px 16px;border:1px dashed var(--brass);border-radius:var(--r);padding:16px;text-align:center;min-height:116px;display:flex;flex-direction:column;justify-content:center;gap:4px}
+.result .big{font-family:var(--display);font-weight:700;font-size:3rem;line-height:1;color:var(--brass);font-variant-numeric:tabular-nums}
+.result .det{font-family:var(--mono);font-size:.85rem;color:var(--muted)}
+.hist{list-style:none;margin:0;padding:6px 16px 16px;display:flex;flex-direction:column;gap:6px}
+.hist li{display:flex;justify-content:space-between;gap:10px;font-family:var(--mono);font-size:.85rem;border-bottom:1px solid var(--line);padding-bottom:6px}
+.plan{margin:0;padding:12px 16px 16px 34px;display:flex;flex-direction:column;gap:6px}
+
+/* game data */
+.tabs2{display:flex;gap:4px;overflow-x:auto;border-bottom:1px solid var(--line)}
+.tabs2 button{background:none;border:0;border-bottom:2px solid transparent;padding:.55rem .85rem;cursor:pointer;color:var(--muted);font-weight:500;white-space:nowrap}
+.tabs2 button[aria-selected="true"]{color:var(--ink);border-bottom-color:var(--accent)}
+.cnt{font-family:var(--mono);font-size:.75rem;color:var(--muted);margin-left:.25rem}
+.field.full{grid-column:1/-1}
+.subs{display:flex;flex-direction:column;gap:12px;padding:16px}
+.subrow{display:grid;grid-template-columns:repeat(4,minmax(0,1fr)) auto;gap:10px;align-items:end;border:1px solid var(--line);border-radius:var(--r);padding:12px}
+/* adventure stage */
+.app.stagemode{height:100vh;height:100dvh}
+.main.stage{height:100vh;height:100dvh;overflow:hidden;padding-top:16px;padding-bottom:16px;gap:12px}
+.stagebar{display:flex;align-items:center;gap:12px;flex-wrap:wrap;min-width:0}
+.stagebar h1{font-size:1.4rem}
+.gtabs{display:flex;gap:6px;overflow-x:auto;margin-left:auto;min-width:0;max-width:100%}
+.gtab{white-space:nowrap;border:1px solid var(--line);background:var(--surface);border-radius:999px;padding:.3rem .9rem;cursor:pointer;font-weight:500}
+.gtab[aria-selected="true"]{border-color:var(--accent);background:var(--accent);color:var(--accent-ink)}
+.gtab:disabled{opacity:.55;cursor:not-allowed}
+.soon{font-size:.68rem;letter-spacing:.05em;text-transform:uppercase;margin-left:.5rem;color:var(--muted)}
+.stagebody{flex:1;min-height:0;display:grid;grid-template-columns:minmax(0,1fr) 280px;gap:16px}
+.stagemain{min-height:0;min-width:0;overflow-y:auto}
+.rail{min-height:0;display:flex;flex-direction:column;background:var(--surface);border:1px solid var(--line);border-radius:var(--r);overflow:hidden}
+.rail-head{display:flex;justify-content:space-between;align-items:center;padding:10px 12px;border-bottom:1px solid var(--line);font-family:var(--display);font-weight:700}
+.rail-list{flex:1;min-height:0;display:flex;flex-direction:column;gap:6px;padding:8px;container-type:size}
+.seat{flex:1 1 0;min-height:0;display:flex;align-items:center;gap:10px;border:1px dashed var(--line);border-radius:calc(var(--r)*.75);padding:0 10px;overflow:hidden;font-size:clamp(.68rem,calc(100cqh / var(--n) * .2),1rem)}
+.seat.filled{border-style:solid;background:color-mix(in srgb,var(--accent) 8%,var(--surface))}
+.av{flex:none;display:grid;place-items:center;border-radius:50%;background:var(--side);color:var(--side-ink);font-family:var(--display);font-weight:700;width:clamp(24px,calc(100cqh / var(--n) * .5),56px);height:clamp(24px,calc(100cqh / var(--n) * .5),56px)}
+.seat-body{min-width:0;flex:1;display:flex;flex-direction:column;justify-content:center}
+.seat-pick{width:100%;min-height:0;padding:0;border:0;background:transparent;font-weight:700;font-size:1em;text-overflow:ellipsis;cursor:pointer}
+.seat:not(.filled) .seat-pick{font-weight:400;color:var(--muted)}
+.seat-line2,.seat-stats{color:var(--muted);font-size:.85em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.seat-stats{display:flex;gap:10px;font-family:var(--mono)}
+.d2 .seat-line2,.d3 .seat-line2,.d3 .av{display:none}
+.d3 .seat-body{flex-direction:row;align-items:center;gap:8px}
+.d3 .seat-pick{flex:1;min-width:0}
+/* button effects (admin picks style, speed, strength, color in site settings) */
+:root{--fx-ms:160ms;--fx-amt:3;--fx-color:var(--accent)}
+.btn,.gtab,.dice button{position:relative;touch-action:manipulation;-webkit-tap-highlight-color:transparent;transition:transform var(--fx-ms) cubic-bezier(.2,.7,.3,1),border-color .15s,background-color .15s,color .15s}
+.btn::after,.gtab::after,.dice button::after{content:"";position:absolute;inset:0;border-radius:inherit;pointer-events:none;opacity:0;transition:opacity var(--fx-ms) ease}
+html[data-fx=glow] .btn::after,html[data-fx=glow] .gtab::after,html[data-fx=glow] .dice button::after{box-shadow:0 0 calc(var(--fx-amt)*3px) calc(var(--fx-amt)*.5px) var(--fx-color)}
+html[data-fx=lift] .btn::after,html[data-fx=lift] .gtab::after,html[data-fx=lift] .dice button::after{box-shadow:0 calc(var(--fx-amt)*2px) calc(var(--fx-amt)*3px) color-mix(in srgb,var(--fx-color) 40%,transparent)}
+html[data-fx=shine] .btn,html[data-fx=shine] .gtab,html[data-fx=shine] .dice button{overflow:hidden}
+html[data-fx=shine] .btn::before,html[data-fx=shine] .gtab::before,html[data-fx=shine] .dice button::before{content:"";position:absolute;top:0;bottom:0;left:0;width:55%;background:linear-gradient(100deg,transparent,color-mix(in srgb,var(--fx-color) 55%,#fff),transparent);opacity:.55;transform:translateX(-140%) skewX(-18deg);pointer-events:none}
+@media (hover:hover){
+ html[data-fx=lift] .btn:not([disabled]):hover,html[data-fx=lift] .gtab:not(:disabled):hover,html[data-fx=lift] .dice button:hover{transform:translateY(calc(var(--fx-amt)*-1px))}
+ html[data-fx=bounce] .btn:not([disabled]):hover,html[data-fx=bounce] .gtab:not(:disabled):hover,html[data-fx=bounce] .dice button:hover{transform:scale(calc(1 + var(--fx-amt) / 100));transition-timing-function:cubic-bezier(.34,1.56,.64,1)}
+ html[data-fx=lift] .btn:not([disabled]):hover::after,html[data-fx=glow] .btn:not([disabled]):hover::after,html[data-fx=lift] .gtab:not(:disabled):hover::after,html[data-fx=glow] .gtab:not(:disabled):hover::after,html[data-fx=lift] .dice button:hover::after,html[data-fx=glow] .dice button:hover::after{opacity:1}
+ html[data-fx=shine] .btn:not([disabled]):hover::before,html[data-fx=shine] .gtab:not(:disabled):hover::before,html[data-fx=shine] .dice button:hover::before{transform:translateX(280%) skewX(-18deg);transition:transform calc(var(--fx-ms)*3) ease}
+}
+html:not([data-fx=none]) .btn:not([disabled]):active,html:not([data-fx=none]) .gtab:not(:disabled):active,html:not([data-fx=none]) .dice button:active{transform:scale(.96)}
+.fxprev{display:flex;gap:12px;flex-wrap:wrap;align-items:center;padding:0 16px 16px}
+@media (prefers-reduced-motion:reduce){.btn,.gtab,.dice button,.btn::before,.btn::after,.gtab::before,.gtab::after{transition:none!important}html .btn:hover,html .btn:active,html .gtab:hover,html .gtab:active,html .dice button:hover,html .dice button:active{transform:none!important}}
+/* background and class extras, items, weapons, proficiencies */
+.featrow{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:10px;align-items:end;border:1px solid var(--line);border-radius:var(--r);padding:12px}
+.featrow.withlvl{grid-template-columns:minmax(0,1fr) 110px auto}
+.featrow .field.full{grid-column:1/-1}
+.chkgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:6px 12px;padding:14px 16px}
+.chk{display:flex;gap:8px;align-items:center;min-height:36px;cursor:pointer}
+.chk input{width:18px;height:18px;flex:none}
+.chk .pa,.pa{margin-left:auto;font-family:var(--mono);font-size:.7rem;color:var(--muted)}
+.items{list-style:none;margin:0;padding:0 16px 8px;display:flex;flex-direction:column;gap:8px}
+.irow{display:grid;grid-template-columns:minmax(0,1fr) 72px auto auto;gap:8px;align-items:center}
+.irow input,.wb{min-height:36px;border:1px solid var(--line);border-radius:calc(var(--r)*.75);background:var(--surface);padding:0 .6rem;width:100%}
+.iqty,.wb{text-align:center}
+.bkbody{padding:16px;display:flex;flex-direction:column;gap:12px}
+.bkrow{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+.bktext{width:100%;min-height:120px;font-family:var(--mono);font-size:.8rem;border:1px solid var(--line);border-radius:calc(var(--r)*.75);background:var(--surface);color:var(--ink);padding:8px;resize:vertical}
+.icell{display:flex;gap:8px;align-items:center;white-space:nowrap}
+.eqw{display:flex;gap:6px;align-items:center;font-size:.9rem;cursor:pointer}
+.irow .eqw input{width:18px;height:18px;min-height:0;padding:0}
+.wlist{list-style:none;margin:0;padding:0}
+.whead,.wrow{display:grid;grid-template-columns:minmax(0,1.6fr) 64px minmax(0,1.4fr) auto 64px auto;gap:10px;align-items:center;padding:8px 16px;border-top:1px solid var(--line)}
+.whead{font-size:.72rem;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);border-top:0}
+.wn b{display:block;overflow:hidden;text-overflow:ellipsis}
+.wn small,.wa small{display:block;color:var(--muted);font-size:.78rem}
+.wa{text-align:center;font-family:var(--display);font-weight:700;font-size:1.25rem;font-variant-numeric:tabular-nums}
+.wd{font-family:var(--mono);font-size:.85rem}
+.wp{display:flex;gap:6px;align-items:center;white-space:nowrap;font-size:.85rem}
+.wp input{width:18px;height:18px}
+.kvr{display:grid;grid-template-columns:140px minmax(0,1fr);gap:12px;padding:7px 16px;border-top:1px solid var(--line)}
+.kvr .k{color:var(--muted);text-align:right;font-size:.9rem}
+.featwrap{padding:0 16px 14px;display:flex;flex-direction:column;gap:8px}
+details.feat{border:1px solid var(--line);border-radius:calc(var(--r)*.75);padding:8px 12px}
+details.feat summary{cursor:pointer;display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.featd{margin-top:8px;font-size:.92rem}
+@media(max-width:700px){
+ input,select,textarea{font-size:16px}
+ .whead{display:none}
+ .wrow{grid-template-columns:minmax(0,1fr) 64px}
+ .wrow>.wd{grid-column:1/-1}
+ .kvr{grid-template-columns:1fr;gap:2px}.kvr .k{text-align:left}
+ .featrow.withlvl{grid-template-columns:minmax(0,1fr) 90px auto}
+}
+.stagemain,.scroll{overscroll-behavior:contain}
+.panel{contain:layout style}
+#acbody,#profbody,#hpbody,#wbody,#featbody,#profsrows,#itbody{contain:layout style}
+.netbar{position:fixed;left:12px;right:12px;bottom:12px;z-index:50;background:var(--danger);color:#fff;padding:10px 14px;border-radius:var(--r);font-weight:600;box-shadow:0 4px 16px rgba(0,0,0,.3)}
+.pwrow{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.pwrow input{min-height:36px;width:150px;border:1px solid var(--line);border-radius:calc(var(--r)*.75);background:var(--surface);padding:0 .6rem}
+/* initiative */
+.ini{display:flex;flex-direction:column;gap:14px}
+.ini-top{display:flex;gap:10px;flex-wrap:wrap;align-items:center;padding:14px 16px}
+.ini-round{font-family:var(--display);font-weight:700;font-size:1.4rem;margin-right:auto;font-variant-numeric:tabular-nums}
+.ini-add{display:flex;gap:10px 16px;flex-wrap:wrap;align-items:flex-end;padding:0 16px 14px}
+.ini-add .field{min-width:0}
+.ini-add .sm{width:84px}
+.ini-list{list-style:none;margin:0;padding:0}
+.ini-row{display:grid;grid-template-columns:28px minmax(0,1fr) 84px auto auto;gap:10px;align-items:center;padding:8px 16px;border-top:1px solid var(--line)}
+.ini-row.now{background:color-mix(in srgb,var(--turn-now) 24%,var(--surface));box-shadow:inset 5px 0 0 var(--turn-now)}
+.ini-row.next{background:color-mix(in srgb,var(--turn-next) 15%,var(--surface));box-shadow:inset 4px 0 0 var(--turn-next)}
+.ini-row.done{background:color-mix(in srgb,var(--turn-done) 14%,var(--surface));box-shadow:inset 3px 0 0 var(--turn-done)}
+.ini-row.done .ini-name b{color:var(--muted)}
+.ini-row.now .ini-name b{font-weight:800}
+.ini-mark{font-size:1.1rem;text-align:center;color:var(--muted)}
+.ini-row.now .ini-mark{color:var(--turn-now)}.ini-row.next .ini-mark{color:var(--turn-next)}
+.ini-legend{display:flex;gap:16px;flex-wrap:wrap;padding:0 16px 12px;font-size:.85rem;color:var(--muted)}
+.ini-legend i{display:inline-block;width:12px;height:12px;border-radius:3px;margin-right:6px;vertical-align:-1px}
+.ini-name{min-width:0;display:flex;flex-direction:column}
+.ini-name b{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.ini-name small{color:var(--muted)}
+.ini-row input{width:100%;text-align:center;min-height:36px;border:1px solid var(--line);border-radius:calc(var(--r)*.75);background:var(--surface);font-variant-numeric:tabular-nums}
+.ini-hp{font-family:var(--mono);font-size:.85rem;color:var(--muted);white-space:nowrap}
+.ini-hp input{width:64px}
+.ini-act{display:flex;gap:6px}
+@media(max-width:700px){.ini-row{grid-template-columns:24px minmax(0,1fr) 70px;}.ini-hp,.ini-act{grid-column:2/-1}}
+/* hp */
+.hpwrap{padding:16px;display:flex;flex-direction:column;gap:14px}
+.hpmax{display:flex;justify-content:space-between;align-items:flex-start;gap:12px}
+.hpmax b{font-family:var(--display);font-size:2.6rem;line-height:1;font-variant-numeric:tabular-nums}
+.hpbar{height:14px;border-radius:999px;background:color-mix(in srgb,var(--ink) 10%,var(--surface));display:flex;overflow:hidden;border:1px solid var(--line)}
+.hpbar i{display:block;height:100%}
+.hpbar .cur{background:var(--accent)}.hpbar .cur.low{background:var(--danger)}.hpbar .tmp{background:var(--temp)}
+.hpnums{display:flex;gap:12px;margin-top:4px;font-family:var(--mono);font-size:.85rem;color:var(--muted)}
+.tt{color:var(--temp);font-family:var(--mono);font-size:.85em}
+.hpgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;align-items:end}
+.hpbtns{display:flex;gap:8px;flex-wrap:wrap}
+.hpsub{display:flex;gap:12px 32px;flex-wrap:wrap;align-items:flex-end}
+.stepper{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.mono{font-family:var(--mono);font-size:.85rem}
+.dots{display:flex;gap:6px}
+.dot{width:20px;height:20px;border-radius:50%;border:2px solid var(--muted);background:transparent;padding:0;cursor:pointer}
+.dot.on.ok{background:var(--accent);border-color:var(--accent)}
+.dot.on.bad{background:var(--danger);border-color:var(--danger)}
+details.how summary{cursor:pointer;color:var(--muted);font-weight:500}
+details.how ul{margin:8px 0 0;padding-left:20px;display:flex;flex-direction:column;gap:4px;font-size:.9rem}
+/* saving throws and skills */
+.profgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(270px,1fr));gap:8px 36px;padding:12px 16px 16px}
+.pcol h3{font-size:1rem;color:var(--muted);margin:0 0 4px}
+.prow{display:grid;grid-template-columns:28px 46px minmax(0,1fr) auto;align-items:center;gap:10px;min-height:34px;border-bottom:1px solid var(--line)}
+.pv{font-family:var(--display);font-weight:700;font-size:1.1rem;text-align:right;font-variant-numeric:tabular-nums}
+.prow.s2 .pv{color:var(--brass)}
+.pa{font-family:var(--mono);font-size:.74rem;color:var(--muted)}
+.pt{width:22px;height:22px;margin:0 3px;border-radius:50%;border:2px solid var(--muted);background:transparent;cursor:pointer;padding:0}
+.pt:hover{border-color:var(--ink)}
+.pt.s1{background:var(--ink);border-color:var(--ink)}
+.pt.s2{background:var(--gold);border-color:var(--gold);box-shadow:0 0 0 2px var(--surface),0 0 0 4px var(--gold)}
+/* site settings and dice */
+.brand .logo{width:30px;height:30px;object-fit:contain;flex:none}
+.sr{position:absolute;width:1px;height:1px;opacity:0;overflow:hidden;pointer-events:none}
+label.btn:focus-within{outline:2px solid var(--accent);outline-offset:2px}
+.medias{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:16px;padding:0 16px 8px}
+.media{display:flex;flex-direction:column;gap:8px;min-width:0}
+.thumb{height:110px;border:1px dashed var(--line);border-radius:var(--r);display:grid;place-items:center;background-size:cover;background-position:center;background-repeat:no-repeat}
+.thumb.logo{background-size:contain;width:110px}
+.crows{display:flex;flex-direction:column}
+.crow{display:grid;grid-template-columns:minmax(130px,1fr) 56px 90px auto;gap:12px;align-items:center;padding:10px 16px;border-bottom:1px solid var(--line)}
+.crow:last-child{border-bottom:0}
+.crow input[type=color]{width:56px;height:34px;padding:2px;border:1px solid var(--line);border-radius:calc(var(--r)*.5);background:var(--surface);cursor:pointer}
+.crow code{font-family:var(--mono);font-size:.82rem;color:var(--muted)}
+.pair{display:flex;gap:12px;justify-content:center;flex-wrap:wrap;margin-bottom:6px}
+.rc{border:1px solid var(--line);border-radius:var(--r);padding:8px 18px;min-width:104px;display:flex;flex-direction:column;align-items:center;gap:2px}
+.rc.kept{border-color:var(--brass);box-shadow:inset 0 0 0 1px var(--brass)}
+.rc.tossed{opacity:.65}
+.rc .tag{font-size:.7rem;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+.rc .num{font-family:var(--display);font-size:2rem;font-weight:700;line-height:1.15;font-variant-numeric:tabular-nums}
+.rc s.num{text-decoration-thickness:3px;text-decoration-color:var(--danger);color:var(--muted)}
+.hist .old{color:var(--muted);font-weight:400;text-decoration-color:var(--danger)}
+@media (max-width:820px){.crow{grid-template-columns:1fr 56px auto;}.crow code{display:none}
+  .app.stagemode{height:100dvh;grid-template-rows:auto minmax(0,1fr)}
+  .main.stage{height:auto;min-height:0}
+  .stagebody{grid-template-columns:minmax(0,1fr) 128px;gap:10px}
+  .rail .av{display:none}.gtabs{margin-left:0;width:100%}
+  .d3 .seat-body{flex-direction:column;align-items:stretch;gap:0}
+  .d3 .seat-pick{flex:none}
+  .d3 .seat-stats{font-size:.72em;gap:8px}}
+@media (max-width:820px){
+  .subrow{grid-template-columns:minmax(0,1fr)}
+  .app{grid-template-columns:minmax(0,1fr)}
+  .side{position:static;height:auto;flex-direction:row;flex-wrap:wrap;align-items:center;gap:10px 14px;padding:12px max(16px,env(safe-area-inset-right,0px)) 12px max(16px,env(safe-area-inset-left,0px))}
+  .nav{flex-direction:row;overflow-x:auto;order:3;width:100%}
+  .nav button{white-space:nowrap}
+  .nav button[aria-current="page"]{box-shadow:inset 0 -3px 0 var(--brass)}
+  .side-foot{margin:0 0 0 auto;flex-direction:row;align-items:center;border:0;padding:0}
+  .me{display:none}
+  .main{padding:20px max(16px,env(safe-area-inset-right,0px)) 40px max(16px,env(safe-area-inset-left,0px))}
+  .games{grid-template-columns:minmax(0,1fr)}
+}
+@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+</style>
+
+<div id="root"></div>
+
+<script>
+/* ---------- reference data (names from the sheet's Race Info and Class Info tabs) ---------- */
+const SEED={"races":[{"id":"r1","name":"Hill Dwarf","asi":"con +2, wis +1","nac":"","speed":25,"bhp":1,"res":"Dwarven Resilience\nYou have advantage on saving throws against poison, and you have resistance against poison damage.","lang":"Common, Dwarvish","nat":"","prof":"Battleaxe, Handaxe, Light Hammer, Warhammer","other":"1 Tool (Artisan's Tools)"},{"id":"r2","name":"High Elf","asi":"dex +2, int +1","nac":"","speed":30,"bhp":"","res":"","lang":"Common, Elvish, 1 extra","nat":"","prof":"Longsword, Shortsword, Shortbow, Longbow","other":"Keen Senses\nYou gain proficiency in the Perception skill."},{"id":"r3","name":"Lightfoot Halfling","asi":"dex +2, cha +1","nac":"","speed":25,"bhp":"","res":"","lang":"Common, Halfling","nat":"","prof":"","other":""},{"id":"r4","name":"Human","asi":"str +1, dex +1, con +1, int +1, wis +1, cha +1","nac":"","speed":30,"bhp":"","res":"","lang":"Common, 1 extra","nat":"","prof":"","other":""},{"id":"r5","name":"Black Dragonborn","asi":"str +2, cha +1","nac":"10+dex","speed":30,"bhp":"","res":"Damage Resistance\nYou have resistance to Acid damage.","lang":"Common, Draconic","nat":"","prof":"","other":""},{"id":"r6","name":"Blue Dragonborn","asi":"str +2, cha +1","nac":"10+dex","speed":30,"bhp":"","res":"Damage Resistance\nYou have resistance to Lightning damage.","lang":"Common, Draconic","nat":"","prof":"","other":""},{"id":"r7","name":"Brass Dragonborn","asi":"str +2, cha +1","nac":"10+dex","speed":30,"bhp":"","res":"Damage Resistance\nYou have resistance to Fire damage.","lang":"Common, Draconic","nat":"","prof":"","other":""},{"id":"r8","name":"Bronze Dragonborn","asi":"str +2, cha +1","nac":"10+dex","speed":30,"bhp":"","res":"Damage Resistance\nYou have resistance to Lightning damage.","lang":"Common, Draconic","nat":"","prof":"","other":""},{"id":"r9","name":"Copper Dragonborn","asi":"str +2, cha +1","nac":"10+dex","speed":30,"bhp":"","res":"Damage Resistance\nYou have resistance to Acid damage.","lang":"Common, Draconic","nat":"","prof":"","other":""},{"id":"r10","name":"Gold Dragonborn","asi":"str +2, cha +1","nac":"10+dex","speed":30,"bhp":"","res":"Damage Resistance\nYou have resistance to Fire damage.","lang":"Common, Draconic","nat":"","prof":"","other":""},{"id":"r11","name":"Green Dragonborn","asi":"str +2, cha +1","nac":"10+dex","speed":30,"bhp":"","res":"Damage Resistance\nYou have resistance to Poison damage.","lang":"Common, Draconic","nat":"","prof":"","other":""},{"id":"r12","name":"Red Dragonborn","asi":"str +2, cha +1","nac":"10+dex","speed":30,"bhp":"","res":"Damage Resistance\nYou have resistance to Fire damage.","lang":"Common, Draconic","nat":"","prof":"","other":""},{"id":"r13","name":"Silver Dragonborn","asi":"str +2, cha +1","nac":"10+dex","speed":30,"bhp":"","res":"Damage Resistance\nYou have resistance to Cold damage.","lang":"Common, Draconic","nat":"","prof":"","other":""},{"id":"r14","name":"White Dragonborn","asi":"str +2, cha +1","nac":"10+dex","speed":30,"bhp":"","res":"Damage Resistance\nYou have resistance to Cold damage.","lang":"Common, Draconic","nat":"","prof":"","other":""},{"id":"r15","name":"Rock Gnome","asi":"int +2, con +1","nac":"","speed":25,"bhp":"","res":"","lang":"Common, Gnomish","nat":"","prof":"","other":"1 Tool (Tinker's Tools)"},{"id":"r16","name":"Half-Elf","asi":"cha +2, choose 2: str +1, dex +1, con +1, int +1, wis +1","nac":"","speed":30,"bhp":"","res":"","lang":"Common, Elvish, 1 extra","nat":"","prof":"","other":"Skill Versatility\nYou gain proficiency in two skills of your choice."},{"id":"r17","name":"Half-Orc","asi":"str +2, con +1","nac":"","speed":30,"bhp":"--","res":"","lang":"Common, Orc","nat":"","prof":"","other":"Menacing\nYou gain proficiency in the Intimidation skill."},{"id":"r18","name":"Tiefling","asi":"int +1, cha +2","nac":"","speed":30,"bhp":"","res":"Hellish Resistance\nYou have resistance to Fire damage.","lang":"Common, Infernal","nat":"","prof":"","other":""}],"classes":[{"id":"c19","name":"Barbarian","hd":"d12","alt":"10+dex+con","init":"","bhp":"","saves":"Strength, Constitution, Choose 2, Animal Handling, Athletics, Intimidation, Nature, Perception, Survival","first":"Light Armor, Medium Armor","multi":"Shields, Simple Weapons, Martial Weapons","spellType":"","spellAb":"","speedInc":"","subs":[{"id":"s31","name":"Berserker","alt":"","bhp":"","prof":""}]},{"id":"c20","name":"Bard","hd":"d8","alt":"","init":"","bhp":"","saves":"Dexterity, Charisma, Choose 2, Acrobatics, Animal Handling, Arcana, Athletics, Deception, History, Insight, Intimidation, Investigation, Medicine, Nature, Perception, Performance, Persuasion, Religion, Sleight of Hand, Stealth, Survival","first":"Simple Weapons, Hand Crossbow, Longsword, Rapier, Shortsword, 2 Tools (Musical Instruments)","multi":"Light Armor, 1 Skill, 1 Tool (Musical Instrument)","spellType":"Full Caster","spellAb":"Charisma","speedInc":"","subs":[{"id":"s32","name":"Lore","alt":"","bhp":"","prof":""}]},{"id":"c21","name":"Cleric","hd":"d8","alt":"","init":"","bhp":"","saves":"Wisdom, Charisma, Choose 2, History, Insight, Medicine, Persuasion, Religion","first":"Simple Weapons","multi":"Light Armor, Medium Armor, Shields","spellType":"Full Caster","spellAb":"Wisdom","speedInc":"","subs":[{"id":"s33","name":"Life","alt":"","bhp":"","prof":"Heavy Armor"}]},{"id":"c22","name":"Druid","hd":"d8","alt":"","init":"","bhp":"","saves":"Intelligence, Wisdom, Choose 2, Arcana, Animal Handling, Insight, Medicine, Nature, Perception, Religion, Survival","first":"Club, Dagger, Dart, Javelin, Mace, Quarterstaff, Scimitar, Sickle, Sling, Spear","multi":"Light Armor, Medium Armor, Shields, NoMetal, Druidic, 1 Tool (Herbalism Kit)","spellType":"Full Caster","spellAb":"Wisdom","speedInc":"","subs":[{"id":"s34","name":"Land","alt":"","bhp":"","prof":""}]},{"id":"c23","name":"Fighter","hd":"d10","alt":"","init":"","bhp":"","saves":"Strength, Constitution, Choose 2, Acrobatics, Animal Handling, Athletics, History, Insight, Intimidation, Perception, Survival","first":"Heavy Armor","multi":"Light Armor, Medium Armor, Shields, Simple Weapons, Martial Weapons","spellType":"","spellAb":"","speedInc":"","subs":[{"id":"s35","name":"Champion","alt":"","bhp":"","prof":""}]},{"id":"c24","name":"Monk","hd":"d8","alt":"10+dex+wis","init":"","bhp":"","saves":"Strength, Dexterity, Choose 2, Acrobatics, Athletics, History, Insight, Religion, Stealth","first":"1 Tool (Artisan's Tools or Musical Instrument)","multi":"Simple Weapons, Shortsword","spellType":"","spellAb":"","speedInc":"","subs":[{"id":"s36","name":"Open Hand","alt":"","bhp":"","prof":""}]},{"id":"c25","name":"Paladin","hd":"d10","alt":"","init":"","bhp":"","saves":"Wisdom, Charisma, Choose 2, Athletics, Insight, Intimidation, Medicine, Persuasion, Religion","first":"Heavy Armor","multi":"Light Armor, Medium Armor, Shields, Simple Weapons, Martial Weapons","spellType":"Half Caster","spellAb":"Charisma","speedInc":"","subs":[{"id":"s37","name":"Devotion","alt":"","bhp":"","prof":""}]},{"id":"c26","name":"Ranger","hd":"d10","alt":"","init":"","bhp":"","saves":"Strength, Dexterity, Choose 2, Animal Handling, Athletics, Insight, Investigation, Nature, Perception, Stealth, Survival","first":"","multi":"Light Armor, Medium Armor, Shields, Simple Weapons, Martial Weapons, 1 Skill","spellType":"Half Caster","spellAb":"Wisdom","speedInc":"","subs":[{"id":"s38","name":"Hunter","alt":"","bhp":"","prof":""}]},{"id":"c27","name":"Rogue","hd":"d8","alt":"","init":"","bhp":"","saves":"Dexterity, Intelligence, Choose 3, Acrobatics, Athletics, Deception, Insight, Intimidation, Investigation, Perception, Performance, Persuasion, Sleight of Hand, Stealth","first":"Simple Weapons, Hand Crossbow, Longsword, Rapier, Shortsword","multi":"Light Armor, 1 Skill, Thieves' Cant, 1 Tool (Thieves' Tools)","spellType":"","spellAb":"","speedInc":"","subs":[{"id":"s39","name":"Thief","alt":"","bhp":"","prof":""}]},{"id":"c28","name":"Sorcerer","hd":"d6","alt":"","init":"","bhp":"","saves":"Constitution, Charisma, Choose 2, Arcana, Deception, Insight, Intimidation, Persuasion, Religion","first":"Dagger, Dart, Sling, Quarterstaff, Light Crossbow","multi":"","spellType":"Full Caster","spellAb":"Charisma","speedInc":"","subs":[{"id":"s40","name":"Draconic Bloodline","alt":"13+dex","bhp":1,"prof":""}]},{"id":"c29","name":"Warlock","hd":"d8","alt":"","init":"","bhp":"","saves":"Wisdom, Charisma, Choose 2, Arcana, Deception, History, Intimidation, Investigation, Nature, Religion","first":"","multi":"Light Armor, Simple Weapons","spellType":"Pact Magic","spellAb":"Charisma","speedInc":"","subs":[{"id":"s41","name":"Fiend","alt":"","bhp":"","prof":""}]},{"id":"c30","name":"Wizard","hd":"d6","alt":"","init":"","bhp":"","saves":"Intelligence, Wisdom, Choose 2, Arcana, History, Insight, Investigation, Medicine, Religion","first":"Dagger, Dart, Sling, Quarterstaff, Light Crossbow","multi":"","spellType":"Full Caster","spellAb":"Intelligence","speedInc":"","subs":[{"id":"s42","name":"Evocation","alt":"","bhp":"","prof":""}]}],"weapons":[{"id":"w43","name":"Unarmed Strike","die":"1","dtype":"bludgeoning","pcat":"Unarmed","range":"Melee","monk":1,"ench":"","bdie":"","btype":"","abil":"","props":"","apply":1},{"id":"w44","name":"Two-Handed Unarmed Strike","die":"1","dtype":"bludgeoning","pcat":"Unarmed","range":"Melee","monk":1,"ench":"","bdie":"","btype":"","abil":"","props":"","apply":1},{"id":"w45","name":"Natural Attack","die":"1","dtype":"","pcat":"Natural","range":"Melee","monk":1,"ench":"","bdie":"","btype":"","abil":"","props":"","apply":1},{"id":"w46","name":"Improvised Weapon","die":"1d4","dtype":"bludgeoning","pcat":"Improvised","range":"Melee or Ranged","monk":0,"ench":"","bdie":"","btype":"","abil":"","props":"","apply":1},{"id":"w47","name":"Club","die":"1d4","dtype":"bludgeoning","pcat":"Simple","range":"Melee","monk":1,"ench":"","bdie":"","btype":"","abil":"","props":"Light","apply":1},{"id":"w48","name":"Offhand Club","die":"1d4","dtype":"bludgeoning","pcat":"Simple","range":"Melee","monk":1,"ench":"","bdie":"","btype":"","abil":"","props":"Light","apply":0},{"id":"w49","name":"Dagger","die":"1d4","dtype":"piercing","pcat":"Simple","range":"Melee or Ranged","monk":1,"ench":"","bdie":"","btype":"","abil":"","props":"Finesse, Light, Thrown (range 20/60)","apply":1},{"id":"w50","name":"Offhand Dagger","die":"1d4","dtype":"piercing","pcat":"Simple","range":"Melee or Ranged","monk":1,"ench":"","bdie":"","btype":"","abil":"","props":"Finesse, Light, Thrown (range 20/60)","apply":0},{"id":"w51","name":"Greatclub","die":"1d8","dtype":"bludgeoning","pcat":"Simple","range":"Melee","monk":0,"ench":"","bdie":"","btype":"","abil":"","props":"Two-Handed","apply":1},{"id":"w52","name":"Handaxe","die":"1d6","dtype":"slashing","pcat":"Simple","range":"Melee or Ranged","monk":1,"ench":"","bdie":"","btype":"","abil":"","props":"Light, Thrown (range 20/60)","apply":1},{"id":"w53","name":"Offhand Handaxe","die":"1d6","dtype":"slashing","pcat":"Simple","range":"Melee or Ranged","monk":1,"ench":"","bdie":"","btype":"","abil":"","props":"Light, Thrown (range 20/60)","apply":0},{"id":"w54","name":"Javelin","die":"1d6","dtype":"piercing","pcat":"Simple","range":"Melee or Ranged","monk":1,"ench":"","bdie":"","btype":"","abil":"","props":"Thrown (range 30/120)","apply":1},{"id":"w55","name":"Light Hammer","die":"1d4","dtype":"bludgeoning","pcat":"Simple","range":"Melee or Ranged","monk":1,"ench":"","bdie":"","btype":"","abil":"","props":"Light, Thrown (range 20/60)","apply":1},{"id":"w56","name":"Offhand Light Hammer","die":"1d4","dtype":"bludgeoning","pcat":"Simple","range":"Melee or Ranged","monk":1,"ench":"","bdie":"","btype":"","abil":"","props":"Light, Thrown (range 20/60)","apply":0},{"id":"w57","name":"Mace","die":"1d6","dtype":"bludgeoning","pcat":"Simple","range":"Melee","monk":1,"ench":"","bdie":"","btype":"","abil":"","props":"","apply":1},{"id":"w58","name":"Offhand Mace","die":"1d6","dtype":"bludgeoning","pcat":"Simple","range":"Melee","monk":1,"ench":"","bdie":"","btype":"","abil":"","props":"","apply":0},{"id":"w59","name":"Quarterstaff","die":"1d6","dtype":"bludgeoning","pcat":"Simple","range":"Melee","monk":1,"ench":"","bdie":"","btype":"","abil":"","props":"Versatile (1d8)","apply":1},{"id":"w60","name":"Two-Handed Quarterstaff","die":"1d8","dtype":"bludgeoning","pcat":"Simple","range":"Melee","monk":1,"ench":"","bdie":"","btype":"","abil":"","props":"Versatile (1d8)","apply":1},{"id":"w61","name":"Quarterstaff (Opposite End)","die":"1d4","dtype":"bludgeoning","pcat":"Simple","range":"Melee","monk":1,"ench":"","bdie":"","btype":"","abil":"","props":"Versatile (1d8)","apply":1},{"id":"w62","name":"Sickle","die":"1d4","dtype":"slashing","pcat":"Simple","range":"Melee","monk":1,"ench":"","bdie":"","btype":"","abil":"","props":"Light","apply":1},{"id":"w63","name":"Offhand Sickle","die":"1d4","dtype":"slashing","pcat":"Simple","range":"Melee","monk":1,"ench":"","bdie":"","btype":"","abil":"","props":"Light","apply":0},{"id":"w64","name":"Spear","die":"1d6","dtype":"piercing","pcat":"Simple","range":"Melee or Ranged","monk":1,"ench":"","bdie":"","btype":"","abil":"","props":"Thrown (range 20/60), Versatile (1d8)","apply":1},{"id":"w65","name":"Spear (Opposite End)","die":"1d4","dtype":"bludgeoning","pcat":"Simple","range":"Melee","monk":1,"ench":"","bdie":"","btype":"","abil":"","props":"Thrown (range 20/60), Versatile (1d8)","apply":1},{"id":"w66","name":"Two-Handed Spear","die":"1d8","dtype":"piercing","pcat":"Simple","range":"Melee","monk":1,"ench":"","bdie":"","btype":"","abil":"","props":"Thrown (range 20/60), Versatile (1d8)","apply":1},{"id":"w67","name":"Light Crossbow","die":"1d8","dtype":"piercing","pcat":"Simple","range":"Ranged","monk":0,"ench":"","bdie":"","btype":"","abil":"","props":"Ammunition (range 80/320), Loading, Two-Handed","apply":1},{"id":"w68","name":"Dart","die":"1d4","dtype":"piercing","pcat":"Simple","range":"Ranged","monk":0,"ench":"","bdie":"","btype":"","abil":"","props":"Finesse, Thrown (range 20/60)","apply":1},{"id":"w69","name":"Shortbow","die":"1d6","dtype":"piercing","pcat":"Simple","range":"Ranged","monk":0,"ench":"","bdie":"","btype":"","abil":"","props":"Ammunition (range 80/320), Two-Handed","apply":1},{"id":"w70","name":"Sling","die":"1d4","dtype":"bludgeoning","pcat":"Simple","range":"Ranged","monk":0,"ench":"","bdie":"","btype":"","abil":"","props":"Ammunition (range 30/120)","apply":1},{"id":"w71","name":"Battleaxe","die":"1d8","dtype":"slashing","pcat":"Martial","range":"Melee","monk":0,"ench":"","bdie":"","btype":"","abil":"","props":"Versatile (1d10)","apply":1},{"id":"w72","name":"Two-Handed Battleaxe","die":"1d10","dtype":"slashing","pcat":"Martial","range":"Melee","monk":0,"ench":"","bdie":"","btype":"","abil":"","props":"Versatile (1d10)","apply":1},{"id":"w73","name":"Offhand Battleaxe","die":"1d8","dtype":"slashing","pcat":"Martial","range":"Melee","monk":0,"ench":"","bdie":"","btype":"","abil":"","props":"Versatile (1d10)","apply":0},{"id":"w74","name":"Flail","die":"1d8","dtype":"bludgeoning","pcat":"Martial","range":"Melee","monk":0,"ench":"","bdie":"","btype":"","abil":"","props":"","apply":1},{"id":"w75","name":"Offhand Flail","die":"1d8","dtype":"bludgeoning","pcat":"Martial","range":"Melee","monk":0,"ench":"","bdie":"","btype":"","abil":"","props":"","apply":0},{"id":"w76","name":"Glaive","die":"1d10","dtype":"slashing","pcat":"Martial","range":"Melee","monk":0,"ench":"","bdie":"","btype":"","abil":"","props":"Heavy, Reach, Two-Handed","apply":1},{"id":"w77","name":"Glaive (Opposite End)","die":"1d4","dtype":"bludgeoning","pcat":"Martial","range":"Melee","monk":0,"ench":"","bdie":"","btype":"","abil":"","props":"Heavy, Reach, Two-Handed","apply":1},{"id":"w78","name":"Greataxe","die":"1d12","dtype":"slashing","pcat":"Martial","range":"Melee","monk":0,"ench":"","bdie":"","btype":"","abil":"","props":"Heavy, Two-Handed","apply":1},{"id":"w79","name":"Greatsword","die":"2d6","dtype":"slashing","pcat":"Martial","range":"Melee","monk":0,"ench":"","bdie":"","btype":"","abil":"","props":"Heavy, Two-Handed","apply":1},{"id":"w80","name":"Halberd","die":"1d10","dtype":"slashing","pcat":"Martial","range":"Melee","monk":0,"ench":"","bdie":"","btype":"","abil":"","props":"Heavy, Reach, Two-Handed","apply":1},{"id":"w81","name":"Halberd (Opposite End)","die":"1d4","dtype":"bludgeoning","pcat":"Martial","range":"Melee","monk":0,"ench":"","bdie":"","btype":"","abil":"","props":"Heavy, Reach, Two-Handed","apply":1},{"id":"w82","name":"Lance","die":"1d12","dtype":"piercing","pcat":"Martial","range":"Melee","monk":0,"ench":"","bdie":"","btype":"","abil":"","props":"Reach, Special - You have disadvantage when you use a lance to attack a target within 5 feet of you. Also, a lance requires two hands to wield when you aren't mounted.","apply":1},{"id":"w83","name":"Longsword","die":"1d8","dtype":"slashing","pcat":"Martial","range":"Melee","monk":0,"ench":"","bdie":"","btype":"","abil":"","props":"Versatile (1d10)","apply":1},{"id":"w84","name":"Two-Handed Longsword","die":"1d10","dtype":"slashing","pcat":"Martial","range":"Melee","monk":0,"ench":"","bdie":"","btype":"","abil":"","props":"Versatile (1d10)","apply":1},{"id":"w85","name":"Offhand Longsword","die":"1d8","dtype":"slashing","pcat":"Martial","range":"Melee","monk":0,"ench":"","bdie":"","btype":"","abil":"","props":"Versatile (1d10)","apply":0},{"id":"w86","name":"Maul","die":"2d6","dtype":"bludgeoning","pcat":"Martial","range":"Melee","monk":0,"ench":"","bdie":"","btype":"","abil":"","props":"Heavy, Two-Handed","apply":1},{"id":"w87","name":"Morningstar","die":"1d8","dtype":"piercing","pcat":"Martial","range":"Melee","monk":0,"ench":"","bdie":"","btype":"","abil":"","props":"","apply":1},{"id":"w88","name":"Offhand Morningstar","die":"1d8","dtype":"piercing","pcat":"Martial","range":"Melee","monk":0,"ench":"","bdie":"","btype":"","abil":"","props":"","apply":0},{"id":"w89","name":"Pike","die":"1d10","dtype":"piercing","pcat":"Martial","range":"Melee","monk":0,"ench":"","bdie":"","btype":"","abil":"","props":"Heavy, Reach, Two-Handed","apply":1},{"id":"w90","name":"Pike (Opposite End)","die":"1d4","dtype":"bludgeoning","pcat":"Martial","range":"Melee","monk":0,"ench":"","bdie":"","btype":"","abil":"","props":"Heavy, Reach, Two-Handed","apply":1},{"id":"w91","name":"Rapier","die":"1d8","dtype":"piercing","pcat":"Martial","range":"Melee","monk":0,"ench":"","bdie":"","btype":"","abil":"","props":"Finesse","apply":1},{"id":"w92","name":"Offhand Rapier","die":"1d8","dtype":"piercing","pcat":"Martial","range":"Melee","monk":0,"ench":"","bdie":"","btype":"","abil":"","props":"Finesse","apply":0},{"id":"w93","name":"Scimitar","die":"1d6","dtype":"slashing","pcat":"Martial","range":"Melee","monk":0,"ench":"","bdie":"","btype":"","abil":"","props":"Finesse, Light","apply":1},{"id":"w94","name":"Offhand Scimitar","die":"1d6","dtype":"slashing","pcat":"Martial","range":"Melee","monk":0,"ench":"","bdie":"","btype":"","abil":"","props":"Finesse, Light","apply":0},{"id":"w95","name":"Shortsword","die":"1d6","dtype":"piercing","pcat":"Martial","range":"Melee","monk":1,"ench":"","bdie":"","btype":"","abil":"","props":"Finesse, Light","apply":1},{"id":"w96","name":"Offhand Shortsword","die":"1d6","dtype":"piercing","pcat":"Martial","range":"Melee","monk":1,"ench":"","bdie":"","btype":"","abil":"","props":"Finesse, Light","apply":0},{"id":"w97","name":"Trident","die":"1d6","dtype":"piercing","pcat":"Martial","range":"Melee or Ranged","monk":0,"ench":"","bdie":"","btype":"","abil":"","props":"Thrown (range 20/60), Versatile (1d8)","apply":1},{"id":"w98","name":"Two-Handed Trident","die":"1d8","dtype":"piercing","pcat":"Martial","range":"Melee","monk":0,"ench":"","bdie":"","btype":"","abil":"","props":"Thrown (range 20/60), Versatile (1d8)","apply":1},{"id":"w99","name":"War Pick","die":"1d8","dtype":"piercing","pcat":"Martial","range":"Melee","monk":0,"ench":"","bdie":"","btype":"","abil":"","props":"","apply":1},{"id":"w100","name":"Offhand War Pick","die":"1d8","dtype":"piercing","pcat":"Martial","range":"Melee","monk":0,"ench":"","bdie":"","btype":"","abil":"","props":"","apply":0},{"id":"w101","name":"Warhammer","die":"1d8","dtype":"bludgeoning","pcat":"Martial","range":"Melee","monk":0,"ench":"","bdie":"","btype":"","abil":"","props":"Versatile (1d10)","apply":1},{"id":"w102","name":"Two-Handed Warhammer","die":"1d10","dtype":"bludgeoning","pcat":"Martial","range":"Melee","monk":0,"ench":"","bdie":"","btype":"","abil":"","props":"Versatile (1d10)","apply":1},{"id":"w103","name":"Offhand Warhammer","die":"1d8","dtype":"bludgeoning","pcat":"Martial","range":"Melee","monk":0,"ench":"","bdie":"","btype":"","abil":"","props":"Versatile (1d10)","apply":0},{"id":"w104","name":"Whip","die":"1d4","dtype":"slashing","pcat":"Martial","range":"Melee","monk":0,"ench":"","bdie":"","btype":"","abil":"","props":"Finesse, Reach","apply":1},{"id":"w105","name":"Blowgun","die":1,"dtype":"piercing","pcat":"Martial","range":"Ranged","monk":0,"ench":"","bdie":"","btype":"","abil":"","props":"Ammunition (range 25/100), Loading","apply":1},{"id":"w106","name":"Hand Crossbow","die":"1d6","dtype":"piercing","pcat":"Martial","range":"Ranged","monk":0,"ench":"","bdie":"","btype":"","abil":"","props":"Ammunition (range 30/120), Light, Loading","apply":1},{"id":"w107","name":"Heavy Crossbow","die":"1d10","dtype":"piercing","pcat":"Martial","range":"Ranged","monk":0,"ench":"","bdie":"","btype":"","abil":"","props":"Ammunition (range 100/400), Heavy, Loading, Two-Handed","apply":1},{"id":"w108","name":"Longbow","die":"1d8","dtype":"piercing","pcat":"Martial","range":"Ranged","monk":0,"ench":"","bdie":"","btype":"","abil":"","props":"Ammunition (150/600), Heavy, Two-Handed","apply":1},{"id":"w109","name":"Net","die":0,"dtype":"","pcat":"Martial","range":"Ranged","monk":0,"ench":"","bdie":"","btype":"","abil":"","props":"Thrown (range 5/15), Special - A Large or smaller creature hit by a net is restrained until it is freed. See `!item net` for more details.","apply":0},{"id":"w110","name":"Eldritch Blast","die":"1d10","dtype":"force","pcat":"Spell","range":"Ranged","monk":0,"ench":"","bdie":"","btype":"","abil":"","props":"Make a ranged spell attack against the target. On a hit, the target takes 1d10 force damage.\nThe spell creates 1 beams. You can direct the beams at the same target or at different ones. Make a separate attack roll for each beam.","apply":0},{"id":"w111","name":"Dagger +1","die":"1d4","dtype":"magical piercing","pcat":"Simple","range":"Melee or Ranged","monk":1,"ench":1,"bdie":"","btype":"","abil":"","props":"Finesse, Light, Thrown (range 20/60)","apply":1},{"id":"w112","name":"Offhand Dagger +1","die":"1d4","dtype":"magical piercing","pcat":"Simple","range":"Melee or Ranged","monk":1,"ench":1,"bdie":"","btype":"","abil":"","props":"Finesse, Light, Thrown (range 20/60)","apply":0},{"id":"w113","name":"Flame Tongue Longsword","die":"1d8","dtype":"magical slashing","pcat":"Martial","range":"Melee","monk":0,"ench":"","bdie":"2d6","btype":"fire","abil":"","props":"Versatile (1d10)\n**Flame Tongue**\nYou can use a bonus action to speak this magic sword's command word, causing flames to erupt from the blade. These flames shed bright light in a 40-foot radius and dim light for an additional 40 feet. While the sword is ablaze, it deals an extra 2d6 fire damage to any target it hits. The flames last until you use a bonus action to speak the command word again or until you drop or sheathe the sword.","apply":1},{"id":"w114","name":"Two-Handed Flame Tongue Longsword","die":"1d10","dtype":"magical slashing","pcat":"Martial","range":"Melee","monk":0,"ench":"","bdie":"2d6","btype":"fire","abil":"","props":"Versatile (1d10)\n**Flame Tongue**\nYou can use a bonus action to speak this magic sword's command word, causing flames to erupt from the blade. These flames shed bright light in a 40-foot radius and dim light for an additional 40 feet. While the sword is ablaze, it deals an extra 2d6 fire damage to any target it hits. The flames last until you use a bonus action to speak the command word again or until you drop or sheathe the sword.","apply":1},{"id":"w115","name":"Fire Bolt","die":"1d10","dtype":"fire","pcat":"Spell","range":"Ranged","monk":0,"ench":"","bdie":"","btype":"","abil":"int","props":"On a hit, the target takes 1d10 fire damage. A flammable object hit by this spell ignites if it isn't being worn or carried.","apply":0},{"id":"w116","name":"Luck Blade Rapier","die":"1d8","dtype":"magical piercing","pcat":"Martial","range":"Melee","monk":0,"ench":1,"bdie":"","btype":"","abil":"","props":"Finesse\n**Luck Blade**\nYou gain a +1 bonus to attack and damage rolls made with this magic weapon. While the sword is on your person, you also gain a +1 bonus to saving throws.\n**Luck**\nIf the sword is on your person, you can call on its luck (no action required) to reroll one attack roll, ability check, or saving throw you dislike. You must use the second roll. This property can't be used again until the next dawn.\n**Wish**\nThe sword has 1d4-1 charges. While holding it, you can use an action to expend 1 charge and cast the wish spell from it. This property can't be used again until the next dawn. The sword loses this property if it has no charges.","apply":1},{"id":"w117","name":"Hammer of Thunderbolts","die":"2d6","dtype":"magical bludgeoning","pcat":"Martial","range":"Melee","monk":0,"ench":1,"bdie":"","btype":"","abil":"","props":"Giant's Bane (Requires Attunement). You must be wearing a belt of giant strength (any variety) and gauntlets of ogre power to attune to this weapon. The attunement ends if you take off either of those items. While you are attuned to this weapon and holding it, your Strength score increases by 4 to a maximum of 30. When you roll a 20 on an attack roll made with this weapon against a giant, the giant must succeed on a DC 17 Constitution saving throw or die.\nThe hammer also has 5 charges. While attuned to it, you can expend 1 charge and make a ranged weapon attack with the hammer, hurling it as if it had the thrown property with a normal range of 20 feet and a long range of 60 feet. If the attack hits, the hammer unleashes a thunderclap audible out to 300 feet. The target and every creature within 30 feet of it must succeed on a DC 17 Constitution saving throw or be stunned until the end of your next turn. The hammer regains 1d4+1 expended charges daily at dawn.","apply":1},{"id":"w118","name":"Longbow +1","die":"1d8","dtype":"magical piercing","pcat":"Martial","range":"Ranged","monk":0,"ench":1,"bdie":"","btype":"","abil":"","props":"Ammunition (150/600), Heavy, Two-Handed","apply":1},{"id":"w119","name":"Silvered Rapier","die":"1d8","dtype":"silvered piercing","pcat":"Martial","range":"Melee","monk":0,"ench":"","bdie":"","btype":"","abil":"","props":"Finesse","apply":1}],"armor":[{"id":"a120","name":"Padded","ac":1,"maxdex":"","acat":"Light Armor","str":"","stealth":"Disadvantage","ench":"","pb":"","skills":"","saves":"","props":""},{"id":"a121","name":"Leather","ac":1,"maxdex":"","acat":"Light Armor","str":"","stealth":"","ench":"","pb":"","skills":"","saves":"","props":""},{"id":"a122","name":"Studded Leather","ac":2,"maxdex":"","acat":"Light Armor","str":"","stealth":"","ench":"","pb":"","skills":"","saves":"","props":""},{"id":"a123","name":"Hide","ac":2,"maxdex":2,"acat":"Medium Armor","str":"","stealth":"","ench":"","pb":"","skills":"","saves":"","props":""},{"id":"a124","name":"Chain Shirt","ac":3,"maxdex":2,"acat":"Medium Armor","str":"","stealth":"","ench":"","pb":"","skills":"","saves":"","props":""},{"id":"a125","name":"Scale Mail","ac":4,"maxdex":2,"acat":"Medium Armor","str":"","stealth":"Disadvantage","ench":"","pb":"","skills":"","saves":"","props":""},{"id":"a126","name":"Breastplate","ac":4,"maxdex":2,"acat":"Medium Armor","str":"","stealth":"","ench":"","pb":"","skills":"","saves":"","props":""},{"id":"a127","name":"Half Plate","ac":5,"maxdex":2,"acat":"Medium Armor","str":"","stealth":"Disadvantage","ench":"","pb":"","skills":"","saves":"","props":""},{"id":"a128","name":"Ring Mail","ac":4,"maxdex":0,"acat":"Heavy Armor","str":"","stealth":"Disadvantage","ench":"","pb":"","skills":"","saves":"","props":""},{"id":"a129","name":"Chain Mail","ac":6,"maxdex":0,"acat":"Heavy Armor","str":13,"stealth":"Disadvantage","ench":"","pb":"","skills":"","saves":"","props":""},{"id":"a130","name":"Splint","ac":7,"maxdex":0,"acat":"Heavy Armor","str":15,"stealth":"Disadvantage","ench":"","pb":"","skills":"","saves":"","props":""},{"id":"a131","name":"Plate","ac":8,"maxdex":0,"acat":"Heavy Armor","str":15,"stealth":"Disadvantage","ench":"","pb":"","skills":"","saves":"","props":""},{"id":"a132","name":"Shield","ac":2,"maxdex":"","acat":"Shield","str":"","stealth":"","ench":"","pb":"","skills":"","saves":"","props":""},{"id":"a133","name":"Common Clothes","ac":0,"maxdex":"","acat":"Clothes","str":"","stealth":"","ench":"","pb":"","skills":"","saves":"","props":""},{"id":"a134","name":"Costume","ac":0,"maxdex":"","acat":"Clothes","str":"","stealth":"","ench":"","pb":"","skills":"","saves":"","props":""},{"id":"a135","name":"Fine Clothes","ac":0,"maxdex":"","acat":"Clothes","str":"","stealth":"","ench":"","pb":"","skills":"","saves":"","props":""},{"id":"a136","name":"Traveler's Clothes","ac":0,"maxdex":"","acat":"Clothes","str":"","stealth":"","ench":"","pb":"","skills":"","saves":"","props":""},{"id":"a137","name":"Robes","ac":0,"maxdex":"","acat":"Clothes","str":"","stealth":"","ench":"","pb":"","skills":"","saves":"","props":""},{"id":"a138","name":"Vestments","ac":0,"maxdex":"","acat":"Clothes","str":"","stealth":"","ench":"","pb":"","skills":"","saves":"","props":""}],"alignments":[{"id":"l139","name":"Lawful Good"},{"id":"l140","name":"Neutral Good"},{"id":"l141","name":"Chaotic Good"},{"id":"l142","name":"Lawful Neutral"},{"id":"l143","name":"True Neutral"},{"id":"l144","name":"Chaotic Neutral"},{"id":"l145","name":"Lawful Evil"},{"id":"l146","name":"Neutral Evil"},{"id":"l147","name":"Chaotic Evil"}],"backgrounds":[{"id":"b148","name":"Acolyte"},{"id":"b149","name":"Charlatan"},{"id":"b150","name":"Criminal"},{"id":"b151","name":"Entertainer"},{"id":"b152","name":"Folk Hero"},{"id":"b153","name":"Guild Artisan"},{"id":"b154","name":"Hermit"},{"id":"b155","name":"Noble"},{"id":"b156","name":"Outlander"},{"id":"b157","name":"Sage"},{"id":"b158","name":"Sailor"},{"id":"b159","name":"Soldier"},{"id":"b160","name":"Urchin"}]}; /* starting catalogs; the admin edits live copies in CAT */
+(()=>{const mk=(p,a)=>a.map((n,i)=>({id:p+(i+1),name:n}));
+ SEED.languages=mk('lg',['Common','Dwarvish','Elvish','Giant','Gnomish','Goblin','Halfling','Orc','Abyssal','Celestial','Draconic','Deep Speech','Infernal','Primordial','Sylvan','Undercommon']);
+ SEED.tools=mk('tl',["Alchemist's supplies","Brewer's supplies","Calligrapher's supplies","Carpenter's tools","Cartographer's tools","Cobbler's tools","Cook's utensils","Glassblower's tools","Jeweler's tools","Leatherworker's tools","Mason's tools","Painter's supplies","Potter's tools","Smith's tools","Tinker's tools","Weaver's tools","Woodcarver's tools","Disguise kit","Forgery kit","Herbalism kit","Navigator's tools","Poisoner's kit","Thieves' tools","Gaming set","Musical instrument"]);
+ SEED.vehicles=mk('vh',['Land vehicles','Water vehicles']);
+ const bc={Acolyte:[2,0,0],Charlatan:[0,0,0],Criminal:[0,1,0],Entertainer:[0,1,0],'Folk Hero':[0,1,0],'Guild Artisan':[1,1,0],Hermit:[1,0,0],Noble:[1,1,0],Outlander:[1,1,0],Sage:[2,0,0],Sailor:[0,0,0],Soldier:[0,1,0],Urchin:[0,0,0]};
+ SEED.backgrounds=SEED.backgrounds.map(b=>{const c=bc[b.name]||[0,0,0];return{...b,nLang:c[0],nTool:c[1],nVeh:c[2]}});})();
+const clone=o=>JSON.parse(JSON.stringify(o));
+const ABS=['str','dex','con','int','wis','cha'];
+const XP=[0,300,900,2700,6500,14000,23000,34000,48000,64000,85000,100000,120000,140000,165000,195000,225000,265000,305000,355000];
+
+/* ---------- text ---------- */
+const TX={
+th:{brand:'Acacia Watch',signin:'เข้าสู่ระบบ',signup:'สมัครสมาชิก',user:'ชื่อผู้ใช้',pass:'รหัสผ่าน',pass2:'ยืนยันรหัสผ่าน',disp:'ชื่อที่แสดง',
+ firstNote:'บัญชีแรกที่สมัครจะเป็นผู้ดูแล บัญชีถัดไปเป็นผู้เล่น ผู้ดูแลเปลี่ยนสิทธิ์ให้ได้ภายหลัง',protoNote:'ต้นแบบ: บัญชีและข้อมูลเก็บในเบราว์เซอร์เครื่องนี้เท่านั้น',
+ eUser:'ชื่อผู้ใช้ต้องมี 3 ตัวอักษรขึ้นไป ใช้ a-z ตัวเลข และ _ เท่านั้น',ePass:'รหัสผ่านต้องมี 6 ตัวอักษรขึ้นไป',eMatch:'รหัสผ่านสองช่องไม่ตรงกัน',eTaken:'ชื่อผู้ใช้นี้ถูกใช้แล้ว',eBad:'ชื่อผู้ใช้หรือรหัสผ่านไม่ถูกต้อง',
+ players:'ข้อมูลผู้เล่น',npcs:'ตัวละครของผู้ดูแล',games:'Minigame',logout:'ออกจากระบบ',admin:'ผู้ดูแล',player:'ผู้เล่น',
+ playersSub:'ข้อมูลตัวละครของผู้เล่น ใช้ช่องเดียวกับชีตตัวละคร v2.1',playersSubMine:'ตัวละครของคุณ',npcsSub:'NPC ศัตรู และพันธมิตรที่ผู้ดูแลคิดขึ้นเอง',gamesSub:'เกมเล็ก ๆ ไว้เพิ่มสีสันระหว่างเล่น',
+ add:'เพิ่มตัวละคร',edit:'แก้ไข',del:'ลบ',delSure:'กดอีกครั้งเพื่อลบ',save:'บันทึก',back:'กลับ',noRows:'ยังไม่มีข้อมูล',addSample:'เพิ่มข้อมูลตัวอย่าง',sampleNote:'ตัวอย่างไว้ลองดูหน้าตา ลบได้ภายหลัง',
+ colChar:'ตัวละคร',colPlayer:'ผู้เล่น',colRace:'เผ่า',colClass:'อาชีพ / เลเวล',colHp:'HP',colAc:'AC',colType:'ประเภท',
+ fName:'ชื่อตัวละคร',fPlayer:'ผู้เล่น',fRace:'เผ่า (Race)',fClass:'อาชีพ (Class)',fSub:'สายอาชีพ (Subclass)',fLevel:'เลเวล',fXp:'ค่าประสบการณ์',fBg:'ภูมิหลัง (Background)',fAlign:'แนวคิด (Alignment)',
+ fAc:'AC',fSpeed:'ความเร็ว (ฟุต)',fHp:'HP สูงสุด',fInsp:'Inspiration',fNotes:'บันทึก',fType:'ประเภท',unassigned:'ไม่ระบุผู้เล่น',none:'ไม่มี',
+ secBasic:'ข้อมูลทั่วไป',secAbil:'ค่าพลัง',secCombat:'การต่อสู้และบันทึก',pb:'Proficiency Bonus',init:'Initiative',next:'เลเวลถัดไปที่ XP',max:'สูงสุด',
+ tAlly:'พันธมิตร',tNeutral:'กลาง',tVillain:'ศัตรู',
+ accounts:'บัญชีผู้ใช้',accSub:'กำหนดว่าใครเป็นผู้ดูแล',role:'สิทธิ์',lastAdmin:'ต้องมีผู้ดูแลอย่างน้อยหนึ่งคน',
+ diceTitle:'ทอยลูกเต๋า',count:'จำนวน',mod:'ปรับค่า',mode:'โหมด',normal:'ปกติ',adv:'Advantage',dis:'Disadvantage',roll:'ทอย',history:'ประวัติการทอย',rollHint:'เลือกลูกเต๋าแล้วกดทอย',total:'รวม',
+ ideasTitle:'ไอเดียที่จะเพิ่ม',ideas:['ตารางสุ่มเหตุการณ์ระหว่างเดินทาง','สุ่มชื่อ NPC และชื่อโรงเตี๊ยม'],
+ mine:'ของฉัน',noAccess:'หน้านี้สำหรับผู้ดูแล',hp0:'—',
+ data:'ข้อมูลเกม',dataSub:'เผ่า อาชีพ สายอาชีพ อาวุธ เกราะ Background ภาษา Tool และ Vehicle Proficiencies เพิ่ม แก้ไข ลบได้ทุกอย่าง',races:'เผ่า',classes:'อาชีพ',weapons:'อาวุธ',armor:'เกราะ',alignments:'แนวคิด',backgrounds:'ภูมิหลัง',
+ addItem:'เพิ่มรายการ',resetDefaults:'คืนค่าเริ่มต้นจากชีต',resetSure:'กดอีกครั้งเพื่อคืนค่าเริ่มต้น',dataNote:'เปลี่ยนชื่อรายการแล้ว ตัวละครที่ใช้อยู่จะอัปเดตตามให้ ส่วนการลบจะไม่แก้ตัวละคร',
+ errName:'ต้องใส่ชื่อ',errDup:'มีชื่อนี้ในรายการแล้ว',errSubDup:'ชื่อสายอาชีพซ้ำกัน',subAdd:'+ เพิ่มสายอาชีพ',subRemove:'ลบ',delInUse:'ใช้อยู่ {n} ตัว กดอีกครั้งเพื่อลบ',removed:'(ไม่อยู่ในรายการแล้ว)',yes:'ใช่',no:'ไม่',noSub:'ไม่มีสายอาชีพ',subHint:'สายอาชีพที่เพิ่มแล้วจะขึ้นในฟอร์มตัวละครของอาชีพนี้',
+ site:'ตั้งค่าเว็บ',siteSub:'ปรับชื่อ โลโก้ ปก สี และหน้าตาของเว็บ เห็นผลทันที กดบันทึกเพื่อใช้จริง',sIdentity:'ชื่อและรูป',sName:'ชื่อเว็บ',sTagline:'ข้อความใต้ชื่อ (หน้า Login)',sLogo:'โลโก้',sCover:'ปกเว็บ (พื้นหลังหน้า Login)',
+ sUpload:'เลือกรูป',sRemove:'เอาออก',sNoImg:'ยังไม่มีรูป',sColors:'สี',cBg:'สีพื้นหลัง',cSurface:'สีแผงเนื้อหา',cInk:'สีตัวอักษร',cAccent:'สีปุ่ม',cSide:'สีแถบเมนูซ้าย',sDefault:'ค่าเริ่มต้น',
+ sShape:'รูปร่างและตัวอักษร',sRadius:'ความโค้งของมุม',sFont:'ฟอนต์หัวข้อ',sSave:'บันทึกการตั้งค่า',sRevert:'ยกเลิกที่ยังไม่บันทึก',sResetAll:'คืนทุกอย่างเป็นค่าเริ่มต้น',sResetSure:'กดอีกครั้งเพื่อคืนค่าเริ่มต้นทั้งหมด',
+ sSaved:'บันทึกแล้ว',sSavedTemp:'บันทึกได้เฉพาะตอนเปิดหน้านี้ ปิดแล้วจะหาย (เบราว์เซอร์ไม่ให้เก็บถาวร หรือรูปใหญ่เกินไป)',sImgErr:'อ่านรูปนี้ไม่ได้ ลองไฟล์อื่น',sNote:'สีที่ตั้งใช้กับทั้งโหมดสว่างและมืด การตั้งค่านี้เก็บในเบราว์เซอร์เครื่องนี้',kept:'ใช้ค่านี้',tossed:'ตัดทิ้ง',
+ adventure:'Adventure',advSub:'ห้องผจญภัยที่ผู้ดูแลสร้าง กำหนดจำนวนที่นั่งผู้เล่นได้ (ชื่อเมนูชั่วคราว)',createRoom:'สร้างห้อง',roomName:'ชื่อห้อง',seats:'จำนวนที่นั่งผู้เล่น',seatsHint:'1 ถึง 12 ที่นั่ง แถบผู้เล่นจะย่อหรือขยายให้พอดีหน้าจอ',errSeats:'ใส่จำนวนที่นั่งเป็นเลข 1 ถึง 12',colRoom:'ห้อง',colSeats:'ที่นั่ง',open:'เปิดห้อง',noRooms:'ยังไม่มีห้อง สร้างห้องแรกเพื่อเริ่มผจญภัย',roomDefault:'ห้อง',emptySeat:'ที่นั่งว่าง',seat:'ที่นั่ง',playersRail:'ผู้เล่น',minigamesBar:'Minigame',soon:'เร็ว ๆ นี้',leave:'ออกจากห้อง',
+ iniTab:'Initiative',eThrottle:'ลองผิดหลายครั้ง กรุณารอสักครู่แล้วลองใหม่',eNet:'เชื่อมต่อเซิร์ฟเวอร์ไม่ได้',netSaveFail:'บันทึกไปยังเซิร์ฟเวอร์ไม่สำเร็จ ข้อมูลล่าสุดอาจยังไม่ถูกเก็บ ตรวจการเชื่อมต่อแล้วลองใหม่',netRejected:'เซิร์ฟเวอร์ไม่อนุญาตให้บันทึกบางรายการ',netLogin:'หมดเวลาเข้าสู่ระบบ กรุณาเข้าสู่ระบบใหม่',netDown:'ไม่สามารถเชื่อมต่อเซิร์ฟเวอร์',netRetry:'ลองใหม่',pwSet:'ตั้งรหัสผ่านใหม่',pwNew:'รหัสผ่านใหม่',pwDone:'ตั้งรหัสผ่านใหม่แล้ว',pwShort:'รหัสผ่านต้องมี 6 ตัวขึ้นไป',userDel:'ลบบัญชี',userDelSure:'กดอีกครั้งเพื่อลบ',serverNote:'ข้อมูลเก็บบนเซิร์ฟเวอร์ ใช้ร่วมกันได้ทุกเครื่อง',colAct:'จัดการ',acTitle:'AC (Armor Class)',acLabel:'AC',acAuto:'ระบบคำนวณ',bkTitle:'สำรองและนำเข้าข้อมูล',bkNote:'ไฟล์สำรองมีบัญชีผู้ใช้ (รหัสผ่านแบบแฮช) ตัวละคร ข้อมูลเกม ห้อง และตั้งค่าเว็บ เก็บไว้เป็นความลับ',bkDownload:'ดาวน์โหลดไฟล์สำรอง',bkShowText:'แสดงข้อมูลเป็นข้อความ',bkHide:'ซ่อนข้อความ',bkCopy:'คัดลอก',bkImport:'นำเข้าข้อมูล',bkImportNote:'เลือกไฟล์สำรอง หรือวางข้อความที่คัดลอกไว้ แล้วกดนำเข้า ข้อมูลปัจจุบันทั้งหมดจะถูกแทนที่',bkPaste:'วางข้อมูลสำรองที่นี่',bkDoImport:'นำเข้าและแทนที่ข้อมูลทั้งหมด',bkSure:'กดอีกครั้งเพื่อยืนยันการแทนที่',bkSaved:'บันทึกไฟล์แล้ว',bkCopied:'คัดลอกแล้ว',bkCopyManual:'คัดลอกอัตโนมัติไม่ได้ กดเลือกข้อความแล้วคัดลอกเอง',bkDlFail:'บันทึกไฟล์ไม่สำเร็จ ลองใช้ปุ่มแสดงข้อความแล้วคัดลอกแทน',bkLoaded:'อ่านไฟล์แล้ว ({n} KB) กดนำเข้าเพื่อดำเนินการ',bkBad:'ข้อมูลไม่ถูกต้อง นำเข้าไม่ได้',bkBadApp:'ไฟล์นี้ไม่ใช่ไฟล์สำรองของเว็บนี้',bkNoAdmin:'ไฟล์ไม่มีบัญชีผู้ดูแล จึงไม่นำเข้า',bkEmpty:'ยังไม่มีข้อมูลให้นำเข้า',bkDone:'นำเข้าสำเร็จ',bkDoneTemp:'นำเข้าแล้ว แต่เบราว์เซอร์ไม่ให้เก็บถาวร ข้อมูลจะอยู่เฉพาะหน้านี้',bkRelogin:'นำเข้าข้อมูลแล้ว บัญชีเดิมไม่อยู่ในไฟล์ กรุณาเข้าสู่ระบบใหม่',acManualBadge:'ผู้ดูแลกำหนดเอง',acMode:'วิธีกำหนด AC',acModeAuto:'ระบบคำนวณจากเกราะที่สวมใส่',acModeManual:'พิมพ์เอง (กรณีพิเศษ)',acManualVal:'AC ที่กำหนด',acLocked:'AC คำนวณโดยระบบจากเกราะ/โล่ที่ติ๊กสวมใส่ในไอเท็ม และ DEX',acLockedManual:'ผู้ดูแลกำหนด AC ของตัวละครนี้เอง',acHow:'AC คำนวณอย่างไร',
+ acNone:'ไม่สวมเกราะ: 10 + DEX ({dx}) = {v}',acBody:'{name}: เกราะ {armor}, DEX {dex}{note} = {v}',acShield:'{name}: {v}',acTotal:'รวม {v}',acStr:'{name} ต้องการ STR {n} แต่ STR ของตัวละครคือ {s} (ความเร็วลด 10 ฟุต)',acStealth:'{name} ทำให้เสียเปรียบ (Disadvantage) ในการ Stealth',acIgnored:'นับเกราะ/โล่ได้อย่างละหนึ่งชิ้น {name} จึงไม่ถูกนับ',acHeavyNoDex:'เกราะหนักไม่บวก DEX',acCap:'จำกัด DEX ไม่เกิน +{n}',itEquip:'สวมใส่',acOver:'ใช้ค่าที่ผู้ดูแลพิมพ์แทนค่าคำนวณ ({v})',featTitle:'ฟีเจอร์ (Features)',featAdd:'+ เพิ่มฟีเจอร์',featName:'ชื่อฟีเจอร์',featLvl:'ได้เมื่อเลเวล',featDesc:'คำอธิบาย',featNone:'ยังไม่มีฟีเจอร์',featHintC:'ความสามารถของอาชีพ ผู้เล่นเห็นเมื่อเลเวลถึง',featHintB:'ที่มาของ Background หรือความสามารถติดตัว',skHint:'ทักษะเหล่านี้จะถูกติ๊กให้ผู้เล่นที่เลือก Background นี้ทันที 1 ขั้น (ผู้เล่นยกเป็นสองเท่าได้)',equip:'อุปกรณ์เริ่มต้น (หนึ่งรายการต่อบรรทัด เช่น 2x Torch)',sk:'Skill Proficiencies ที่ได้',feats:'ฟีเจอร์',
+ fromBg:'จาก Background',passive:'Passive Wisdom (Perception)',itTitle:'ไอเท็มที่ถืออยู่',itName:'ชื่อไอเท็ม',itQty:'จำนวน',itDel:'ลบ',itAdd:'เพิ่มไอเท็ม',itEmpty:'ยังไม่มีไอเท็ม',itHint:'ไอเท็มจาก Background จะถูกใส่ให้เมื่อเลือก Background (แก้ไขหรือลบได้) ถ้าชื่อตรงกับเกราะหรือโล่ในข้อมูลเกม (เช่น Chain Mail, Shield, Leather +1) จะมีช่อง "สวมใส่" และ AC จะคำนวณให้อัตโนมัติ',featTitleP:'ฟีเจอร์และความสามารถ',featNoneP:'ยังไม่มีฟีเจอร์ที่ปลดล็อก ผู้ดูแลเพิ่มได้ในข้อมูลเกม',
+ prTitle:'Proficiencies (ความชำนาญ)',prArmor:'เกราะ',prWeapon:'อาวุธ',prVehicle:'ยานพาหนะ',prTool:'เครื่องมือ',prLang:'ภาษา',prOther:'ความชำนาญอื่น ๆ',prSpeeds:'ความเร็วอื่น ๆ',
+ wTitle:'อาวุธ',wName:'ชื่อ',wAtk:'โบนัสโจมตี',wDmg:'ดาเมจ/ประเภท',wProf:'ชำนาญ',wBonus:'โบนัสเพิ่ม',wPick:'เลือกอาวุธจากข้อมูลเกม',wAdd:'เพิ่มอาวุธ',wEmpty:'ยังไม่มีอาวุธ',wMissing:'อาวุธนี้ถูกลบออกจากข้อมูลเกมแล้ว',wHint:'โบนัสโจมตีและดาเมจคำนวณจากค่าพลัง ความชำนาญ และโบนัสมนตร์',
+ sFx:'ลูกเล่นของปุ่ม',fxStyle:'สไตล์ตอนชี้/กด',fxSpeed:'ความเร็ว',fxAmt:'ความแรง',fxPreview:'ลองชี้หรือกดปุ่มเหล่านี้',cFx:'สีเอฟเฟกต์ปุ่ม',fx_lift:'ยกขึ้น',fx_glow:'เรืองแสง',fx_shine:'แสงวิ่งผ่าน',fx_bounce:'เด้ง',fx_none:'ไม่มีเอฟเฟกต์',
+ cTurnNow:'ไฮไลท์เทิร์นปัจจุบัน',cTurnNext:'ไฮไลท์เทิร์นถัดไป',cTurnDone:'ไฮไลท์ผ่านเทิร์นแล้ว',iniNextTag:'ถัดไป',iniDoneTag:'ผ่านแล้ว',iniRound:'รอบที่',iniNext:'เทิร์นถัดไป',iniPrev:'ย้อนกลับ',iniStart:'เริ่มรอบ 1',iniClear:'ล้างรายการ',iniAddSeat:'เพิ่มผู้เล่นที่นั่งอยู่',iniAddGm:'เพิ่มตัวละคร GM',iniPickGm:'เลือกตัวละคร GM',iniCustom:'ศัตรู/ตัวประกอบ (ตั้งชื่อเอง)',iniName:'ชื่อ',iniMod:'โบนัส',iniHpF:'HP',iniAdd:'เพิ่ม',iniRollAll:'ทอยให้ทุกคนที่ยังไม่มีค่า',iniRoll:'ทอย',iniInit:'Initiative',iniEmpty:'ยังไม่มีใครในลำดับ เพิ่มผู้เล่นหรือศัตรูด้านบนเพื่อเริ่มต่อสู้',iniNow:'เทิร์นนี้',iniPc:'ผู้เล่น',iniGm:'GM',iniFoe:'ศัตรู',iniHpNote:'HP ของตัวละครที่ลิงก์ไว้แก้ในหน้าข้อมูลตัวละคร',iniDel:'เอาออก',iniNoRoll:'ยังไม่ได้ทอย',iniSureClear:'กดอีกครั้งเพื่อล้าง',iniNeedName:'ใส่ชื่อก่อน',iniTies:'ค่าเท่ากันเรียงตามโบนัส DEX',
+ languages:'ภาษา',tools:'Tool Proficiencies',vehicles:'Vehicle Proficiencies',secBgPick:'ตัวเลือกจาก Background',fLangPick:'ภาษา',fToolPick:'Tool Proficiency',fVehPick:'Vehicle Proficiency',
+ secProf:'Saving Throw และ Skills',pSaves:'Saving Throws',pSkills:'Skills',profHint:'คลิกวงกลมเพื่อสลับ: ไม่เลือก → ชำนาญ (+PB) → ชำนาญสองเท่า สีทอง (+2×PB)',pNone:'ไม่ชำนาญ',pOne:'ชำนาญ (+PB)',pTwo:'ชำนาญสองเท่า (+2×PB)',
+ hpTitle:'HP',hpMax:'HP สูงสุด',hpAuto:'ระบบคำนวณ',hpManualBadge:'ผู้ดูแลกำหนดเอง',hpCur:'HP ปัจจุบัน',hpTemp:'Temp HP (เลือดเทียม)',hpAmt:'จำนวน',hpDamage:'โดนดาเมจ',hpHeal:'รักษา',hpGrant:'ให้ Temp HP',
+ hpMode:'วิธีกำหนด HP สูงสุด',hpModeAuto:'ระบบคำนวณ',hpModeManual:'พิมพ์เอง',hpManualVal:'HP สูงสุดที่กำหนด',hpLocked:'HP สูงสุดคำนวณโดยระบบจากอาชีพ เผ่า เลเวล และ CON',hpLockedManual:'ผู้ดูแลกำหนด HP สูงสุดของตัวละครนี้เอง',
+ hpRule:'ดาเมจหัก Temp HP ก่อน Temp HP ไม่ซ้อนกัน ได้ใหม่ให้เก็บค่าที่สูงกว่า และหายเมื่อพักยาว',hdTitle:'Hit Dice',hdUsed:'ใช้ไปแล้ว',hdLeft:'เหลือ',longRest:'พักยาว',longRestHint:'HP เต็ม ล้าง Temp HP คืน Hit Dice ครึ่งหนึ่ง',
+ deathTitle:'Death Saves',dsSucc:'สำเร็จ',dsFail:'ล้มเหลว',hpHow:'คำนวณ HP สูงสุดอย่างไร',hpL1:'เลเวล 1: Hit Die เต็ม {d} + CON {con} = {v}',hpLn:'เลเวล {range}: (ค่าเฉลี่ย {avg} + CON {con}) × {n} = {v}',
+ hpBonus:'โบนัส{src} {name}: {b} ต่อเลเวล × {lvl} = {v}',hpTotal:'รวม {v}',hpNoDie:'ไม่พบ Hit Die ของอาชีพนี้ในข้อมูลเกม จึงนับเป็น 0',hsRace:'เผ่า',hsClass:'อาชีพ',hsSub:'สายอาชีพ',hpOver:'ใช้ค่าที่ผู้ดูแลพิมพ์แทนค่าคำนวณ ({v})'},
+en:{brand:'Acacia Watch',signin:'Sign in',signup:'Sign up',user:'Username',pass:'Password',pass2:'Confirm password',disp:'Display name',
+ firstNote:'The first account becomes the admin; later accounts are players. Admins can change roles afterwards.',protoNote:'Prototype: accounts and data stay in this browser only.',
+ eUser:'Username needs 3+ characters: a-z, digits and _ only.',ePass:'Password needs 6+ characters.',eMatch:'The two passwords do not match.',eTaken:'That username is already taken.',eBad:'Wrong username or password.',
+ players:'Player info',npcs:'GM characters',games:'Minigames',logout:'Sign out',admin:'Admin',player:'Player',
+ playersSub:'Player characters, using the same fields as the v2.1 character sheet',playersSubMine:'Your characters',npcsSub:'NPCs, villains and allies the GM invents',gamesSub:'Small games to add flavor during play',
+ add:'Add character',edit:'Edit',del:'Delete',delSure:'Click again to delete',save:'Save',back:'Back',noRows:'Nothing here yet',addSample:'Add sample data',sampleNote:'Samples to try the layout; delete them any time',
+ colChar:'Character',colPlayer:'Player',colRace:'Race',colClass:'Class / Level',colHp:'HP',colAc:'AC',colType:'Type',
+ fName:'Character name',fPlayer:'Player',fRace:'Race',fClass:'Class',fSub:'Subclass',fLevel:'Level',fXp:'Experience',fBg:'Background',fAlign:'Alignment',
+ fAc:'AC',fSpeed:'Speed (ft)',fHp:'Hit point max',fInsp:'Inspiration',fNotes:'Notes',fType:'Type',unassigned:'No player',none:'None',
+ secBasic:'Basics',secAbil:'Ability scores',secCombat:'Combat and notes',pb:'Proficiency bonus',init:'Initiative',next:'Next level at XP',max:'Max',
+ tAlly:'Ally',tNeutral:'Neutral',tVillain:'Villain',
+ accounts:'Accounts',accSub:'Choose who is an admin',role:'Role',lastAdmin:'There must be at least one admin.',
+ diceTitle:'Dice roller',count:'Count',mod:'Modifier',mode:'Mode',normal:'Normal',adv:'Advantage',dis:'Disadvantage',roll:'Roll',history:'Roll history',rollHint:'Pick a die and roll',total:'Total',
+ ideasTitle:'Planned ideas',ideas:['Random travel event table','NPC and tavern name generator'],
+ mine:'Mine',noAccess:'This page is for admins',hp0:'—',
+ data:'Game data',dataSub:'Races, classes, subclasses, weapons, armor, backgrounds, languages, tool and vehicle proficiencies. Add, edit or delete any of them.',races:'Races',classes:'Classes',weapons:'Weapons',armor:'Armor',alignments:'Alignments',backgrounds:'Backgrounds',
+ addItem:'Add item',resetDefaults:'Reset to sheet defaults',resetSure:'Click again to reset',dataNote:'Renaming an item updates the characters that use it. Deleting leaves characters untouched.',
+ errName:'A name is required.',errDup:'That name is already in the list.',errSubDup:'Two subclasses share a name.',subAdd:'+ Add subclass',subRemove:'Remove',delInUse:'Used by {n}. Click again to delete',removed:'(no longer in the list)',yes:'Yes',no:'No',noSub:'No subclasses',subHint:'Subclasses added here show up in the character form for this class.',
+ site:'Site settings',siteSub:'Change the name, logo, cover, colors and look of the site. Changes show right away; press Save to keep them.',sIdentity:'Name and images',sName:'Site name',sTagline:'Line under the name (sign-in page)',sLogo:'Logo',sCover:'Cover (sign-in page background)',
+ sUpload:'Choose image',sRemove:'Remove',sNoImg:'No image yet',sColors:'Colors',cBg:'Background',cSurface:'Panels',cInk:'Text',cAccent:'Buttons',cSide:'Left menu',sDefault:'Default',
+ sShape:'Shape and type',sRadius:'Corner roundness',sFont:'Heading font',sSave:'Save settings',sRevert:'Discard unsaved changes',sResetAll:'Reset everything to default',sResetSure:'Click again to reset everything',
+ sSaved:'Saved.',sSavedTemp:'Saved for this visit only; it will be lost when you close the page (the browser blocks storage, or the image is too large).',sImgErr:'Could not read that image. Try another file.',sNote:'Chosen colors apply to both light and dark mode. These settings are stored in this browser.',kept:'Kept',tossed:'Discarded',
+ adventure:'Adventure',advSub:'Adventure rooms the admin creates, with a set number of player seats (temporary menu name)',createRoom:'Create room',roomName:'Room name',seats:'Player seats',seatsHint:'1 to 12 seats. The player bar shrinks or grows to fit the screen.',errSeats:'Enter a seat count from 1 to 12.',colRoom:'Room',colSeats:'Seats',open:'Open room',noRooms:'No rooms yet. Create the first one to start an adventure.',roomDefault:'Room',emptySeat:'Empty seat',seat:'Seat',playersRail:'Players',minigamesBar:'Minigames',soon:'Soon',leave:'Leave room',
+ iniTab:'Initiative',eThrottle:'Too many attempts, please wait a moment and try again',eNet:'Cannot reach the server',netSaveFail:'Could not save to the server, so the latest changes may not be stored. Check the connection and try again.',netRejected:'The server did not allow some items to be saved',netLogin:'Your session ended, please sign in again',netDown:'Cannot reach the server',netRetry:'Try again',pwSet:'Set new password',pwNew:'New password',pwDone:'New password set',pwShort:'Password needs 6+ characters',userDel:'Delete account',userDelSure:'Press again to delete',serverNote:'Data is stored on the server and shared across devices.',colAct:'Actions',acTitle:'AC (Armor Class)',acLabel:'AC',acAuto:'System calculated',bkTitle:'Backup and import',bkNote:'The backup holds user accounts (hashed passwords), characters, game data, rooms and site settings. Keep it private.',bkDownload:'Download backup file',bkShowText:'Show data as text',bkHide:'Hide text',bkCopy:'Copy',bkImport:'Import data',bkImportNote:'Choose a backup file or paste the copied text, then import. All current data will be replaced.',bkPaste:'Paste backup data here',bkDoImport:'Import and replace everything',bkSure:'Press again to confirm the replacement',bkSaved:'File saved',bkCopied:'Copied',bkCopyManual:'Could not copy automatically. Select the text and copy it yourself.',bkDlFail:'Could not save the file. Use Show data as text and copy it instead.',bkLoaded:'File read ({n} KB). Press import to continue.',bkBad:'The data is not valid, so nothing was imported.',bkBadApp:'This is not a backup file from this site.',bkNoAdmin:'The file has no admin account, so it was not imported.',bkEmpty:'There is no data to import yet.',bkDone:'Import complete',bkDoneTemp:'Imported, but the browser will not keep it permanently. It stays on this page only.',bkRelogin:'Data imported. Your old account is not in the file, so please sign in again.',acManualBadge:'Set by admin',acMode:'How AC is set',acModeAuto:'System calculates from worn armor',acModeManual:'Type it in (special cases)',acManualVal:'AC to use',acLocked:'AC is calculated by the system from the armor and shield ticked as worn in Items, and DEX.',acLockedManual:'The admin set this character\'s AC by hand.',acHow:'How AC is calculated',
+ acNone:'No armor: 10 + DEX ({dx}) = {v}',acBody:'{name}: {armor} armor, DEX {dex}{note} = {v}',acShield:'{name}: {v}',acTotal:'Total {v}',acStr:'{name} needs STR {n} but this character has STR {s} (speed −10 ft)',acStealth:'{name} gives Disadvantage on Stealth',acIgnored:'Only one body armor and one shield count, so {name} is ignored',acHeavyNoDex:'heavy armor ignores DEX',acCap:'DEX capped at +{n}',itEquip:'Worn',acOver:'Using the admin\'s typed value instead of the calculated one ({v})',featTitle:'Features',featAdd:'+ Add feature',featName:'Feature name',featLvl:'Gained at level',featDesc:'Description',featNone:'No features yet',featHintC:'Class abilities; players see them once their level is reached',featHintB:'Background story or the ability it grants',skHint:'Players who pick this background get these skills ticked once, right away (they can still raise them to double).',equip:'Starting equipment (one item per line, e.g. 2x Torch)',sk:'Skill proficiencies granted',feats:'Features',
+ fromBg:'From background',passive:'Passive Wisdom (Perception)',itTitle:'Items carried',itName:'Item name',itQty:'Quantity',itDel:'Remove',itAdd:'Add item',itEmpty:'No items yet',itHint:'Background items are added when a background is picked (you can edit or remove them). If a name matches armor or a shield in the game data (Chain Mail, Shield, Leather +1), a Worn box appears and AC is calculated automatically.',featTitleP:'Features and abilities',featNoneP:'No unlocked features yet. The admin adds them in Game data.',
+ prTitle:'Proficiencies',prArmor:'Armor',prWeapon:'Weapons',prVehicle:'Vehicles',prTool:'Tools',prLang:'Languages',prOther:'Other proficiencies',prSpeeds:'Other speeds',
+ wTitle:'Weapons',wName:'Name',wAtk:'Attack bonus',wDmg:'Damage / type',wProf:'Proficient',wBonus:'Extra bonus',wPick:'Pick a weapon from game data',wAdd:'Add weapon',wEmpty:'No weapons yet',wMissing:'This weapon was removed from game data',wHint:'Attack bonus and damage come from ability, proficiency and enchantment.',
+ sFx:'Button effects',fxStyle:'Hover / press style',fxSpeed:'Speed',fxAmt:'Strength',fxPreview:'Hover or press these buttons to try it',cFx:'Button effect color',fx_lift:'Lift',fx_glow:'Glow',fx_shine:'Shine sweep',fx_bounce:'Bounce',fx_none:'No effects',
+ cTurnNow:'Current turn highlight',cTurnNext:'Next turn highlight',cTurnDone:'Already went highlight',iniNextTag:'Next',iniDoneTag:'Done',iniRound:'Round',iniNext:'Next turn',iniPrev:'Back',iniStart:'Start round 1',iniClear:'Clear list',iniAddSeat:'Add seated players',iniAddGm:'Add GM character',iniPickGm:'Pick a GM character',iniCustom:'Enemy or extra (custom name)',iniName:'Name',iniMod:'Bonus',iniHpF:'HP',iniAdd:'Add',iniRollAll:'Roll for everyone without a value',iniRoll:'Roll',iniInit:'Initiative',iniEmpty:'Nobody in the order yet. Add players or enemies above to start a fight.',iniNow:'Now',iniPc:'Player',iniGm:'GM',iniFoe:'Enemy',iniHpNote:'HP of linked characters is edited on the character sheet.',iniDel:'Remove',iniNoRoll:'Not rolled',iniSureClear:'Press again to clear',iniNeedName:'Enter a name first',iniTies:'Ties are ordered by DEX bonus',
+ languages:'Languages',tools:'Tool proficiencies',vehicles:'Vehicle proficiencies',secBgPick:'Choices from background',fLangPick:'Language',fToolPick:'Tool proficiency',fVehPick:'Vehicle proficiency',
+ secProf:'Saving throws and skills',pSaves:'Saving Throws',pSkills:'Skills',profHint:'Click a circle to cycle: none → proficient (+PB) → double, gold (+2×PB)',pNone:'Not proficient',pOne:'Proficient (+PB)',pTwo:'Double proficiency (+2×PB)',
+ hpTitle:'HP',hpMax:'Max HP',hpAuto:'System calculated',hpManualBadge:'Set by admin',hpCur:'Current HP',hpTemp:'Temp HP',hpAmt:'Amount',hpDamage:'Damage',hpHeal:'Heal',hpGrant:'Grant temp HP',
+ hpMode:'How max HP is set',hpModeAuto:'System calculates',hpModeManual:'Type it in',hpManualVal:'Max HP to use',hpLocked:'Max HP is calculated by the system from class, race, level and CON.',hpLockedManual:'The admin set this character\'s max HP by hand.',
+ hpRule:'Damage hits temp HP first. Temp HP does not stack: a new grant keeps the higher value. It ends on a long rest.',hdTitle:'Hit dice',hdUsed:'Used',hdLeft:'Left',longRest:'Long rest',longRestHint:'Full HP, clears temp HP, regain half of the hit dice',
+ deathTitle:'Death saves',dsSucc:'Successes',dsFail:'Failures',hpHow:'How max HP is calculated',hpL1:'Level 1: full hit die {d} + CON {con} = {v}',hpLn:'Level {range}: (average {avg} + CON {con}) × {n} = {v}',
+ hpBonus:'{src} bonus {name}: {b} per level × {lvl} = {v}',hpTotal:'Total {v}',hpNoDie:'No hit die found for this class in the game data, counted as 0.',hsRace:'Race',hsClass:'Class',hsSub:'Subclass',hpOver:'Using the admin\'s typed value instead of the calculated one ({v})'}};
+
+/* ---------- storage (localStorage when available, memory otherwise) ---------- */
+const mem={};
+function load(k,d){try{const v=localStorage.getItem(k);if(v!==null)return JSON.parse(v)}catch(e){}return mem[k]!==undefined?mem[k]:d}
+let REMOTE=false,firstRun=false;
+const REMOTE_KEYS={dd_cat:'cat',dd_site:'site',dd_rooms:'rooms'};
+function put(k,v){mem[k]=v;
+  if(REMOTE){if(REMOTE_KEYS[k]){pushKv(k,v);return true}if(k==='dd_users'||k==='dd_session'||k==='dd_pcs'||k==='dd_npcs')return true}
+  try{localStorage.setItem(k,JSON.stringify(v));return true}catch(e){return false}}
+/* ---------- server mode (used when the page is served by server.py) ---------- */
+async function api(method,path,body){
+  const r=await fetch(path,{method,credentials:'same-origin',headers:{'Content-Type':'application/json','X-Requested-With':'dd'},body:body===undefined?undefined:JSON.stringify(body)});
+  let j={};try{j=await r.json()}catch(e){}
+  if(!r.ok){const e=new Error(j.error||('http'+r.status));e.status=r.status;e.code=j.error;throw e}
+  return j;
+}
+function netBar(msg){let el=document.getElementById('netbar');if(!msg){if(el)el.remove();return}if(!el){el=document.createElement('div');el.id='netbar';el.className='netbar';el.setAttribute('role','alert');document.body.appendChild(el)}el.textContent=msg}
+function netErr(e){
+  if(e&&e.status===401&&session){session=null;users=[];pcs=[];npcs=[];rooms=[];edit=null;dedit=null;siteDraft=null;authTab='signin';authErr=t('netLogin');netBar('');render();return}
+  netBar(t(e&&e.code==='rejected'?'netRejected':'netSaveFail'));
+}
+const synced={pc:new Map(),npc:new Map()};
+let syncChain=Promise.resolve(),inflight=0;const kvTimers={};
+function resetSynced(){synced.pc=new Map(pcs.map(r=>[r.id,JSON.stringify(r)]));synced.npc=new Map(npcs.map(r=>[r.id,JSON.stringify(r)]))}
+function applyBoot(j){
+  REMOTE=true;SITE=Object.assign({},j.site||{});firstRun=!j.hasUsers;
+  if(j.me){users=j.users||[j.me];session=j.me.id;pcs=j.pcs||[];npcs=j.npcs||[];rooms=j.rooms||[];CAT=j.cat||clone(SEED);normCat();
+    if(!j.cat&&j.me.role==='admin')api('POST','api/kv/cat',{value:CAT}).catch(netErr)}
+  else{users=[];session=null;pcs=[];npcs=[];rooms=[]}
+  resetSynced();
+}
+function pushKv(k,v){
+  clearTimeout(kvTimers[k]);inflight++;
+  kvTimers[k]=setTimeout(()=>{syncChain=syncChain.then(async()=>{try{await api('POST','api/kv/'+REMOTE_KEYS[k],{value:v});netBar('')}catch(e){netErr(e)}finally{inflight--}})},350);
+}
+function syncKind(k){
+  const L=list(k),cur=new Map(L.map(r=>[r.id,JSON.stringify(r)]));
+  const up=L.filter(r=>synced[k].get(r.id)!==cur.get(r.id)),del=[...synced[k].keys()].filter(id=>!cur.has(id));
+  if(!up.length&&!del.length)return;
+  synced[k]=cur;inflight++;
+  syncChain=syncChain.then(async()=>{
+    try{const j=await api('POST','api/sync',{kind:k,upsert:up,del});
+      (j.records||[]).forEach(srv=>{const L2=list(k),i=L2.findIndex(x=>x.id===srv.id);if(i>=0){L2[i]=srv;synced[k].set(srv.id,JSON.stringify(srv))}});
+      if((j.rejected||[]).length)netErr({code:'rejected'});else netBar('');
+      if(!edit&&!dedit&&session)render();
+    }catch(e){netErr(e)}finally{inflight--}});
+}
+async function pull(){
+  if(!REMOTE||!session||edit||dedit||inflight)return;
+  if(view!=='players'&&view!=='npcs')return;
+  try{applyBoot(await api('GET','api/boot'));if(!edit&&!dedit&&!inflight)render()}catch(e){if(e.status===401)netErr(e)}
+}
+
+let lang=load('dd_lang',null)||((navigator.language||'').startsWith('th')?'th':'en');
+let users=load('dd_users',[]), pcs=load('dd_pcs',[]), npcs=load('dd_npcs',[]);
+let CAT=load('dd_cat',null)||clone(SEED);
+const BGSK={Acolyte:['insight','religion'],Charlatan:['deception','sleight'],Criminal:['deception','stealth'],Entertainer:['acrobatics','performance'],'Folk Hero':['animal','survival'],'Guild Artisan':['insight','persuasion'],Hermit:['medicine','religion'],Noble:['history','persuasion'],Outlander:['athletics','survival'],Sage:['arcana','history'],Sailor:['athletics','perception'],Soldier:['athletics','intimidation'],Urchin:['sleight','stealth']};
+function normCat(){for(const k in SEED)if(!Array.isArray(CAT[k]))CAT[k]=clone(SEED[k]);
+CAT.backgrounds.forEach(b=>{if(!Array.isArray(b.sk))b.sk=clone(BGSK[b.name]||[]);if(typeof b.equip!=='string')b.equip='';if(!Array.isArray(b.feats))b.feats=[]});
+CAT.classes.forEach(c=>{if(!Array.isArray(c.feats))c.feats=[]});
+CAT.backgrounds.forEach(b=>{const sd=SEED.backgrounds.find(x=>x.name===b.name);['nLang','nTool','nVeh'].forEach(k=>{if(b[k]===undefined||b[k]==='')b[k]=sd?sd[k]:0})});
+}
+normCat();
+const names=k=>CAT[k].map(x=>x.name);
+const subsOf=c=>(CAT.classes.find(x=>x.name===c)?.subs||[]).map(s=>s.name);
+const pick=(arr,pref)=>arr.includes(pref)?pref:(arr[0]||'');
+let session=load('dd_session',null);
+let view='players', edit=null, authTab='signin', authErr='', delArm=null, flashMsg='';
+let dataTab='races', dedit=null, dataArm=null, dataErr='';
+let SITE=Object.assign({},load('dd_site',{})), siteDraft=null, siteMsg='';
+let rooms=load('dd_rooms',[]), roomOpen=null, roomEdit=null, roomErr='', advGame='dice';
+const curSite=()=>(view==='site'&&siteDraft&&me())?siteDraft:SITE;
+const brandName=()=>(curSite().name||'').trim()||t('brand');
+const brandMark=()=>curSite().logo?`<img class="logo" src="${esc(curSite().logo)}" alt="">`:ICON.d20;
+const brandHtml=()=>`${brandMark()}<span>${esc(brandName())}</span>`;
+const FONTS={Alegreya:"'Alegreya','Sarabun',Georgia,serif",Cinzel:"'Cinzel','Sarabun',Georgia,serif",Sarabun:"'Sarabun','Segoe UI',system-ui,sans-serif",Plex:"'IBM Plex Mono',ui-monospace,monospace"};
+function lum(h){return hexRgb(h).map(v=>{v/=255;return v<=.03928?v/12.92:Math.pow((v+.055)/1.055,2.4)}).reduce((s,v,i)=>s+v*[.2126,.7152,.0722][i],0)}
+function hexRgb(h){h=String(h).replace('#','');if(h.length===3)h=[...h].map(c=>c+c).join('');const n=parseInt(h,16)||0;return[n>>16&255,n>>8&255,n&255]}
+const onColor=h=>{const L=lum(h)+.05;return L/0.062>1.05/L?'#14201d':'#ffffff'};
+const FONT_URL={Cinzel:'https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700&display=swap',Plex:'https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@500&display=swap'},fontOn={};
+function ensureFont(n){const u=FONT_URL[n];if(!u||fontOn[n])return;fontOn[n]=1;const l=document.createElement('link');l.rel='stylesheet';l.href=u;document.head.appendChild(l)}
+function applySite(s){
+  const st=document.documentElement.style,set=(k,v)=>v?st.setProperty(k,v):st.removeProperty(k);
+  set('--bg',s.bg);set('--surface',s.surface);set('--ink',s.ink);
+  const base=s.bg||s.surface||s.ink;
+  set('--line',base?'color-mix(in srgb,var(--ink) 18%,var(--bg))':'');
+  set('--muted',base?'color-mix(in srgb,var(--ink) 62%,var(--bg))':'');
+  set('color-scheme',s.bg?(lum(s.bg)>.4?'light':'dark'):'');
+  set('--accent',s.accent);set('--accent-ink',s.accent?onColor(s.accent):'');
+  set('--side',s.side);set('--side-ink',s.side?onColor(s.side):'');
+  set('--side-muted',s.side?'color-mix(in srgb,var(--side-ink) 62%,var(--side))':'');
+  set('--side-line',s.side?'color-mix(in srgb,var(--side-ink) 16%,var(--side))':'');
+  set('--side-active',s.side?'color-mix(in srgb,var(--side-ink) 12%,var(--side))':'');
+  document.documentElement.dataset.fx=s.fx||'lift';ensureFont(s.font);
+  set('--fx-ms',s.fxms?s.fxms+'ms':'');set('--fx-amt',s.fxamt!==undefined&&s.fxamt!==''?String(s.fxamt):'');set('--fx-color',s.fxc);
+  set('--turn-now',s.tnow);set('--turn-next',s.tnext);set('--turn-done',s.tdone);
+  set('--r',s.radius!==undefined&&s.radius!==''&&s.radius!==null?s.radius+'px':'');
+  set('--display',FONTS[s.font]||'');
+}
+function readImage(file,max,type,q){return new Promise((res,rej)=>{const fr=new FileReader();fr.onerror=rej;fr.onload=()=>{const img=new Image();img.onerror=rej;img.onload=()=>{
+  const sc=Math.min(1,max/Math.max(img.width,img.height)),c=document.createElement('canvas');c.width=Math.max(1,Math.round(img.width*sc));c.height=Math.max(1,Math.round(img.height*sc));
+  const x=c.getContext('2d');if(type==='image/jpeg'){x.fillStyle='#fff';x.fillRect(0,0,c.width,c.height)}x.drawImage(img,0,0,c.width,c.height);res(c.toDataURL(type,q))};img.src=fr.result};fr.readAsDataURL(file)})}
+let diceSides=20, diceCount=1, diceMod=0, diceMode='normal', rolls=[], lastRoll=null;
+const t=k=>TX[lang][k];
+const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const uid=()=>Math.random().toString(36).slice(2,10);
+const me=()=>users.find(u=>u.id===session)||null;
+const isAdmin=()=>me()?.role==='admin';
+const mod=v=>Math.floor((Number(v)-10)/2);
+const sgn=n=>(n>=0?'+':'−')+Math.abs(n);
+const prof=l=>2+Math.floor((Math.max(1,Number(l)||1)-1)/4);
+
+async function hashPw(pw,salt){
+  try{const d=await crypto.subtle.digest('SHA-256',new TextEncoder().encode(salt+':'+pw));return[...new Uint8Array(d)].map(x=>x.toString(16).padStart(2,'0')).join('')}
+  catch(e){let h=5381;for(const c of salt+pw)h=((h*33)^c.charCodeAt(0))>>>0;return'x'+h.toString(16)}
+}
+
+/* ---------- icons ---------- */
+const ICON={
+ d20:'<svg viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round" aria-hidden="true"><path d="M16 2.5 28 9.5v13L16 29.5 4 22.5v-13z"/><path d="M16 2.5 4 22.5h24zM4 9.5l12 6 12-6M16 15.5v14"/></svg>',
+ players:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><circle cx="9" cy="8" r="3.2"/><path d="M3 20c.6-3.6 3-5.5 6-5.5s5.4 1.9 6 5.5"/><path d="M16 5.3a3 3 0 0 1 0 5.4M18 14.8c1.7.7 2.7 2.4 3 5.2"/></svg>',
+ npcs:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round" aria-hidden="true"><path d="M12 3 4 6v6c0 4.5 3.2 7.6 8 9 4.8-1.4 8-4.5 8-9V6z"/><path d="M12 8v6M9 11h6"/></svg>',
+ games:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="4" width="16" height="16" rx="3"/><circle cx="9" cy="9" r="1.1" fill="currentColor"/><circle cx="15" cy="15" r="1.1" fill="currentColor"/><circle cx="15" cy="9" r="1.1" fill="currentColor"/><circle cx="9" cy="15" r="1.1" fill="currentColor"/></svg>',
+ data:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round" stroke-linecap="round" aria-hidden="true"><path d="M5 4.5h10a3 3 0 0 1 3 3v12H8a3 3 0 0 1-3-3z"/><path d="M5 16.5a3 3 0 0 1 3-3h10M9 8h5"/></svg>',
+ site:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><path d="M4 7h9M17 7h3M4 17h3M11 17h9M4 12h3M11 12h9"/><circle cx="15" cy="7" r="2"/><circle cx="9" cy="17" r="2"/><circle cx="9" cy="12" r="0.01"/></svg>',
+ adventure:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="8.5"/><path d="m15.5 8.5-2 5-5 2 2-5z"/></svg>'};
+
+/* ---------- login ---------- */
+function langSwitch(){return`<div class="lang" role="group" aria-label="Language"><button type="button" data-act="lang" data-v="th" aria-pressed="${lang==='th'}">ไทย</button><button type="button" data-act="lang" data-v="en" aria-pressed="${lang==='en'}">EN</button></div>`}
+function renderLogin(){
+  const up=authTab==='signup';
+  const cv=SITE.cover?` style="background-image:linear-gradient(rgba(10,16,15,.5),rgba(10,16,15,.62)),url('${esc(SITE.cover)}');background-size:cover;background-position:center"`:'';
+  return`<div class="login"${cv}><div class="login-card">
+  <div class="login-top"><div class="brand">${brandHtml()}</div>${langSwitch()}</div>${SITE.tagline?`<p class="note" style="margin:-6px 0 0">${esc(SITE.tagline)}</p>`:''}
+  <div class="tabs" role="tablist"><button role="tab" data-act="tab" data-v="signin" aria-selected="${!up}">${t('signin')}</button><button role="tab" data-act="tab" data-v="signup" aria-selected="${up}">${t('signup')}</button></div>
+  <form class="stack" id="authForm" autocomplete="off" novalidate>
+    <div class="field"><label for="a_user">${t('user')}</label><input id="a_user" name="user" autocapitalize="none" autocomplete="username"></div>
+    ${up?`<div class="field"><label for="a_disp">${t('disp')}</label><input id="a_disp" name="disp"></div>`:''}
+    <div class="field"><label for="a_pass">${t('pass')}</label><input id="a_pass" name="pass" type="password" autocomplete="${up?'new-password':'current-password'}"></div>
+    ${up?`<div class="field"><label for="a_pass2">${t('pass2')}</label><input id="a_pass2" name="pass2" type="password" autocomplete="new-password"></div>`:''}
+    <div class="err" id="authErr" role="alert">${esc(authErr)}</div>
+    <button class="btn primary" type="submit">${up?t('signup'):t('signin')}</button>
+  </form>
+  <p class="note">${up?t('firstNote')+' ':''}${REMOTE?t('serverNote'):t('protoNote')}</p></div></div>`;
+}
+async function submitAuth(form){
+  const f=Object.fromEntries(new FormData(form));
+  const name=(f.user||'').trim().toLowerCase();
+  if(authTab==='signup'){
+    if(!/^[a-z0-9_]{3,}$/.test(name))return authErr=t('eUser'),render();
+    if((f.pass||'').length<6)return authErr=t('ePass'),render();
+    if(f.pass!==f.pass2)return authErr=t('eMatch'),render();
+    if(REMOTE)return remoteAuth('api/register',{name,disp:(f.disp||'').trim(),pass:f.pass});
+    if(users.some(u=>u.name===name))return authErr=t('eTaken'),render();
+    const salt=uid()+uid();
+    const u={id:uid(),name,disp:(f.disp||'').trim()||name,role:users.length?'player':'admin',salt,hash:await hashPw(f.pass,salt)};
+    users.push(u);put('dd_users',users);startSession(u);
+  }else{
+    if(REMOTE)return remoteAuth('api/login',{name,pass:f.pass||''});
+    const u=users.find(x=>x.name===name);
+    if(!u||u.hash!==await hashPw(f.pass||'',u.salt))return authErr=t('eBad'),render();
+    startSession(u);
+  }
+}
+async function remoteAuth(path,body){
+  try{const j=await api('POST',path,body);applyBoot(j);netBar('');startSession(j.me)}
+  catch(e){authErr=({bad_login:t('eBad'),name_taken:t('eTaken'),bad_name:t('eUser'),bad_pass:t('ePass'),too_many_attempts:t('eThrottle')})[e.code]||t('eNet');render()}
+}
+function startSession(u){session=u.id;put('dd_session',session);authErr='';edit=null;view='players';location.hash='players';render()}
+
+/* ---------- records ---------- */
+function blank(kind){
+  return{id:uid(),kind,owner:kind==='pc'?(isAdmin()?'':session):'',name:'',race:pick(names('races'),'Human'),cls:pick(names('classes'),'Fighter'),sub:'',level:1,xp:0,bg:'',align:pick(names('alignments'),'True Neutral'),
+    abil:{str:10,dex:10,con:10,int:10,wis:10,cha:10},ac:10,speed:30,hp:10,insp:false,notes:'',type:'neutral',pick:{lang:[],tool:[],veh:[]},prof:{save:{},skill:{}},items:[],weapons:[],profOther:'',speeds:'',hpMode:'auto',hpManual:'',hpCur:null,hpTemp:0,hdUsed:0,death:{s:0,f:0},acMode:'auto',acManual:''};
+}
+function sample(kind){
+  const mk=(o)=>{const r=Object.assign(blank(kind),o);if(kind==='npc'){r.hpMode='manual';r.hpManual=r.hp;r.acMode='manual';r.acManual=r.ac}else{r.hp=effMax(r);r.ac=effAc(r)}return r};
+  if(kind==='npc')return[
+   mk({name:'Mirelle Voss',race:'Half-Elf',cls:'Rogue',sub:'Thief',level:4,xp:2700,bg:'Tavern keeper',align:'Chaotic Neutral',abil:{str:9,dex:16,con:12,int:13,wis:12,cha:15},ac:14,hp:27,type:'ally',notes:'Knows every rumor in the harbor district.'}),
+   mk({name:'Brother Halvard',race:'Hill Dwarf',cls:'Cleric',sub:'Life',level:6,xp:14000,bg:'Acolyte',align:'Lawful Good',abil:{str:12,dex:10,con:15,int:11,wis:17,cha:13},ac:18,speed:25,hp:52,type:'ally'}),
+   mk({name:'Ashkaar the Pale',race:'Tiefling',cls:'Warlock',sub:'Fiend',level:8,xp:34000,bg:'Charlatan',align:'Neutral Evil',abil:{str:8,dex:14,con:14,int:12,wis:11,cha:19},ac:13,hp:58,type:'villain',notes:'Wants the lighthouse key.'})];
+  return[mk({name:'Tessa Wren',owner:isAdmin()?'':session,race:'Lightfoot Halfling',cls:'Bard',sub:'Lore',level:3,xp:900,bg:'Entertainer',align:'Chaotic Good',abil:{str:8,dex:15,con:12,int:11,wis:10,cha:16},speed:25,hp:21,items:[{id:uid(),name:'Leather',qty:1,src:'',eq:true},{id:uid(),name:'Costume',qty:1,src:'',eq:false}],weapons:[{id:uid(),ref:'Dagger',bonus:0},{id:uid(),ref:'Rapier',bonus:0},{id:uid(),ref:'Light Crossbow',bonus:0}]})];
+}
+const list=k=>k==='pc'?pcs:npcs;
+function commit(k){if(REMOTE){syncKind(k);return}put(k==='pc'?'dd_pcs':'dd_npcs',list(k))}
+const ownerName=id=>users.find(u=>u.id===id)?.disp||'';
+const nextXp=l=>l>=20?null:XP[l];
+
+/* ---------- views ---------- */
+function renderApp(){
+  const u=me(), adm=isAdmin();
+  const items=[['players','players'],...(adm?[['npcs','npcs'],['data','data'],['adventure','adventure'],['games','games'],['site','site']]:[])];
+  if(!adm&&view!=='players')view='players';
+  const stage=inStage();
+  return`<div class="app${stage?' stagemode':''}"><aside class="side">
+   <div class="brand">${brandHtml()}</div>
+   <nav class="nav" aria-label="Main">${items.map(([k,ic])=>`<button data-act="nav" data-v="${k}" ${view===k?'aria-current="page"':''}>${ICON[ic]}<span>${t(k)}</span></button>`).join('')}</nav>
+   <div class="side-foot"><div class="me"><b>${esc(u.disp)}</b><span>${adm?t('admin'):t('player')}</span></div>${langSwitch()}<button class="btn small" data-act="logout">${t('logout')}</button></div>
+  </aside><main class="main${stage?' stage':''}" id="main">${view==='players'?renderPlayers():view==='npcs'?renderNpcs():view==='data'?renderData():view==='site'?renderSite():view==='adventure'?renderAdventure():renderGames()}</main></div>`;
+}
+function head(title,sub,btn){return`<div class="head"><div><h1>${title}</h1><p>${sub}</p></div>${btn||''}</div>`}
+function table(kind){
+  const adm=isAdmin();
+  let rows=list(kind);
+  if(kind==='pc'&&!adm)rows=rows.filter(r=>r.owner===session);
+  if(!rows.length)return`<div class="empty"><div>${t('noRows')}</div><button class="btn" data-act="sample" data-k="${kind}">${t('addSample')}</button><div class="note">${t('sampleNote')}</div></div>`;
+  const typeLbl={ally:t('tAlly'),neutral:t('tNeutral'),villain:t('tVillain')};
+  return`<div class="scroll"><table><thead><tr><th>${t('colChar')}</th><th>${kind==='pc'?t('colPlayer'):t('colType')}</th><th>${t('colRace')}</th><th>${t('colClass')}</th><th class="num">${t('colHp')}</th><th class="num">${t('colAc')}</th><th></th></tr></thead><tbody>
+  ${rows.map(r=>`<tr><td><b>${esc(r.name)||'—'}</b><span class="sub">${esc(r.bg)}</span></td>
+   <td>${kind==='pc'?(esc(ownerName(r.owner))||'<span class="muted">'+t('unassigned')+'</span>'):`<span class="pill">${esc(typeLbl[r.type]||'')}</span>`}</td>
+   <td>${esc(r.race)}</td><td>${esc(r.cls)} ${r.level}<span class="sub">${esc(r.sub)}</span></td>
+   <td class="num">${curHp(r)} / ${r.hp}${num(r.hpTemp)?' <span class="tt">+'+num(r.hpTemp)+'</span>':''}</td><td class="num">${r.ac}</td>
+   <td><div class="acts"><button class="btn small" data-act="edit" data-k="${kind}" data-id="${r.id}">${t('edit')}</button><button class="btn small danger" data-act="del" data-k="${kind}" data-id="${r.id}">${delArm===r.id?t('delSure'):t('del')}</button></div></td></tr>`).join('')}
+  </tbody></table></div>`;
+}
+function renderPlayers(){
+  if(edit&&edit.kind==='pc')return renderEditor();
+  const adm=isAdmin();
+  let h=head(t('players'),adm?t('playersSub'):t('playersSubMine'),`<button class="btn primary" data-act="new" data-k="pc">+ ${t('add')}</button>`);
+  h+=`<section class="panel">${table('pc')}</section>`;
+  if(adm)h+=`<section class="panel"><div class="ph"><div><h2>${t('accounts')}</h2><div class="note">${t('accSub')}</div></div></div><div class="scroll"><table><thead><tr><th>${t('user')}</th><th>${t('disp')}</th><th>${t('role')}</th>${REMOTE?`<th>${t('colAct')}</th>`:''}</tr></thead><tbody>
+   ${users.map(u=>`<tr><td>${esc(u.name)}</td><td>${esc(u.disp)}</td><td><label class="field" style="max-width:170px"><span class="lbl" style="display:none">${t('role')}</span><select data-act="role" data-id="${u.id}" aria-label="${t('role')} ${esc(u.name)}"><option value="player" ${u.role==='player'?'selected':''}>${t('player')}</option><option value="admin" ${u.role==='admin'?'selected':''}>${t('admin')}</option></select></label></td>${REMOTE?`<td><div class="pwrow"><input type="password" id="pw_${u.id}" autocomplete="new-password" placeholder="${t('pwNew')}" aria-label="${t('pwNew')} ${esc(u.name)}"><button type="button" class="btn small" data-act="pwset" data-id="${u.id}">${t('pwSet')}</button>${u.id!==session?`<button type="button" class="btn small danger" data-act="userdel" data-id="${u.id}">${dataArm==='udel_'+u.id?t('userDelSure'):t('userDel')}</button>`:''}</div></td>`:''}</tr>`).join('')}
+   </tbody></table></div><div class="err" id="accErr" style="padding:0 16px 12px">${flashMsg}</div></section>`;
+  return h;
+}
+function renderNpcs(){
+  if(edit&&edit.kind==='npc')return renderEditor();
+  return head(t('npcs'),t('npcsSub'),`<button class="btn primary" data-act="new" data-k="npc">+ ${t('add')}</button>`)+`<section class="panel">${table('npc')}</section>`;
+}
+const opt=(arr,sel)=>arr.map(v=>`<option value="${esc(v)}" ${v===sel?'selected':''}>${esc(v)}</option>`).join('');
+const optCur=(arr,cur)=>opt(arr,cur)+(cur&&!arr.includes(cur)?`<option value="${esc(cur)}" selected>${esc(cur)} ${t('removed')}</option>`:'');
+function subOpts(cls,sel){return`<option value="">${t('none')}</option>`+optCur(subsOf(cls),sel)}
+const skName=k=>(SKILLS.find(x=>x[0]===k)||[k,k])[1];
+const bgOf=d=>CAT.backgrounds.find(x=>x.name===d.bg);
+const bgSkills=d=>{const b=bgOf(d);return b&&Array.isArray(b.sk)?b.sk:[]};
+const profLevel=(d,kind,k)=>{const st=(d.prof&&d.prof[kind]&&d.prof[kind][k])||0;return kind==='skill'&&bgSkills(d).includes(k)?Math.max(st,1):st};
+function derived(d){
+  const pb=prof(d.level),dx=mod(d.abil.dex),nx=nextXp(Number(d.level));
+  return`<div class="chip"><span>${t('pb')}</span><b>${sgn(pb)}</b></div><div class="chip"><span>${t('init')}</span><b>${sgn(dx)}</b></div><div class="chip"><span>${t('next')}</span><b>${nx===null?t('max'):nx}</b></div><div class="chip"><span>${t('passive')}</span><b>${10+mod(d.abil.wis)+pb*profLevel(d,'skill','perception')}</b></div>`;
+}
+const SAVE_NAMES={str:'Strength',dex:'Dexterity',con:'Constitution',int:'Intelligence',wis:'Wisdom',cha:'Charisma'};
+const SKILLS=[['acrobatics','Acrobatics','dex'],['animal','Animal Handling','wis'],['arcana','Arcana','int'],['athletics','Athletics','str'],['deception','Deception','cha'],['history','History','int'],['insight','Insight','wis'],['intimidation','Intimidation','cha'],['investigation','Investigation','int'],['medicine','Medicine','wis'],['nature','Nature','int'],['perception','Perception','wis'],['performance','Performance','cha'],['persuasion','Persuasion','cha'],['religion','Religion','int'],['sleight','Sleight of Hand','dex'],['stealth','Stealth','dex'],['survival','Survival','wis']];
+const num=v=>{const n=Number(v);return Number.isFinite(n)?n:0};
+const fill=(str,o)=>str.replace(/\{(\w+)\}/g,(_,k)=>o[k]);
+const dieOf=cls=>{const c=CAT.classes.find(x=>x.name===cls),m=c&&String(c.hd).match(/(\d+)/);return m?Number(m[1]):0};
+/* HP: level 1 takes the full hit die, later levels take the fixed average, each plus CON and never less than 1.
+   entries is a list so multiclass can add more rows later; the first row's level 1 gets the full die. */
+function hpCalc(d){
+  const lvl=Math.max(1,Math.min(20,Math.round(num(d.level))||1)),con=mod(d.abil.con),lines=[];
+  const entries=[{cls:d.cls,sub:d.sub,level:lvl}];
+  let total=0,first=true,missing=false;
+  entries.forEach(e=>{
+    const die=dieOf(e.cls),avg=Math.floor(die/2)+1;if(!die)missing=true;let from=1;
+    if(first){const g=Math.max(1,die+con);total+=g;lines.push(fill(t('hpL1'),{d:die,con:sgn(con),v:g}));from=2;first=false}
+    const n=e.level-from+1;
+    if(n>0){const g=Math.max(1,avg+con);total+=g*n;lines.push(fill(t('hpLn'),{range:from===e.level?from:from+'–'+e.level,avg,con:sgn(con),n,v:g*n}))}
+  });
+  const race=CAT.races.find(x=>x.name===d.race),co=CAT.classes.find(x=>x.name===d.cls),so=co&&co.subs.find(x=>x.name===d.sub);
+  [['hsRace',d.race,num(race&&race.bhp)],['hsClass',d.cls,num(co&&co.bhp)],['hsSub',d.sub,num(so&&so.bhp)]].forEach(([src,name,b])=>{
+    if(!b)return;total+=b*lvl;lines.push(fill(t('hpBonus'),{src:t(src),name:esc(name),b:sgn(b),lvl,v:sgn(b*lvl)}))});
+  total=Math.max(1,total);
+  return{max:total,lines,lvl,die:dieOf(d.cls),missing};
+}
+function effMax(d){return d.hpMode==='manual'&&num(d.hpManual)>=1?Math.round(num(d.hpManual)):hpCalc(d).max}
+const curOf=(d,max)=>d.hpCur==null?max:Math.max(0,Math.min(num(d.hpCur),max));
+const curHp=r=>curOf(r,r.hp);
+function normHp(d){
+  if(d.hpMode===undefined){const man=d.kind==='npc';d.hpMode=man?'manual':'auto';d.hpManual=man?d.hp:''}
+  if(d.hpTemp===undefined)d.hpTemp=0;if(d.hpCur===undefined)d.hpCur=null;if(d.hdUsed===undefined)d.hdUsed=0;if(!d.death)d.death={s:0,f:0};
+}
+function hpBody(d){
+  const c=hpCalc(d),max=effMax(d),cur=curOf(d,max),tmp=Math.max(0,Math.round(num(d.hpTemp))),adm=isAdmin(),manual=d.hpMode==='manual'&&num(d.hpManual)>=1;
+  const total=Math.max(1,max+tmp),used=Math.min(c.lvl,Math.max(0,Math.round(num(d.hdUsed)))),left=c.lvl-used;
+  const dots=(k,cls)=>[0,1,2].map(i=>`<button type="button" class="dot ${cls} ${d.death[k]>i?'on':''}" id="ds_${k}${i}" data-hpa="ds:${k}:${i}" aria-pressed="${d.death[k]>i}" aria-label="${t(k==='s'?'dsSucc':'dsFail')} ${i+1}"></button>`).join('');
+  return`<div class="hpmax"><div><span class="lbl">${t('hpMax')}</span><div><b id="hp_max">${max}</b></div></div><span class="pill ${manual?'admin':''}">${manual?t('hpManualBadge'):t('hpAuto')}</span></div>
+  <div><div class="hpbar" role="img" aria-label="${t('hpCur')} ${cur} / ${max}, ${t('hpTemp')} ${tmp}"><i class="cur ${cur<=max/4?'low':''}" id="hp_bc" style="width:${cur/total*100}%"></i><i class="tmp" id="hp_bt" style="width:${tmp/total*100}%"></i></div>
+   <div class="hpnums"><span id="hp_txt">${cur} / ${max}</span><span class="tt" id="hp_ttxt">${tmp?'+'+tmp+' temp':''}</span></div></div>
+  <div class="hpgrid"><div class="field"><label for="hp_cur">${t('hpCur')}</label><input id="hp_cur" data-hp="cur" type="number" min="0" value="${cur}"></div>
+   <div class="field"><label for="hp_temp">${t('hpTemp')}</label><input id="hp_temp" data-hp="temp" type="number" min="0" value="${tmp}"></div>
+   <div class="field"><label for="hp_amt">${t('hpAmt')}</label><input id="hp_amt" type="number" min="0" placeholder="0"></div>
+   <div class="hpbtns"><button type="button" class="btn" id="hpb_dmg" data-hpa="dmg">${t('hpDamage')}</button><button type="button" class="btn" id="hpb_heal" data-hpa="heal">${t('hpHeal')}</button><button type="button" class="btn" id="hpb_grant" data-hpa="grant">${t('hpGrant')}</button></div></div>
+  <p class="note" style="margin:0">${t('hpRule')}</p>
+  <div class="hpsub"><div><span class="lbl">${t('hdTitle')}</span><div class="stepper"><button type="button" class="btn small" id="hd_m" data-hpa="hd-" aria-label="${t('hdUsed')} −">−</button><span class="mono">d${c.die||'?'} · ${t('hdUsed')} ${used} · ${t('hdLeft')} ${left} / ${c.lvl}</span><button type="button" class="btn small" id="hd_p" data-hpa="hd+" aria-label="${t('hdUsed')} +">+</button></div></div>
+   <div><span class="lbl">${t('deathTitle')}</span><div class="stepper"><span class="note">${t('dsSucc')}</span><div class="dots">${dots('s','ok')}</div><span class="note">${t('dsFail')}</span><div class="dots">${dots('f','bad')}</div></div></div>
+   <button type="button" class="btn small" id="hp_long" data-hpa="long" title="${t('longRestHint')}">${t('longRest')}</button></div>
+  ${adm?`<div class="hpgrid"><div class="field"><label for="hp_mode">${t('hpMode')}</label><select id="hp_mode" data-hp="mode"><option value="auto" ${d.hpMode==='manual'?'':'selected'}>${t('hpModeAuto')}</option><option value="manual" ${d.hpMode==='manual'?'selected':''}>${t('hpModeManual')}</option></select></div>
+   ${d.hpMode==='manual'?`<div class="field"><label for="hp_manual">${t('hpManualVal')}</label><input id="hp_manual" data-hp="manual" type="number" min="1" value="${esc(d.hpManual)}"></div>`:''}</div>`:`<p class="note" style="margin:0">${manual?t('hpLockedManual'):t('hpLocked')}</p>`}
+  <details class="how"><summary>${t('hpHow')}</summary><ul>${c.lines.map(l=>`<li>${l}</li>`).join('')}<li><b>${fill(t('hpTotal'),{v:c.max})}</b></li>${manual?`<li>${fill(t('hpOver'),{v:c.max})}</li>`:''}${c.missing?`<li class="err">${t('hpNoDie')}</li>`:''}</ul></details>`;
+}
+const hpPanel=d=>`<section class="panel"><div class="ph"><h2>${t('hpTitle')}</h2></div><div class="hpwrap" id="hpbody">${hpBody(d)}</div></section>`;
+function refreshHp(focusId){const b=document.getElementById('hpbody');if(!b||!edit)return;const open=b.querySelector('details.how')?.open;b.innerHTML=hpBody(edit.draft);if(open)b.querySelector('details.how').open=true;if(focusId){const el=document.getElementById(focusId);if(el)el.focus()}}
+function updateHpBar(){
+  const d=edit.draft,max=effMax(d),cur=curOf(d,max),tmp=Math.max(0,Math.round(num(d.hpTemp))),tot=Math.max(1,max+tmp),g=id=>document.getElementById(id);
+  if(g('hp_max'))g('hp_max').textContent=max;if(g('hp_bc')){g('hp_bc').style.width=cur/tot*100+'%';g('hp_bc').classList.toggle('low',cur<=max/4)}
+  if(g('hp_bt'))g('hp_bt').style.width=tmp/tot*100+'%';if(g('hp_txt'))g('hp_txt').textContent=cur+' / '+max;if(g('hp_ttxt'))g('hp_ttxt').textContent=tmp?'+'+tmp+' temp':'';
+}
+function hpAction(a,id){
+  const d=edit.draft,max=effMax(d),cur=curOf(d,max),lvl=hpCalc(d).lvl,amtEl=document.getElementById('hp_amt'),amt=Math.max(0,Math.round(num(amtEl&&amtEl.value)));
+  if(a==='dmg'){let r=amt,tmp=Math.max(0,Math.round(num(d.hpTemp)));const ab=Math.min(tmp,r);tmp-=ab;r-=ab;d.hpTemp=tmp;d.hpCur=Math.max(0,cur-r)}
+  else if(a==='heal'){d.hpCur=Math.min(max,cur+amt);if(d.hpCur>0&&amt>0)d.death={s:0,f:0}}
+  else if(a==='grant'){d.hpTemp=Math.max(Math.round(num(d.hpTemp)),amt)}
+  else if(a==='long'){d.hpCur=null;d.hpTemp=0;d.hdUsed=Math.max(0,Math.round(num(d.hdUsed))-Math.max(1,Math.floor(lvl/2)));d.death={s:0,f:0}}
+  else if(a==='hd-'){d.hdUsed=Math.max(0,Math.round(num(d.hdUsed))-1)}
+  else if(a==='hd+'){d.hdUsed=Math.min(lvl,Math.round(num(d.hdUsed))+1)}
+  else if(a.startsWith('ds:')){const[,k,i]=a.split(':'),n=Number(i)+1;d.death[k]=d.death[k]===n?n-1:n}
+  refreshHp(id);
+}
+function profRow(d,kind,k,name,ab){
+  const st=profLevel(d,kind,k),bgG=kind==='skill'&&bgSkills(d).includes(k),m=mod(d.abil[ab])+prof(d.level)*st,lab=[t('pNone'),t('pOne'),t('pTwo')][st]+(bgG?' ('+t('fromBg')+')':'');
+  return`<div class="prow s${st}"><button type="button" class="pt s${st}" id="pt_${kind}_${k}" data-pt="${kind}:${k}" aria-label="${esc(name)}: ${lab}" title="${lab}"></button><span class="pv" data-pv="${kind}:${k}:${ab}">${sgn(m)}</span><span class="pn">${esc(name)}</span>${kind==='skill'?`<span class="pa">${ab.toUpperCase()}${bgG?' · BG':''}</span>`:'<span></span>'}</div>`;
+}
+const profBody=d=>`<div class="pcol"><h3>${t('pSaves')}</h3>${ABS.map(k=>profRow(d,'save',k,SAVE_NAMES[k],k)).join('')}</div><div class="pcol"><h3>${t('pSkills')}</h3>${SKILLS.map(([k,n,a])=>profRow(d,'skill',k,n,a)).join('')}</div>`;
+const profPanel=d=>`<section class="panel"><div class="ph"><h2>${t('secProf')}</h2><span class="note">${t('profHint')}</span></div><div class="profgrid" id="profbody">${profBody(d)}</div></section>`;
+function refreshProf(focusId){const b=document.getElementById('profbody');if(!b||!edit)return;b.innerHTML=profBody(edit.draft);if(focusId){const el=document.getElementById(focusId);if(el)el.focus()}}
+function bgPanel(d){
+  const b=CAT.backgrounds.find(x=>x.name===d.bg);if(!b)return'';
+  const groups=[['lang','languages','nLang','fLangPick'],['tool','tools','nTool','fToolPick'],['veh','vehicles','nVeh','fVehPick']];
+  const html=groups.map(([k,cat,nk,lab])=>{const n=Number(b[nk])||0;
+    return Array.from({length:n},(_,i)=>{const cur=(d.pick[k]||[])[i]||'';
+      return`<div class="field"><label for="p_${k}${i}">${t(lab)}${n>1?' '+(i+1):''}</label><select id="p_${k}${i}" data-pk="${k}" data-pi="${i}"><option value="">—</option>${optCur(names(cat),cur)}</select></div>`}).join('')}).join('');
+  return html?`<section class="panel"><div class="ph"><h2>${t('secBgPick')}</h2><span class="note">${esc(b.name)}</span></div><div class="grid">${html}</div></section>`:'';
+}
+const toks=x=>String(x||'').split(',').map(v=>v.trim()).filter(Boolean);
+function classProfs(d){
+  const c=CAT.classes.find(x=>x.name===d.cls),r=CAT.races.find(x=>x.name===d.race),armor=[],weap=[],tool=[];
+  toks(c&&c.first).concat(toks(r&&r.prof)).forEach(x=>{/armor|shield/i.test(x)?armor.push(x):/tool|instrument/i.test(x)?tool.push(x):weap.push(x)});
+  return{armor,weap,tool};
+}
+const parseEquip=txt=>String(txt||'').split(/\r?\n/).map(l=>l.trim()).filter(Boolean).map(l=>{const m=l.match(/^(\d+)\s*[x×]\s*(.+)$/i);return m?{name:m[2].trim(),qty:Math.max(1,+m[1])}:{name:l,qty:1}});
+function syncBgItems(d){const b=bgOf(d);d.items=(d.items||[]).filter(i=>i.src!=='bg');if(b)parseEquip(b.equip).forEach(e=>d.items.push({id:uid(),name:e.name,qty:e.qty,src:'bg'}))}
+/* weapons */
+const wFind=name=>CAT.weapons.find(w=>w.name===name);
+function isProf(d,w,row){
+  if(row.p!==undefined&&row.p!==null)return !!row.p;
+  if(/^(unarmed|natural)$/i.test(w.pcat))return true;
+  const L=classProfs(d).weap.map(x=>x.toLowerCase()),base=w.name.replace(/\s*\+\d+$/,'').replace(/^offhand\s+/i,'').toLowerCase();
+  return L.includes((w.pcat+' weapons').toLowerCase())||L.includes(base)||L.includes(w.name.toLowerCase());
+}
+function weaponStats(d,row){
+  const w=wFind(row.ref);if(!w)return null;const props=String(w.props||'').toLowerCase();let ab;
+  if(w.abil&&ABS.includes(String(w.abil).toLowerCase()))ab=String(w.abil).toLowerCase();
+  else if(/^ranged$/i.test(w.range))ab='dex';
+  else if(/finesse/.test(props))ab=mod(d.abil.dex)>mod(d.abil.str)?'dex':'str';
+  else ab='str';
+  const m=mod(d.abil[ab]),p=isProf(d,w,row),magic=Math.round(num(w.ench))+Math.round(num(row.bonus)),atk=m+(p?prof(d.level):0)+magic,db=(w.apply?m:0)+magic;
+  let dmg=String(w.die||'').trim();
+  if(dmg)dmg+=db?(db>0?'+':'−')+Math.abs(db):'';else dmg=db?sgn(db):'';
+  if(w.dtype)dmg+=' '+w.dtype;if(w.bdie)dmg+=' + '+w.bdie+(w.btype?' '+w.btype:'');
+  return{w,ab,p,atk,dmg};
+}
+function weaponsBody(d){
+  const rows=(d.weapons||[]).map(r=>{const s=weaponStats(d,r),sub=s?[s.w.pcat,s.w.range,s.w.props].filter(Boolean).join(' · '):t('wMissing');
+    return`<li class="wrow"><div class="wn"><b>${esc(r.ref)}</b><small>${esc(sub)}</small></div><div class="wa" aria-label="${t('wAtk')}">${s?sgn(s.atk):'—'}<small>${s?s.ab.toUpperCase():''}</small></div><div class="wd">${s?esc(s.dmg):'—'}</div>
+     <label class="wp"><input type="checkbox" data-wk="p" data-id="${r.id}" ${s&&s.p?'checked':''}> ${t('wProf')}</label><input class="wb" type="number" aria-label="${t('wBonus')}" data-wk="bonus" data-id="${r.id}" value="${esc(r.bonus||0)}"><button type="button" class="btn small danger" data-wa="del" data-id="${r.id}" aria-label="${t('itDel')} ${esc(r.ref)}">✕</button></li>`}).join('');
+  return`${rows?`<ul class="wlist">${rows}</ul>`:`<p class="note" style="padding:0 16px">${t('wEmpty')}</p>`}`;
+}
+function weaponsFrame(d){
+  const opts=CAT.weapons.map(w=>`<option value="${esc(w.name)}">${esc(w.name)}</option>`).join('');
+  return`<div class="whead" aria-hidden="true"><span>${t('wName')}</span><span>${t('wAtk')}</span><span>${t('wDmg')}</span><span>${t('wProf')}</span><span>${t('wBonus')}</span><span></span></div><div id="wlist">${weaponsBody(d)}</div>
+   <div class="bar"><div class="field" style="min-width:200px;flex:1"><label for="w_add">${t('wPick')}</label><select id="w_add"><option value="">—</option>${opts}</select></div><button type="button" class="btn small" data-wa="add">${t('wAdd')}</button></div><p class="note" style="margin:0;padding:0 16px 14px">${t('wHint')}</p>`;
+}
+const weaponsPanel=d=>`<section class="panel"><div class="ph"><h2>${t('wTitle')}</h2></div><div id="wbody">${weaponsFrame(d)}</div></section>`;
+function refreshWeapons(){const b=document.getElementById('wlist');if(b&&edit)b.innerHTML=weaponsBody(edit.draft)}
+function updateProfVals(d){const pb=prof(d.level);document.querySelectorAll('#profbody .pv').forEach(el=>{const[kind,k,ab]=el.dataset.pv.split(':');el.textContent=sgn(mod(d.abil[ab])+pb*profLevel(d,kind,k))})}
+/* proficiencies */
+function profsRows(d){
+  const p=classProfs(d),r=CAT.races.find(x=>x.name===d.race),ver=(d.pick.veh||[]).filter(Boolean),tl=(d.pick.tool||[]).filter(Boolean).concat(p.tool),lg=toks(r&&r.lang).concat((d.pick.lang||[]).filter(Boolean));
+  const row=(k,v)=>`<div class="kvr"><span class="k">${t(k)}</span><span>${v.length?esc(v.join(', ')):'-'}</span></div>`;
+  return row('prArmor',p.armor)+row('prWeapon',p.weap)+row('prVehicle',ver)+row('prTool',tl)+row('prLang',lg);
+}
+const profsPanel=d=>`<section class="panel"><div class="ph"><h2>${t('prTitle')}</h2></div><div id="profsrows">${profsRows(d)}</div><div class="grid wide"><div class="field"><label for="e_pother">${t('prOther')}</label><input id="e_pother" data-f="profOther" value="${esc(d.profOther||'')}"></div><div class="field"><label for="e_speeds">${t('prSpeeds')}</label><input id="e_speeds" data-f="speeds" value="${esc(d.speeds||'')}"></div></div></section>`;
+function refreshProfs(){const b=document.getElementById('profsrows');if(b&&edit)b.innerHTML=profsRows(edit.draft)}
+/* items */
+/* ---------- armor class ---------- */
+const armorBase=n=>String(n||'').trim().replace(/\s*\+\d+\s*$/,'').toLowerCase();
+const armorOf=it=>{const b=armorBase(it.name);return b?CAT.armor.find(a=>String(a.name).toLowerCase()===b)||null:null};
+const itemEnch=it=>{const m=String(it.name||'').match(/\+(\d+)\s*$/);return m?+m[1]:0};
+const isShield=a=>/shield/i.test(a.acat||'');
+/* catalog armor AC is the bonus over 10 (Leather 1 = AC 11). one body armor and one shield count. */
+function acCalc(d){
+  const dx=mod(d.abil.dex),lines=[],warns=[];let body=null,sh=null;
+  (d.items||[]).filter(i=>i.eq).forEach(it=>{const a=armorOf(it);if(!a)return;
+    if(isShield(a)){if(!sh)sh={it,a};else warns.push(fill(t('acIgnored'),{name:esc(it.name)}))}
+    else{if(!body)body={it,a};else warns.push(fill(t('acIgnored'),{name:esc(it.name)}))}});
+  let total;
+  if(body){
+    const a=body.a,armor=10+Math.round(num(a.ac))+itemEnch(body.it)+Math.round(num(a.ench));
+    const heavy=/heavy/i.test(a.acat||''),md=String(a.maxdex).trim()===''?null:Math.round(num(a.maxdex));
+    const dp=heavy?0:(md===null?dx:Math.min(dx,md));
+    const note=heavy?' ('+t('acHeavyNoDex')+')':(md!==null&&dx>md?' ('+fill(t('acCap'),{n:md})+')':'');
+    total=armor+dp;lines.push(fill(t('acBody'),{name:esc(body.it.name),armor,dex:sgn(dp),note,v:total}));
+    if(num(a.str)>0&&num(d.abil.str)<num(a.str))warns.push(fill(t('acStr'),{name:esc(body.it.name),n:num(a.str),s:num(d.abil.str)}));
+    if(/disadv/i.test(a.stealth||''))warns.push(fill(t('acStealth'),{name:esc(body.it.name)}));
+  }else{total=10+dx;lines.push(fill(t('acNone'),{dx:sgn(dx),v:total}))}
+  if(sh){const v=Math.round(num(sh.a.ac))+itemEnch(sh.it)+Math.round(num(sh.a.ench));total+=v;lines.push(fill(t('acShield'),{name:esc(sh.it.name),v:sgn(v)}))}
+  return{total,lines,warns};
+}
+const acManualOn=d=>d.acMode==='manual'&&String(d.acManual).trim()!==''&&num(d.acManual)>=0;
+const effAc=d=>acManualOn(d)?Math.round(num(d.acManual)):acCalc(d).total;
+function normAc(d){if(d.acMode===undefined){d.acMode='manual';d.acManual=d.ac}if(d.acManual===undefined)d.acManual=''}
+function acBody(d){
+  const c=acCalc(d),adm=isAdmin(),man=acManualOn(d),v=effAc(d);
+  return`<div class="hpmax"><div><span class="lbl">${t('acLabel')}</span><div><b id="ac_val">${v}</b></div></div><span class="pill ${man?'admin':''}">${man?t('acManualBadge'):t('acAuto')}</span></div>
+  ${adm?`<div class="hpgrid"><div class="field"><label for="ac_mode">${t('acMode')}</label><select id="ac_mode" data-ac="mode"><option value="auto" ${d.acMode==='manual'?'':'selected'}>${t('acModeAuto')}</option><option value="manual" ${d.acMode==='manual'?'selected':''}>${t('acModeManual')}</option></select></div>
+   ${d.acMode==='manual'?`<div class="field"><label for="ac_manual">${t('acManualVal')}</label><input id="ac_manual" data-ac="manual" type="number" min="0" value="${esc(d.acManual)}"></div>`:''}</div>`:`<p class="note" style="margin:0">${man?t('acLockedManual'):t('acLocked')}</p>`}
+  <details class="how"><summary>${t('acHow')}</summary><ul>${c.lines.map(l=>`<li>${l}</li>`).join('')}<li><b>${fill(t('acTotal'),{v:c.total})}</b></li>${man?`<li>${fill(t('acOver'),{v:v})}</li>`:''}${c.warns.map(w=>`<li class="err">${w}</li>`).join('')}</ul></details>`;
+}
+const acPanel=d=>`<section class="panel"><div class="ph"><h2>${t('acTitle')}</h2></div><div class="hpwrap" id="acbody">${acBody(d)}</div></section>`;
+function refreshAc(focusId){const b=document.getElementById('acbody');if(!b||!edit)return;const open=b.querySelector('details.how')?.open;b.innerHTML=acBody(edit.draft);if(open)b.querySelector('details.how').open=true;if(focusId){const el=document.getElementById(focusId);if(el)el.focus()}}
+function itChange(el){
+  const d=edit.draft,it=d.items.find(x=>x.id===el.dataset.id);if(!it)return;
+  if(el.dataset.it==='eq'){it.eq=el.checked;if(it.eq){const a=armorOf(it);if(a)d.items.forEach(o=>{if(o!==it&&o.eq){const b=armorOf(o);if(b&&isShield(b)===isShield(a))o.eq=false}})}refreshItems();return}
+  if(el.dataset.it==='name'){const a=armorOf(it);if(!a)it.eq=false;const row=el.closest('.irow'),has=!!(row&&row.querySelector('[data-it=eq]'));if(has!==!!a)refreshItems();else refreshAc()}
+}
+const itemsBody=d=>`<datalist id="armorlist">${CAT.armor.map(a=>`<option value="${esc(a.name)}">`).join('')}</datalist>${(d.items||[]).length?`<ul class="items">${d.items.map(it=>`<li class="irow"><input id="it_n_${it.id}" list="armorlist" aria-label="${t('itName')}" data-it="name" data-id="${it.id}" value="${esc(it.name)}"><input class="iqty" type="number" min="1" aria-label="${t('itQty')}" data-it="qty" data-id="${it.id}" value="${esc(it.qty)}"><span class="icell">${armorOf(it)?`<label class="eqw"><input type="checkbox" data-it="eq" data-id="${it.id}" ${it.eq?'checked':''}> ${t('itEquip')}</label>`:''}${it.src==='bg'?`<span class="pill">${t('fromBg')}</span>`:''}</span><button type="button" class="btn small danger" data-ita="del" data-id="${it.id}" aria-label="${t('itDel')} ${esc(it.name)}">✕</button></li>`).join('')}</ul>`:`<p class="note" style="padding:0 16px">${t('itEmpty')}</p>`}<div class="bar"><span class="note">${t('itHint')}</span><button type="button" class="btn small" data-ita="add">+ ${t('itAdd')}</button></div>`;
+const itemsPanel=d=>`<section class="panel"><div class="ph"><h2>${t('itTitle')}</h2></div><div id="itbody">${itemsBody(d)}</div></section>`;
+function refreshItems(f){const b=document.getElementById('itbody');if(!b||!edit)return;b.innerHTML=itemsBody(edit.draft);if(f){const el=document.getElementById(f);if(el)el.focus()}refreshAc()}
+/* features */
+function featList(d){
+  const out=[],b=bgOf(d),c=CAT.classes.find(x=>x.name===d.cls),lv=Math.round(num(d.level))||1;
+  if(b)(b.feats||[]).forEach(f=>out.push({...f,kind:'bg',from:b.name}));
+  if(c)(c.feats||[]).filter(f=>(f.lvl||1)<=lv).forEach(f=>out.push({...f,kind:'cls',from:c.name}));
+  return out;
+}
+const featBody=d=>{const L=featList(d);return L.length?L.map(f=>`<details class="feat"><summary><b>${esc(f.name||'—')}</b> <span class="pill">${t(f.kind==='bg'?'fBg':'fClass')} · ${esc(f.from)}${f.kind==='cls'?' · Lv '+(f.lvl||1):''}</span></summary><div class="featd">${esc(f.desc||'').replace(/\n/g,'<br>')}</div></details>`).join(''):`<p class="note" style="margin:0">${t('featNoneP')}</p>`};
+const featPanel=d=>`<section class="panel"><div class="ph"><h2>${t('featTitleP')}</h2></div><div class="featwrap" id="featbody">${featBody(d)}</div></section>`;
+function refreshFeat(){const b=document.getElementById('featbody');if(!b||!edit)return;const open=[...b.querySelectorAll('details')].map(x=>x.open);b.innerHTML=featBody(edit.draft);b.querySelectorAll('details').forEach((x,i)=>{if(open[i])x.open=true})}
+function refreshExtra(){refreshWeapons();refreshFeat();refreshProfs()}
+let _rf=0,_need={};
+function schedRefresh(n){Object.assign(_need,n);if(_rf)return;_rf=requestAnimationFrame(()=>{_rf=0;const q=_need;_need={};if(!edit)return;const d=edit.draft;updateProfVals(d);refreshWeapons();if(q.h)refreshHp();if(q.f)refreshFeat();if(q.a)refreshAc()})}
+function renderEditor(){
+  const d=edit.draft,pc=edit.kind==='pc',adm=isAdmin();
+  d.pick=d.pick||{lang:[],tool:[],veh:[]};
+  d.prof=d.prof||{save:{},skill:{}};
+  d.items=d.items||[];d.weapons=d.weapons||[];d.profOther=d.profOther||'';d.speeds=d.speeds||'';
+  normHp(d);normAc(d);
+  const owners=users.map(u=>`<option value="${u.id}" ${u.id===d.owner?'selected':''}>${esc(u.disp)} (${esc(u.name)})</option>`).join('');
+  return`${head(esc(d.name)||t('add'),pc?t('players'):t('npcs'),`<button class="btn" data-act="back">← ${t('back')}</button>`)}
+  <section class="panel"><div class="ph"><h2>${t('secBasic')}</h2></div><div class="grid wide">
+   <div class="field"><label for="e_name">${t('fName')}</label><input id="e_name" data-f="name" value="${esc(d.name)}"></div>
+   ${pc?`<div class="field"><label for="e_owner">${t('fPlayer')}</label><select id="e_owner" data-f="owner" ${adm?'':'disabled'}><option value="">${t('unassigned')}</option>${owners}</select></div>`
+       :`<div class="field"><label for="e_type">${t('fType')}</label><select id="e_type" data-f="type"><option value="ally" ${d.type==='ally'?'selected':''}>${t('tAlly')}</option><option value="neutral" ${d.type==='neutral'?'selected':''}>${t('tNeutral')}</option><option value="villain" ${d.type==='villain'?'selected':''}>${t('tVillain')}</option></select></div>`}
+   <div class="field"><label for="e_race">${t('fRace')}</label><select id="e_race" data-f="race">${optCur(names('races'),d.race)}</select></div>
+   <div class="field"><label for="e_cls">${t('fClass')}</label><select id="e_cls" data-f="cls">${optCur(names('classes'),d.cls)}</select></div>
+   <div class="field"><label for="e_sub">${t('fSub')}</label><select id="e_sub" data-f="sub">${subOpts(d.cls,d.sub)}</select></div>
+   <div class="field"><label for="e_level">${t('fLevel')}</label><input id="e_level" data-f="level" type="number" min="1" max="20" value="${d.level}"></div>
+   <div class="field"><label for="e_xp">${t('fXp')}</label><input id="e_xp" data-f="xp" type="number" min="0" value="${d.xp}"></div>
+   <div class="field"><label for="e_bg">${t('fBg')}</label><select id="e_bg" data-f="bg"><option value="">${t('none')}</option>${optCur(names('backgrounds'),d.bg)}</select></div>
+   <div class="field"><label for="e_align">${t('fAlign')}</label><select id="e_align" data-f="align">${optCur(names('alignments'),d.align)}</select></div>
+  </div></section>
+  ${bgPanel(d)}
+  <section class="panel"><div class="ph"><h2>${t('secAbil')}</h2></div><div class="abilities">
+   ${ABS.map(k=>`<div class="ab"><span class="k">${k.toUpperCase()}</span><div class="mod" id="m_${k}">${sgn(mod(d.abil[k]))}</div><input id="e_${k}" aria-label="${k.toUpperCase()}" data-a="${k}" type="number" min="1" max="30" value="${d.abil[k]}"></div>`).join('')}
+  </div><div class="derived" id="derived">${derived(d)}</div></section>
+  ${profPanel(d)}
+  ${hpPanel(d)}
+  ${weaponsPanel(d)}
+  ${profsPanel(d)}
+  ${itemsPanel(d)}
+  ${acPanel(d)}
+  ${featPanel(d)}
+  <section class="panel"><div class="ph"><h2>${t('secCombat')}</h2></div><div class="grid">
+   <div class="field"><label for="e_speed">${t('fSpeed')}</label><input id="e_speed" data-f="speed" type="number" min="0" value="${d.speed}"></div>
+   <div class="field"><label for="e_insp">${t('fInsp')}</label><select id="e_insp" data-f="insp"><option value="0" ${d.insp?'':'selected'}>—</option><option value="1" ${d.insp?'selected':''}>✓</option></select></div>
+  </div><div class="grid wide" style="padding-top:0"><div class="field"><label for="e_notes">${t('fNotes')}</label><textarea id="e_notes" data-f="notes">${esc(d.notes)}</textarea></div></div>
+  <div class="bar"><button class="btn danger" data-act="del-edit">${delArm===d.id?t('delSure'):t('del')}</button><button class="btn primary" data-act="save">${t('save')}</button></div></section>`;
+}
+
+/* ---------- game data (admin edits the catalogs that characters draw from) ---------- */
+const FL={name:['ชื่อ','Name'],asi:['ค่าพลังที่เพิ่ม','Ability score increases'],nac:['AC ธรรมชาติ','Natural AC'],speed:['ความเร็ว (ฟุต)','Speed (ft)'],bhp:['HP โบนัสต่อเลเวล','Bonus HP per level'],
+ res:['ความต้านทานและคุณลักษณะ','Resistances and traits'],lang:['ภาษา','Languages'],nat:['การโจมตีตามธรรมชาติ','Natural attack'],prof:['ความชำนาญอาวุธและเกราะ','Weapon and armor proficiencies'],other:['ฟีเจอร์อื่น','Other features'],
+ hd:['ลูกเต๋า HP','Hit die'],alt:['AC ทางเลือก','Alt AC'],init:['โบนัส Initiative','Init bonus'],saves:['Saving throw และทักษะอาชีพ','Saving throws and class skills'],first:['ความชำนาญเลเวล 1','1st-level proficiencies'],
+ multi:['ความชำนาญเพิ่ม / multiclass','Additional / multiclass proficiencies'],spellType:['ประเภทการร่ายเวท','Spellcasting type'],spellAb:['พลังร่ายเวท','Spellcasting ability'],speedInc:['ความเร็วที่เพิ่ม','Speed increase'],subs:['สายอาชีพ','Subclasses'],
+ die:['ลูกเต๋าดาเมจ','Damage die'],dtype:['ประเภทดาเมจ','Damage type'],pcat:['หมวดความชำนาญ','Proficiency category'],range:['ระยะ','Range'],monk:['อาวุธ Monk','Monk weapon'],ench:['โบนัสมนตร์','Enchantment bonus'],
+ bdie:['ลูกเต๋าดาเมจเพิ่ม','Bonus damage die'],btype:['ประเภทดาเมจเพิ่ม','Bonus damage type'],abil:['พลังที่ใช้โจมตีแทน','Attack ability override'],props:['คุณสมบัติ','Properties'],apply:['บวกค่าพลัง','Apply ability mod'],
+ ac:['โบนัส AC','AC bonus'],maxdex:['Dex สูงสุด','Max Dex modifier'],acat:['หมวด','Category'],str:['STR ที่ต้องการ','Strength required'],stealth:['Stealth','Stealth'],pb:['โบนัส Proficiency','Proficiency bonus bonus'],skills:['โบนัสทักษะ','Skills bonus'],saves2:['โบนัส Saves','Saves bonus']};
+const fl=k=>(FL[k]||[k,k])[lang==='th'?0:1];
+Object.assign(FL,{nLang:['จำนวนภาษาที่เลือกได้','Languages to choose'],nTool:['จำนวน Tool Proficiencies ที่เลือกได้','Tool proficiencies to choose'],nVeh:['จำนวน Vehicle Proficiencies ที่เลือกได้','Vehicle proficiencies to choose']});
+/* field types: t text, a long text, n number, b yes/no */
+const SCHEMA={
+ races:{cols:['name','asi','speed','lang'],f:[['name','t'],['asi','t'],['nac','t'],['speed','n'],['bhp','t'],['res','a'],['lang','t'],['nat','t'],['prof','t'],['other','a']]},
+ classes:{cols:['name','hd','spellType','subs'],f:[['name','t'],['hd','t'],['alt','t'],['init','t'],['bhp','t'],['saves','a'],['first','t'],['multi','t'],['spellType','t'],['spellAb','t'],['speedInc','t']]},
+ weapons:{cols:['name','die','dtype','pcat','range'],f:[['name','t'],['die','t'],['dtype','t'],['pcat','t'],['range','t'],['monk','b'],['ench','t'],['bdie','t'],['btype','t'],['abil','t'],['props','t'],['apply','b']]},
+ armor:{cols:['name','ac','acat','maxdex'],f:[['name','t'],['ac','n'],['maxdex','t'],['acat','t'],['str','t'],['stealth','t'],['ench','t'],['pb','t'],['skills','t'],['saves','t'],['props','t']]},
+ alignments:{cols:['name'],f:[['name','t']]},
+ backgrounds:{cols:['name','nLang','nTool','nVeh','sk'],f:[['name','t'],['nLang','n'],['nTool','n'],['nVeh','n'],['equip','a']]},
+ languages:{cols:['name'],f:[['name','t']]},
+ tools:{cols:['name'],f:[['name','t']]},
+ vehicles:{cols:['name'],f:[['name','t']]}};
+Object.assign(FL,{sk:['Skill Proficiencies ที่ได้','Skill proficiencies granted'],equip:['อุปกรณ์เริ่มต้น (หนึ่งรายการต่อบรรทัด เช่น 2x Torch)','Starting equipment (one item per line, e.g. 2x Torch)']});
+FL.saves=['Saving throw และทักษะอาชีพ','Saving throws and class skills']; /* class saves; armor uses the same key with its own label below */
+const flFor=(cat,k)=>cat==='armor'&&k==='saves'?(lang==='th'?'โบนัส Saves':'Saves bonus'):fl(k);
+const usageKey={races:'race',classes:'cls',alignments:'align',backgrounds:'bg'};
+const pickKey={languages:'lang',tools:'tool',vehicles:'veh'};
+const usage=(c,it)=>usageKey[c]?[...pcs,...npcs].filter(r=>r[usageKey[c]]===it.name).length:pickKey[c]?[...pcs,...npcs].filter(r=>(r.pick&&r.pick[pickKey[c]]||[]).includes(it.name)).length:0;
+function blankItem(c){const o={id:uid()};SCHEMA[c].f.forEach(([k,ty])=>o[k]=ty==='b'?0:(ty==='n'&&/^n[A-Z]/.test(k)?0:''));if(c==='classes'){o.subs=[];o.feats=[]}if(c==='backgrounds'){o.sk=[];o.feats=[]}return o}
+const cell=v=>{const s=String(v??'').replace(/\s+/g,' ').trim();return s?esc(s.length>60?s.slice(0,57)+'…':s):'<span class="muted">—</span>'};
+function renderData(){
+  if(dedit)return renderDataEditor();
+  const sc=SCHEMA[dataTab],L=CAT[dataTab];
+  const tabs=Object.keys(SCHEMA).map(k=>`<button role="tab" data-act="dtab" data-v="${k}" aria-selected="${k===dataTab}">${t(k)} <span class="cnt">${CAT[k].length}</span></button>`).join('');
+  const body=L.length?`<div class="scroll"><table><thead><tr>${sc.cols.map(c=>`<th>${flFor(dataTab,c)}</th>`).join('')}<th></th></tr></thead><tbody>
+   ${L.map(r=>{const n=usage(dataTab,r);return`<tr>${sc.cols.map(c=>c==='subs'?`<td>${r.subs.length?esc(r.subs.map(s=>s.name).join(', ')):'<span class="muted">'+t('noSub')+'</span>'}</td>`:c==='name'?`<td><b>${cell(r.name)}</b></td>`:c==='sk'?`<td>${(r.sk||[]).length?esc(r.sk.map(skName).join(', ')):'<span class="muted">—</span>'}</td>`:`<td>${cell(r[c])}</td>`).join('')}
+   <td><div class="acts"><button class="btn small" data-act="dedit" data-id="${r.id}">${t('edit')}</button><button class="btn small danger" data-act="ddel" data-id="${r.id}">${dataArm===r.id?(n?t('delInUse').replace('{n}',n):t('delSure')):t('del')}</button></div></td></tr>`}).join('')}
+   </tbody></table></div>`:`<div class="empty"><div>${t('noRows')}</div></div>`;
+  return head(t('data'),t('dataSub'),`<button class="btn primary" data-act="dnew">+ ${t('addItem')}</button>`)
+   +`<div class="tabs2" role="tablist">${tabs}</div><section class="panel">${body}<div class="bar"><span class="note">${t('dataNote')}</span><button class="btn small" data-act="dreset">${dataArm==='reset'?t('resetSure'):t('resetDefaults')}</button></div></section>`;
+}
+function renderDataEditor(){
+  const d=dedit.draft,c=dedit.cat,sc=SCHEMA[c];
+  const fields=sc.f.map(([k,ty])=>{
+    const lab=flFor(c,k),id='c_'+k;
+    if(ty==='a')return`<div class="field full"><label for="${id}">${lab}</label><textarea id="${id}" data-cf="${k}">${esc(d[k])}</textarea></div>`;
+    if(ty==='b')return`<div class="field"><label for="${id}">${lab}</label><select id="${id}" data-cf="${k}"><option value="0" ${d[k]?'':'selected'}>${t('no')}</option><option value="1" ${d[k]?'selected':''}>${t('yes')}</option></select></div>`;
+    return`<div class="field"><label for="${id}">${lab}</label><input id="${id}" data-cf="${k}" type="${ty==='n'?'number':'text'}" ${/^n[A-Z]/.test(k)?'min="0" max="10" ':''}value="${esc(d[k])}"></div>`}).join('');
+  const subs=c==='classes'?`<section class="panel"><div class="ph"><div><h2>${t('subs')||fl('subs')}</h2><div class="note">${t('subHint')}</div></div><button class="btn small" data-act="subadd">${t('subAdd')}</button></div>
+   <div class="subs">${d.subs.length?d.subs.map((s,i)=>`<div class="subrow"><div class="field"><label for="s_n${i}">${t('name')||fl('name')}</label><input id="s_n${i}" data-sf="name" data-si="${i}" value="${esc(s.name)}"></div>
+     <div class="field"><label for="s_a${i}">${fl('alt')}</label><input id="s_a${i}" data-sf="alt" data-si="${i}" value="${esc(s.alt)}"></div>
+     <div class="field"><label for="s_b${i}">${fl('bhp')}</label><input id="s_b${i}" data-sf="bhp" data-si="${i}" value="${esc(s.bhp)}"></div>
+     <div class="field"><label for="s_p${i}">${fl('multi')}</label><input id="s_p${i}" data-sf="prof" data-si="${i}" value="${esc(s.prof)}"></div>
+     <button class="btn small danger" data-act="subdel" data-i="${i}">${t('subRemove')}</button></div>`).join(''):`<div class="empty" style="padding:18px">${t('noSub')}</div>`}</div></section>`:'';
+  const skSec=c==='backgrounds'?`<section class="panel"><div class="ph"><div><h2>${fl('sk')}</h2><div class="note">${t('skHint')}</div></div></div><div class="chkgrid">${SKILLS.map(([k,n,a])=>`<label class="chk"><input type="checkbox" data-bgs="${k}" ${(d.sk||[]).includes(k)?'checked':''}> ${n} <span class="pa">${a.toUpperCase()}</span></label>`).join('')}</div></section>`:'';
+  const featSec=(c==='classes'||c==='backgrounds')?`<section class="panel"><div class="ph"><div><h2>${t('featTitle')}</h2><div class="note">${t(c==='classes'?'featHintC':'featHintB')}</div></div><button class="btn small" data-act="ftadd">${t('featAdd')}</button></div>
+   <div class="subs">${(d.feats||[]).length?d.feats.map((f,i)=>`<div class="featrow ${c==='classes'?'withlvl':''}"><div class="field"><label for="f_n${i}">${t('featName')}</label><input id="f_n${i}" data-ftf="name" data-fti="${i}" value="${esc(f.name)}"></div>${c==='classes'?`<div class="field"><label for="f_l${i}">${t('featLvl')}</label><input id="f_l${i}" type="number" min="1" max="20" data-ftf="lvl" data-fti="${i}" value="${esc(f.lvl||1)}"></div>`:''}<button class="btn small danger" data-act="ftdel" data-i="${i}">${t('subRemove')}</button><div class="field full"><label for="f_d${i}">${t('featDesc')}</label><textarea id="f_d${i}" data-ftf="desc" data-fti="${i}">${esc(f.desc)}</textarea></div></div>`).join(''):`<div class="empty" style="padding:18px">${t('featNone')}</div>`}</div></section>`:'';
+  return`${head(esc(d.name)||t('addItem'),t(c),`<button class="btn" data-act="dback">← ${t('back')}</button>`)}
+   <section class="panel"><div class="grid wide">${fields}</div></section>${skSec}${subs}${featSec}
+   <div class="bar" style="padding:0"><div>${dedit.isNew?'':`<button class="btn danger" data-act="ddel-edit">${dataArm===d.id?(usage(c,d)?t('delInUse').replace('{n}',usage(c,d)):t('delSure')):t('del')}</button>`}</div>
+   <div style="display:flex;gap:12px;align-items:center"><span class="err" role="alert">${esc(dataErr)}</span><button class="btn primary" data-act="dsave">${t('save')}</button></div></div>`;
+}
+function cascade(c,old,d){
+  if(pickKey[c]){if(old.name!==d.name){let c2=false;[...pcs,...npcs].forEach(r=>{const a=r.pick&&r.pick[pickKey[c]];if(a)a.forEach((x,i)=>{if(x===old.name){a[i]=d.name;c2=true}})});if(c2){commit('pc');commit('npc')}}return}
+  const key=usageKey[c];if(!key)return;let ch=false;
+  [...pcs,...npcs].forEach(r=>{if(old.name!==d.name&&r[key]===old.name){r[key]=d.name;ch=true}});
+  if(c==='classes')(old.subs||[]).forEach(os=>{const ns=d.subs.find(s=>s.id===os.id);
+    if(ns&&ns.name!==os.name)[...pcs,...npcs].forEach(r=>{if(r.cls===d.name&&r.sub===os.name){r.sub=ns.name;ch=true}})});
+  if(ch){commit('pc');commit('npc')}
+}
+function saveData(){
+  const d=dedit.draft,c=dedit.cat,L=CAT[c];
+  d.name=String(d.name||'').trim();
+  if(c==='backgrounds')['nLang','nTool','nVeh'].forEach(k=>d[k]=Math.max(0,Math.min(10,Math.round(Number(d[k])||0))));
+  if(!d.name){dataErr=t('errName');return render()}
+  if(L.some(x=>x.id!==d.id&&x.name.toLowerCase()===d.name.toLowerCase())){dataErr=t('errDup');return render()}
+  if(c==='classes'||c==='backgrounds')d.feats=(d.feats||[]).map(f=>({...f,name:String(f.name||'').trim(),lvl:Math.max(1,Math.min(20,Math.round(Number(f.lvl)||1)))})).filter(f=>f.name||String(f.desc||'').trim());
+  if(c==='classes'){
+    d.subs=d.subs.map(s=>({...s,name:s.name.trim()})).filter(s=>s.name);
+    if(new Set(d.subs.map(s=>s.name.toLowerCase())).size!==d.subs.length){dataErr=t('errSubDup');return render()}
+  }
+  const i=L.findIndex(x=>x.id===d.id);
+  if(i>=0){cascade(c,L[i],d);L[i]=d}else L.push(d);
+  put('dd_cat',CAT);dedit=null;dataErr='';render();
+}
+
+/* ---------- adventure: rooms with a player rail that fits one screen ---------- */
+const MAXSEATS=12;
+const saveRooms=()=>put('dd_rooms',rooms);
+const inStage=()=>view==='adventure'&&!roomEdit&&rooms.some(r=>r.id===roomOpen);
+function renderAdventure(){
+  if(roomEdit)return renderRoomForm();
+  const rm=rooms.find(r=>r.id===roomOpen);
+  if(rm)return renderStage(rm);
+  const body=rooms.length?`<div class="scroll"><table><thead><tr><th>${t('colRoom')}</th><th class="num">${t('colSeats')}</th><th></th></tr></thead><tbody>${rooms.map(r=>`<tr><td><b>${esc(r.name)}</b></td><td class="num">${r.assign.filter(Boolean).length} / ${r.seats}</td>
+   <td><div class="acts"><button class="btn small primary" data-act="ropen" data-id="${r.id}">${t('open')}</button><button class="btn small" data-act="redit" data-id="${r.id}">${t('edit')}</button><button class="btn small danger" data-act="rdel" data-id="${r.id}">${dataArm==='room:'+r.id?t('delSure'):t('del')}</button></div></td></tr>`).join('')}</tbody></table></div>`
+   :`<div class="empty"><div>${t('noRooms')}</div><button class="btn primary" data-act="radd">+ ${t('createRoom')}</button></div>`;
+  return head(t('adventure'),t('advSub'),`<button class="btn primary" data-act="radd">+ ${t('createRoom')}</button>`)+`<section class="panel">${body}</section>`;
+}
+function renderRoomForm(){
+  const d=roomEdit.draft;
+  return head(roomEdit.isNew?t('createRoom'):esc(d.name),t('adventure'),`<button class="btn" data-act="rback">← ${t('back')}</button>`)+
+  `<section class="panel"><div class="grid wide"><div class="field"><label for="r_name">${t('roomName')}</label><input id="r_name" data-r="name" value="${esc(d.name)}"></div>
+   <div class="field"><label for="r_seats">${t('seats')}</label><input id="r_seats" data-r="seats" type="number" min="1" max="${MAXSEATS}" value="${esc(d.seats)}"><span class="note">${t('seatsHint')}</span></div></div>
+   <div class="bar"><span class="err" role="alert">${esc(roomErr)}</span><button class="btn primary" data-act="rsave">${t('save')}</button></div></section>`;
+}
+function renderStage(rm){
+  const n=rm.seats,used=new Set(rm.assign.filter(Boolean)),dens=n<=3?'d1':n<=6?'d2':'d3';
+  const tabs=`<button role="tab" class="gtab" aria-selected="${advGame==='dice'}" data-act="rgame" data-v="dice">${t('diceTitle')}</button><button role="tab" class="gtab" aria-selected="${advGame==='init'}" data-act="rgame" data-v="init">${t('iniTab')}</button>`+
+    t('ideas').map(i=>`<button class="gtab" disabled>${esc(i)}<span class="soon">${t('soon')}</span></button>`).join('');
+  const seats=Array.from({length:n},(_,i)=>{
+    const cid=rm.assign[i]||'',ch=pcs.find(c=>c.id===cid);
+    const opts=pcs.filter(c=>c.id===cid||!used.has(c.id)).map(c=>`<option value="${c.id}" ${c.id===cid?'selected':''}>${esc(c.name||'—')}</option>`).join('');
+    const who=ch&&ownerName(ch.owner);
+    return`<div class="seat ${ch?'filled':''}"><div class="av" aria-hidden="true">${ch?esc((ch.name||'?').trim().slice(0,1).toUpperCase()):i+1}</div>
+     <div class="seat-body"><select class="seat-pick" aria-label="${t('seat')} ${i+1}" data-seat="${i}"><option value="">${t('emptySeat')}</option>${opts}</select>
+     ${ch?`<div class="seat-line2">${esc(ch.race)} · ${esc(ch.cls)} ${ch.level}${who?' · '+esc(who):''}</div><div class="seat-stats"><span>HP ${curHp(ch)}/${ch.hp}${num(ch.hpTemp)?'+'+num(ch.hpTemp):''}</span><span>AC ${ch.ac}</span></div>`:''}</div></div>`}).join('');
+  return`<div class="stagebar"><button class="btn small" data-act="rclose">← ${t('leave')}</button><h1>${esc(rm.name)}</h1><div class="gtabs" role="tablist" aria-label="${t('minigamesBar')}">${tabs}</div></div>
+  <div class="stagebody"><section class="stagemain">${advGame==='dice'?dicePanel():advGame==='init'?iniPanel(rm):''}</section>
+  <aside class="rail" aria-label="${t('playersRail')}"><div class="rail-head"><span>${t('playersRail')}</span><span class="pill">${used.size} / ${n}</span></div><div class="rail-list ${dens}" style="--n:${n}">${seats}</div></aside></div>`;
+}
+
+/* ---------- initiative tracker ---------- */
+let iniErr='';
+const iniData=rm=>{if(!rm.init)rm.init={round:1,cur:null,list:[]};return rm.init};
+const iniChar=e=>{if(!e.ref)return null;const[k,i]=e.ref.split(':');return(k==='pc'?pcs:npcs).find(c=>c.id===i)||null};
+const iniModOf=e=>{const c=iniChar(e);return c?mod(c.abil.dex):Math.round(num(e.mod))};
+const iniName=e=>{const c=iniChar(e);return c?(c.name||'—'):e.name};
+function iniSort(I){
+  const ix=new Map(I.list.map((e,i)=>[e.id,i])),val=e=>e.init==null?-Infinity:e.init;
+  I.list.sort((a,b)=>val(a)!==val(b)?val(b)-val(a):iniModOf(a)!==iniModOf(b)?iniModOf(b)-iniModOf(a):ix.get(a.id)-ix.get(b.id));
+}
+const iniActive=I=>I.list.filter(e=>e.init!=null);
+function iniRollOne(e){e.init=Math.floor(Math.random()*20)+1+iniModOf(e)}
+function iniPanel(rm){
+  const I=iniData(rm),act=iniActive(I),started=I.cur&&act.some(e=>e.id===I.cur),ci=started?act.findIndex(e=>e.id===I.cur):-1,nextId=started&&act.length>1?act[(ci+1)%act.length].id:null,doneIds=new Set(started?act.slice(0,ci).map(e=>e.id):[]);
+  const gm=npcs.map(c=>`<option value="${c.id}">${esc(c.name||'—')}</option>`).join('');
+  const rows=I.list.map(e=>{
+    const c=iniChar(e),now=started&&e.id===I.cur,nxt=e.id===nextId,dn=doneIds.has(e.id),kind=e.ref&&e.ref.startsWith('pc:')?t('iniPc'):e.ref?t('iniGm'):t('iniFoe');
+    const hp=c?`${curHp(c)} / ${c.hp}${num(c.hpTemp)?' +'+num(c.hpTemp):''}`:`<input type="number" min="0" aria-label="${t('iniHpF')}" data-ini="hp" data-id="${e.id}" value="${e.hp==null?'':esc(e.hp)}" placeholder="HP">`;
+    return`<li class="ini-row ${now?'now':nxt?'next':dn?'done':''}" ${now?'aria-current="true"':''}><span class="ini-mark" aria-hidden="true">${now?'▶':nxt?'→':dn?'✓':''}</span>
+     <div class="ini-name"><b>${esc(iniName(e))}</b><small>${kind} · ${t('iniMod')} ${sgn(iniModOf(e))}${now?' · '+t('iniNow'):nxt?' · '+t('iniNextTag'):dn?' · '+t('iniDoneTag'):''}</small></div>
+     <input type="number" aria-label="${t('iniInit')}: ${esc(iniName(e))}" data-ini="init" data-id="${e.id}" value="${e.init==null?'':e.init}" placeholder="${t('iniNoRoll')}">
+     <span class="ini-hp">${t('iniHpF')} ${hp}</span>
+     <div class="ini-act"><button class="btn small" data-act="ini-roll" data-id="${e.id}">${t('iniRoll')}</button><button class="btn small danger" data-act="ini-del" data-id="${e.id}" aria-label="${t('iniDel')} ${esc(iniName(e))}">✕</button></div></li>`}).join('');
+  return`<section class="panel ini"><div class="ph"><h2>${t('iniTab')}</h2></div>
+   <div class="ini-top"><span class="ini-round">${t('iniRound')} ${I.round}</span>
+    <button class="btn" data-act="ini-prev" ${act.length?'':'disabled'}>← ${t('iniPrev')}</button>
+    <button class="btn primary" data-act="ini-next" ${act.length?'':'disabled'}>${started?t('iniNext')+' →':t('iniStart')}</button>
+    <button class="btn danger" data-act="ini-clear" ${I.list.length?'':'disabled'}>${dataArm==='iniclear'?t('iniSureClear'):t('iniClear')}</button></div>
+   <div class="ini-add">
+    <button class="btn" data-act="ini-addseat">${t('iniAddSeat')}</button>
+    <div class="field"><label for="ini_gm">${t('iniPickGm')}</label><select id="ini_gm"><option value="">—</option>${gm}</select></div>
+    <button class="btn" data-act="ini-addgm">${t('iniAddGm')}</button>
+    <button class="btn" data-act="ini-rollall">${t('iniRollAll')}</button></div>
+   <div class="ini-add"><span class="note" style="width:100%">${t('iniCustom')}</span>
+    <div class="field"><label for="ini_name">${t('iniName')}</label><input id="ini_name" placeholder="Goblin 1"></div>
+    <div class="field sm"><label for="ini_mod">${t('iniMod')}</label><input id="ini_mod" type="number" value="0"></div>
+    <div class="field sm"><label for="ini_hp">${t('iniHpF')}</label><input id="ini_hp" type="number" min="0"></div>
+    <button class="btn" data-act="ini-addcustom">${t('iniAdd')}</button><span class="err" role="alert">${esc(iniErr)}</span></div>
+   ${started?`<div class="ini-legend"><span><i style="background:var(--turn-now)"></i>${t('iniNow')}</span><span><i style="background:var(--turn-next)"></i>${t('iniNextTag')}</span><span><i style="background:var(--turn-done)"></i>${t('iniDoneTag')}</span></div>`:''}${I.list.length?`<ul class="ini-list">${rows}</ul><p class="note" style="margin:0;padding:10px 16px 14px">${t('iniTies')} · ${t('iniHpNote')}</p>`:`<div class="empty"><div>${t('iniEmpty')}</div></div>`}</section>`;
+}
+function iniAction(a,id){
+  const rm=rooms.find(r=>r.id===roomOpen);if(!rm)return;const I=iniData(rm);iniErr='';
+  const has=ref=>I.list.some(e=>e.ref===ref),add=o=>I.list.push(Object.assign({id:uid(),name:'',ref:'',init:null,mod:0,hp:null},o));
+  if(a!=='ini-clear')dataArm=null;
+  if(a==='ini-addseat'){rm.assign.filter(Boolean).forEach(cid=>{if(!has('pc:'+cid))add({ref:'pc:'+cid})})}
+  else if(a==='ini-addgm'){const g=document.getElementById('ini_gm').value;if(g&&!has('npc:'+g))add({ref:'npc:'+g})}
+  else if(a==='ini-addcustom'){const n=document.getElementById('ini_name').value.trim();if(!n){iniErr=t('iniNeedName');render();return}
+    const hpv=document.getElementById('ini_hp').value;add({name:n,mod:Math.round(num(document.getElementById('ini_mod').value)),hp:hpv===''?null:Math.max(0,Math.round(num(hpv)))})}
+  else if(a==='ini-rollall'){I.list.forEach(e=>{if(e.init==null)iniRollOne(e)})}
+  else if(a==='ini-roll'){const e=I.list.find(x=>x.id===id);if(e)iniRollOne(e)}
+  else if(a==='ini-del'){
+    const act=iniActive(I),i=act.findIndex(x=>x.id===id);
+    if(I.cur===id){const nx=act[i+1]||act[0];I.cur=nx&&nx.id!==id?nx.id:null}
+    I.list=I.list.filter(x=>x.id!==id)}
+  else if(a==='ini-clear'){if(dataArm!=='iniclear'){dataArm='iniclear';render();return}dataArm=null;I.list=[];I.cur=null;I.round=1}
+  else if(a==='ini-next'||a==='ini-prev'){
+    const act=iniActive(I);if(!act.length)return;const i=act.findIndex(x=>x.id===I.cur);
+    if(i<0){I.cur=act[0].id;I.round=Math.max(1,I.round)}
+    else if(a==='ini-next'){if(i+1>=act.length){I.cur=act[0].id;I.round++}else I.cur=act[i+1].id}
+    else{if(i===0){if(I.round>1){I.round--;I.cur=act[act.length-1].id}}else I.cur=act[i-1].id}}
+  iniSort(I);saveRooms();render();
+}
+function iniChange(el){
+  const rm=rooms.find(r=>r.id===roomOpen);if(!rm)return;const I=iniData(rm),e=I.list.find(x=>x.id===el.dataset.id);if(!e)return;
+  if(el.dataset.ini==='init')e.init=el.value===''?null:Math.round(num(el.value));
+  else if(el.dataset.ini==='hp')e.hp=el.value===''?null:Math.max(0,Math.round(num(el.value)));
+  iniSort(I);saveRooms();render();
+}
+
+/* ---------- minigames ---------- */
+function dicePanel(){
+  const sides=[4,6,8,10,12,20,100];
+  return`  <section class="panel dicepanel"><div class="ph"><h2>${t('diceTitle')}</h2></div>
+   <div class="dice" role="group" aria-label="${t('diceTitle')}">${sides.map(s=>`<button data-act="side" data-v="${s}" aria-pressed="${diceSides===s}">d${s}</button>`).join('')}</div>
+   <div class="roll-ctl">
+    <div class="field"><label for="d_count">${t('count')}</label><input id="d_count" type="number" min="1" max="20" value="${diceCount}"></div>
+    <div class="field"><label for="d_mod">${t('mod')}</label><input id="d_mod" type="number" min="-30" max="30" value="${diceMod}"></div>
+    <div class="field" style="width:150px"><label for="d_mode">${t('mode')}</label><select id="d_mode"><option value="normal" ${diceMode==='normal'?'selected':''}>${t('normal')}</option><option value="adv" ${diceMode==='adv'?'selected':''}>${t('adv')}</option><option value="dis" ${diceMode==='dis'?'selected':''}>${t('dis')}</option></select></div>
+    <button class="btn primary" data-act="roll" style="min-height:44px">${t('roll')}</button>
+   </div>
+   <div class="result" aria-live="polite">${resultHtml()}</div>
+   ${rolls.length?`<div class="ph" style="border-top:1px solid var(--line);border-bottom:0"><h2 style="font-size:1rem">${t('history')}</h2></div><ul class="hist">${rolls.map(x=>`<li><span>${esc(x.label)}</span><b>${x.tossed!=null?`<s class="old">${x.tossed}</s> `:''}${x.total}</b></li>`).join('')}</ul>`:''}
+  </section>`;
+}
+function renderGames(){
+  return head(t('games'),t('gamesSub'))+`<div class="games">${dicePanel()}
+  <section class="panel"><div class="ph"><h2>${t('ideasTitle')}</h2></div><ol class="plan">${t('ideas').map(i=>`<li>${esc(i)}</li>`).join('')}</ol></section></div>`;
+}
+function resultHtml(){
+  const r=lastRoll;if(!r)return`<div class="muted">${t('rollHint')}</div>`;
+  const modTxt=r.mod?` ${sgn(r.mod)}`:'';
+  if(r.rolls.length===1)return`<div class="big">${r.total}</div><div class="det">${r.n}d${r.sides} [${r.rolls[0].vals.join(', ')}]${modTxt}</div>`;
+  const cards=r.rolls.map(x=>`<div class="rc ${x.kept?'kept':'tossed'}"><span class="tag">${x.kept?t('kept'):t('tossed')}</span>${x.kept?`<b class="num">${x.sum}</b>`:`<s class="num">${x.sum}</s>`}${r.n>1?`<span class="det">[${x.vals.join(', ')}]</span>`:''}</div>`).join('');
+  return`<div class="pair">${cards}</div><div class="big">${r.total}</div><div class="det">${r.mode==='adv'?t('adv'):t('dis')} · ${r.rolls.find(x=>x.kept).sum}${modTxt}</div>`;
+}
+function doRoll(){
+  const n=Math.min(20,Math.max(1,Number($('#d_count').value)||1)),m=Number($('#d_mod').value)||0;
+  diceCount=n;diceMod=m;diceMode=$('#d_mode').value;
+  const one=()=>1+Math.floor(Math.random()*diceSides);
+  const batch=()=>{const vals=Array.from({length:n},one);return{vals,sum:vals.reduce((x,y)=>x+y,0)}};
+  const A=batch(),res={n,sides:diceSides,mod:m,mode:diceMode};
+  if(diceMode==='normal'){res.rolls=[{...A,kept:true}];res.base=A.sum}
+  else{
+    const B=batch(),keepA=diceMode==='adv'?A.sum>=B.sum:A.sum<=B.sum;
+    res.rolls=[{...A,kept:keepA},{...B,kept:!keepA}];res.base=(keepA?A:B).sum;
+  }
+  res.total=res.base+m;lastRoll=res;
+  const tossed=res.rolls.length>1?res.rolls.find(x=>!x.kept).sum+m:null;
+  const label=`${n}d${diceSides}${m?sgn(m):''}${diceMode==='normal'?'':' '+(diceMode==='adv'?'adv':'dis')}`;
+  rolls.unshift({label,total:res.total,tossed});rolls=rolls.slice(0,8);render();
+}
+
+/* ---------- site settings (admin) ---------- */
+const COLORS=[['bg','cBg','--bg'],['surface','cSurface','--surface'],['ink','cInk','--ink'],['accent','cAccent','--accent'],['side','cSide','--side'],['fxc','cFx','--fx-color'],['tnow','cTurnNow','--turn-now'],['tnext','cTurnNext','--turn-next'],['tdone','cTurnDone','--turn-done']];
+const hexOf=v=>/^#[0-9a-f]{6}$/i.test(v)?v.toLowerCase():'#000000';
+function mediaBlock(k,label){
+  const d=siteDraft,has=!!d[k];
+  return`<div class="media"><div class="lbl">${label}</div>
+   <div class="thumb ${k}" ${has?`style="background-image:url('${esc(d[k])}')"`:''}>${has?'':`<span class="muted">${t('sNoImg')}</span>`}</div>
+   <div class="acts" style="justify-content:flex-start"><label class="btn small">${t('sUpload')}<input class="sr" type="file" accept="image/*" data-img="${k}" aria-label="${label}"></label>
+   ${has?`<button class="btn small" data-act="simg-rm" data-k="${k}">${t('sRemove')}</button>`:''}</div></div>`;
+}
+function renderSite(){
+  const d=siteDraft||(siteDraft=clone(SITE)),cs=getComputedStyle(document.documentElement);
+  const rows=COLORS.map(([k,lab,v])=>{const hex=hexOf(d[k]||cs.getPropertyValue(v).trim());
+    return`<div class="crow"><label for="k_${k}">${t(lab)}</label><input type="color" id="k_${k}" data-sk="${k}" value="${hex}"><code id="hx_${k}">${hex}</code>
+     ${d[k]?`<button class="btn small" data-act="sc-reset" data-k="${k}">${t('sDefault')}</button>`:`<span class="pill">${t('sDefault')}</span>`}</div>`}).join('');
+  const radius=d.radius===undefined||d.radius===''||d.radius===null?parseInt(cs.getPropertyValue('--r'))||8:d.radius;
+  return head(t('site'),t('siteSub'))+`
+  <section class="panel"><div class="ph"><h2>${t('sIdentity')}</h2></div><div class="grid wide">
+    <div class="field"><label for="s_name">${t('sName')}</label><input id="s_name" data-s="name" value="${esc(d.name||'')}" placeholder="${esc(t('brand'))}"></div>
+    <div class="field"><label for="s_tag">${t('sTagline')}</label><input id="s_tag" data-s="tagline" value="${esc(d.tagline||'')}"></div></div>
+   <div class="medias">${mediaBlock('logo',t('sLogo'))}${mediaBlock('cover',t('sCover'))}</div>
+   <div class="err" style="padding:0 16px 12px">${esc(siteErr)}</div></section>
+  <section class="panel"><div class="ph"><h2>${t('sColors')}</h2><span class="note">${t('sNote')}</span></div><div class="crows">${rows}</div></section>
+  <section class="panel"><div class="ph"><h2>${t('sFx')}</h2></div><div class="grid wide">
+    <div class="field"><label for="s_fx">${t('fxStyle')}</label><select id="s_fx" data-s="fx">${['lift','glow','shine','bounce','none'].map(o=>`<option value="${o}" ${(d.fx||'lift')===o?'selected':''}>${t('fx_'+o)}</option>`).join('')}</select></div>
+    <div class="field"><label for="s_fxms">${t('fxSpeed')}: <span id="v_fxms">${d.fxms||160}</span> ms</label><input id="s_fxms" data-s="fxms" type="range" min="60" max="500" step="20" value="${d.fxms||160}" style="padding:0"></div>
+    <div class="field"><label for="s_fxamt">${t('fxAmt')}: <span id="v_fxamt">${d.fxamt??3}</span></label><input id="s_fxamt" data-s="fxamt" type="range" min="0" max="10" step="1" value="${d.fxamt??3}" style="padding:0"></div></div>
+   <div class="fxprev"><span class="note">${t('fxPreview')}</span><button class="btn primary" type="button">${t('save')}</button><button class="btn" type="button">${t('edit')}</button><button class="btn small danger" type="button">${t('del')}</button></div></section>
+  <section class="panel"><div class="ph"><h2>${t('sShape')}</h2></div><div class="grid wide">
+    <div class="field"><label for="s_radius">${t('sRadius')}: <span id="rv">${radius}</span>px</label><input id="s_radius" data-s="radius" type="range" min="0" max="20" step="1" value="${radius}" style="padding:0"></div>
+    <div class="field"><label for="s_font">${t('sFont')}</label><select id="s_font" data-s="font"><option value="" ${d.font?'':'selected'}>${t('sDefault')} (Alegreya)</option>${Object.keys(FONTS).filter(f=>f!=='Alegreya').map(f=>`<option value="${f}" ${d.font===f?'selected':''}>${f==='Plex'?'IBM Plex Mono':f}</option>`).join('')}</select></div></div></section>
+  <div class="bar" style="padding:0"><div style="display:flex;gap:10px;flex-wrap:wrap"><button class="btn" data-act="srevert">${t('sRevert')}</button><button class="btn danger" data-act="sresetall">${dataArm==='siteReset'?t('sResetSure'):t('sResetAll')}</button></div>
+   <div style="display:flex;gap:12px;align-items:center"><span class="note" role="status">${esc(siteMsg)}</span><button class="btn primary" data-act="ssave">${t('sSave')}</button></div></div>${bkPanel()}`;
+}
+/* ---------- backup and import ---------- */
+let bkShow=false,bkText='',bkMsg='';
+const bkBuild=()=>JSON.stringify({app:'acacia-watch',version:1,exported:new Date().toISOString(),data:{users:REMOTE?users.map(u=>({...u,salt:'',hash:''})):users,pcs,npcs,cat:CAT,site:SITE,rooms}});
+const bkOkArr=(a,f)=>Array.isArray(a)&&a.every(x=>x&&typeof x==='object'&&f(x));
+function bkApply(text){
+  let o;try{o=JSON.parse(text)}catch(e){return{err:t('bkBad')}}
+  if(!o||(o.app!=='acacia-watch'&&o.app!=='dungeon-desk')||!o.data||typeof o.data!=='object')return{err:t('bkBadApp')};
+  const d=o.data,str=v=>typeof v==='string';
+  if(!bkOkArr(d.users,u=>str(u.id)&&str(u.name)&&str(u.salt)&&str(u.hash)&&(u.role==='admin'||u.role==='player'))||!bkOkArr(d.pcs,c=>str(c.id)&&c.abil&&typeof c.abil==='object')||!bkOkArr(d.npcs,c=>str(c.id)&&c.abil&&typeof c.abil==='object')||!bkOkArr(d.rooms,r=>str(r.id)&&Array.isArray(r.assign))||!d.cat||typeof d.cat!=='object'||Array.isArray(d.cat)||!d.site||typeof d.site!=='object'||Array.isArray(d.site))return{err:t('bkBad')};
+  if(!d.users.some(u=>u.role==='admin'))return{err:t('bkNoAdmin')};
+  if(REMOTE)return api('POST','api/import',d).then(async()=>{applyBoot(await api('GET','api/boot'));siteDraft=clone(SITE);edit=null;dedit=null;roomOpen=null;roomEdit=null;return{ok:true}}).catch(()=>({err:t('netSaveFail')}));
+  users=d.users;pcs=d.pcs;npcs=d.npcs;CAT=d.cat;SITE=d.site;rooms=d.rooms;
+  normCat();siteDraft=clone(SITE);edit=null;dedit=null;roomOpen=null;roomEdit=null;
+  const ok=[put('dd_users',users),put('dd_pcs',pcs),put('dd_npcs',npcs),put('dd_cat',CAT),put('dd_site',SITE),put('dd_rooms',rooms)].every(Boolean);
+  return{ok};
+}
+async function bkAction(a){
+  if(a!=='bk-import')dataArm=null;
+  if(a==='bk-show'){bkShow=!bkShow;bkMsg='';render();return}
+  if(a==='bk-dl'){
+    const text=bkBuild(),name='acacia-watch-backup-'+new Date().toISOString().slice(0,10)+'.json';let done=false;
+    try{const dl=await claude.use('downloads');if(dl){await dl.save({filename:name,data:text});bkMsg=t('bkSaved');done=true}}
+    catch(e){if(e&&e.code==='declined'){render();return}}
+    if(!done){try{const u=URL.createObjectURL(new Blob([text],{type:'application/json'})),x=document.createElement('a');x.href=u;x.download=name;document.body.appendChild(x);x.click();x.remove();setTimeout(()=>URL.revokeObjectURL(u),4000);bkMsg=t('bkSaved')}catch(e){bkMsg=t('bkDlFail')}}
+    render();return}
+  if(a==='bk-copy'){
+    try{await navigator.clipboard.writeText(bkBuild());bkMsg=t('bkCopied');render()}
+    catch(e){bkShow=true;bkMsg=t('bkCopyManual');render();const el=document.getElementById('bk_out');if(el){el.focus();el.select()}}
+    return}
+  if(a==='bk-import'){
+    if(!bkText.trim()){bkMsg=t('bkEmpty');render();return}
+    if(dataArm!=='bkImport'){dataArm='bkImport';bkMsg='';render();return}
+    dataArm=null;const r=await bkApply(bkText);
+    if(r.err){bkMsg=r.err;render();return}
+    bkText='';bkMsg=r.ok?t('bkDone'):t('bkDoneTemp');
+    if(!me()){session=null;put('dd_session',null);authTab='signin';authErr=t('bkRelogin')}
+    render()}
+}
+function bkPanel(){
+  return`<section class="panel" style="margin-top:18px"><div class="ph"><h2>${t('bkTitle')}</h2><span class="note">${t('bkNote')}</span></div><div class="bkbody">
+   <div class="bkrow"><button class="btn primary" data-act="bk-dl">${t('bkDownload')}</button><button class="btn" data-act="bk-copy">${t('bkCopy')}</button><button class="btn" data-act="bk-show">${bkShow?t('bkHide'):t('bkShowText')}</button></div>
+   ${bkShow?`<textarea class="bktext" readonly id="bk_out" aria-label="${t('bkTitle')}">${esc(bkBuild())}</textarea>`:''}
+   <h3 style="margin:8px 0 0">${t('bkImport')}</h3><p class="note" style="margin:0">${t('bkImportNote')}</p>
+   <div class="bkrow"><input type="file" id="bk_file" data-bk="file" accept=".json,application/json"></div>
+   <textarea class="bktext" id="bk_in" data-bk="text" aria-label="${t('bkImport')}" placeholder="${t('bkPaste')}">${esc(bkText)}</textarea>
+   <div class="bkrow"><button class="btn danger" data-act="bk-import">${dataArm==='bkImport'?t('bkSure'):t('bkDoImport')}</button><span class="note" role="status">${esc(bkMsg)}</span></div></div></section>`;
+}
+let siteErr='';
+
+/* ---------- shell ---------- */
+const $=s=>document.querySelector(s);
+function render(){
+  document.documentElement.lang=lang;
+  applySite(curSite());
+  const root=$('#root');
+  root.innerHTML=me()?renderApp():renderLogin();
+}
+
+/* ---------- events ---------- */
+document.addEventListener('click',e=>{
+  const sb=e.target.closest('#authForm [type=submit]');if(sb){e.preventDefault();submitAuth(sb.form);return}
+  const ia=e.target.closest('[data-ita]');
+  if(ia&&edit){const d0=edit.draft;if(ia.dataset.ita==='add'){const it={id:uid(),name:'',qty:1,src:''};d0.items.push(it);refreshItems('it_n_'+it.id)}else{d0.items=d0.items.filter(x=>x.id!==ia.dataset.id);refreshItems()}return}
+  const wa=e.target.closest('[data-wa]');
+  if(wa&&edit){const d0=edit.draft;if(wa.dataset.wa==='add'){const v=document.getElementById('w_add').value;if(v){d0.weapons.push({id:uid(),ref:v,bonus:0});refreshWeapons()}}else{d0.weapons=d0.weapons.filter(x=>x.id!==wa.dataset.id);refreshWeapons()}return}
+  const ha=e.target.closest('[data-hpa]');
+  if(ha&&edit){hpAction(ha.dataset.hpa,ha.id);return}
+  const pt=e.target.closest('[data-pt]');
+  if(pt&&edit){const[kind,k]=pt.dataset.pt.split(':'),dd=edit.draft;dd.prof=dd.prof||{save:{},skill:{}};dd.prof[kind]=dd.prof[kind]||{};const cur=profLevel(dd,kind,k);let nx=(cur+1)%3;if(nx===0&&kind==='skill'&&bgSkills(dd).includes(k))nx=1;dd.prof[kind][k]=nx;refreshProf(pt.id);$('#derived').innerHTML=derived(dd);return}
+  const b=e.target.closest('[data-act]');if(!b)return;
+  const a=b.dataset.act,v=b.dataset.v,k=b.dataset.k,id=b.dataset.id;
+  if(a.startsWith('bk-')){bkAction(a);return}
+  if(a.startsWith('ini-')){iniAction(a,id);return}
+  if(a==='lang'){lang=v;put('dd_lang',lang);render()}
+  else if(a==='tab'){authTab=v;authErr='';render()}
+  else if(a==='logout'){if(REMOTE){api('POST','api/logout',{}).catch(()=>{});users=[];pcs=[];npcs=[];rooms=[];netBar('')}session=null;put('dd_session',null);edit=null;dedit=null;siteDraft=null;roomOpen=null;roomEdit=null;authTab='signin';render()}
+  else if(a==='nav'){view=v;edit=null;dedit=null;delArm=null;dataArm=null;flashMsg='';siteDraft=v==='site'?clone(SITE):null;siteMsg='';siteErr='';roomOpen=null;roomEdit=null;location.hash=v;render();pull()}
+  else if(a==='new'){edit={kind:k,draft:blank(k),isNew:true};delArm=null;render()}
+  else if(a==='edit'){const r=list(k).find(x=>x.id===id);edit={kind:k,draft:JSON.parse(JSON.stringify(r)),isNew:false};delArm=null;render()}
+  else if(a==='back'){edit=null;delArm=null;render()}
+  else if(a==='save'){
+    const L=list(edit.kind),d=edit.draft,i=L.findIndex(x=>x.id===d.id);
+    if(!d.name.trim())d.name=lang==='th'?'ไม่มีชื่อ':'Unnamed';
+    d.ac=effAc(d);d.hp=effMax(d);if(d.hpCur!=null)d.hpCur=curOf(d,d.hp);
+    if(i>=0)L[i]=d;else L.push(d);commit(edit.kind);edit=null;render()}
+  else if(a==='del'||a==='del-edit'){
+    const kind=a==='del'?k:edit.kind,rid=a==='del'?id:edit.draft.id;
+    if(delArm!==rid){delArm=rid;render();return}
+    const L=list(kind),i=L.findIndex(x=>x.id===rid);if(i>=0)L.splice(i,1);commit(kind);delArm=null;edit=null;render()}
+  else if(a==='pwset'){const inp=document.getElementById('pw_'+id),pw=inp?inp.value:'';if(pw.length<6){flashMsg=t('pwShort');render();return}
+    api('POST','api/users/'+id+'/password',{pass:pw}).then(()=>{flashMsg=t('pwDone');render()}).catch(e=>{flashMsg=t('netSaveFail');render()})}
+  else if(a==='userdel'){if(dataArm!=='udel_'+id){dataArm='udel_'+id;render();return}dataArm=null;
+    api('POST','api/users/'+id+'/delete',{}).then(()=>{users=users.filter(x=>x.id!==id);pcs.forEach(r=>{if(r.owner===id)r.owner=''});resetSynced();flashMsg='';render()}).catch(e=>{flashMsg=e.code==='last_admin'?t('lastAdmin'):t('netSaveFail');render()})}
+  else if(a==='sample'){sample(k).forEach(x=>list(k).push(x));commit(k);render()}
+  else if(a==='radd'){roomEdit={draft:{id:uid(),name:'',seats:4,assign:[]},isNew:true};roomErr='';render()}
+  else if(a==='redit'){roomEdit={draft:clone(rooms.find(x=>x.id===id)),isNew:false};roomErr='';render()}
+  else if(a==='rback'){roomEdit=null;roomErr='';render()}
+  else if(a==='rsave'){
+    const d=roomEdit.draft,n=Math.round(Number(d.seats));
+    if(!(n>=1&&n<=MAXSEATS)){roomErr=t('errSeats');return render()}
+    d.seats=n;d.name=String(d.name||'').trim()||t('roomDefault')+' '+(rooms.length+(roomEdit.isNew?1:0));
+    d.assign=Array.from({length:n},(_,i)=>d.assign[i]||'');
+    const i=rooms.findIndex(x=>x.id===d.id);if(i>=0)rooms[i]=d;else rooms.push(d);
+    saveRooms();roomEdit=null;roomErr='';render()}
+  else if(a==='rdel'){if(dataArm!=='room:'+id){dataArm='room:'+id;render();return}rooms=rooms.filter(x=>x.id!==id);saveRooms();dataArm=null;render()}
+  else if(a==='ropen'){roomOpen=id;render()}
+  else if(a==='rclose'){roomOpen=null;render()}
+  else if(a==='rgame'){advGame=v;render()}
+  else if(a==='simg-rm'){siteDraft[k]='';siteErr='';render()}
+  else if(a==='sc-reset'){delete siteDraft[k];render()}
+  else if(a==='srevert'){siteDraft=clone(SITE);siteMsg='';siteErr='';render()}
+  else if(a==='ssave'){SITE=clone(siteDraft);for(const x in SITE)if(SITE[x]===''||SITE[x]===undefined)delete SITE[x];siteMsg=put('dd_site',SITE)?t('sSaved'):t('sSavedTemp');siteDraft=clone(SITE);render()}
+  else if(a==='sresetall'){if(dataArm!=='siteReset'){dataArm='siteReset';render();return}SITE={};siteDraft={};put('dd_site',SITE);dataArm=null;siteMsg=t('sSaved');render()}
+  else if(a==='dtab'){dataTab=v;dataArm=null;render()}
+  else if(a==='dnew'){dedit={cat:dataTab,draft:blankItem(dataTab),isNew:true};dataErr='';dataArm=null;render()}
+  else if(a==='dedit'){dedit={cat:dataTab,draft:clone(CAT[dataTab].find(x=>x.id===id)),isNew:false};dataErr='';dataArm=null;render()}
+  else if(a==='dback'){dedit=null;dataErr='';dataArm=null;render()}
+  else if(a==='dsave'){saveData()}
+  else if(a==='ddel'||a==='ddel-edit'){
+    const rid=a==='ddel'?id:dedit.draft.id,c=a==='ddel'?dataTab:dedit.cat;
+    if(dataArm!==rid){dataArm=rid;render();return}
+    CAT[c]=CAT[c].filter(x=>x.id!==rid);put('dd_cat',CAT);dataArm=null;dedit=null;render()}
+  else if(a==='dreset'){if(dataArm!=='reset'){dataArm='reset';render();return}CAT[dataTab]=clone(SEED[dataTab]);put('dd_cat',CAT);dataArm=null;render()}
+  else if(a==='ftadd'){dedit.draft.feats=dedit.draft.feats||[];dedit.draft.feats.push({id:uid(),name:'',lvl:1,desc:''});render()}
+  else if(a==='ftdel'){dedit.draft.feats.splice(Number(b.dataset.i),1);render()}
+  else if(a==='subadd'){dedit.draft.subs.push({id:uid(),name:'',alt:'',bhp:'',prof:''});render()}
+  else if(a==='subdel'){dedit.draft.subs.splice(Number(b.dataset.i),1);render()}
+  else if(a==='side'){diceSides=Number(v);render()}
+  else if(a==='roll'){doRoll()}
+});
+document.addEventListener('submit',e=>{if(e.target.id==='authForm'){e.preventDefault();submitAuth(e.target)}});
+document.addEventListener('input',e=>{
+  const el=e.target;
+  if(el.dataset.bk){if(el.dataset.bk==='text')bkText=el.value;return}
+  if(view==='site'&&siteDraft&&(el.dataset.sk||el.dataset.s)){
+    if(el.dataset.sk){siteDraft[el.dataset.sk]=el.value;const h=$('#hx_'+el.dataset.sk);if(h)h.textContent=el.value}
+    else{const f=el.dataset.s;siteDraft[f]=['radius','fxms','fxamt'].includes(f)?Number(el.value):el.value;const sp=f==='radius'?$('#rv'):$('#v_'+f);if(sp)sp.textContent=el.value}
+    applySite(siteDraft);const bd=document.querySelector('.side .brand');if(bd)bd.innerHTML=brandHtml();return;
+  }
+  if(roomEdit&&el.dataset.r){roomEdit.draft[el.dataset.r]=el.value;return}
+  if(dedit){
+    const dd=dedit.draft;
+    if(el.dataset.cf){const f=el.dataset.cf;dd[f]=el.tagName==='SELECT'?Number(el.value):(el.type==='number'?(el.value===''?'':Number(el.value)):el.value)}
+    else if(el.dataset.sf){dd.subs[Number(el.dataset.si)][el.dataset.sf]=el.value}
+    else if(el.dataset.ftf){const f=(dd.feats||[])[Number(el.dataset.fti)];if(f)f[el.dataset.ftf]=el.dataset.ftf==='lvl'?Number(el.value):el.value}
+    else if(el.dataset.bgs){const a=dd.sk=dd.sk||[],k=el.dataset.bgs,ix=a.indexOf(k);if(el.checked&&ix<0)a.push(k);if(!el.checked&&ix>=0)a.splice(ix,1)}
+    return;
+  }
+  if(!edit)return;const d=edit.draft;
+  if(el.dataset.it){const it=d.items.find(x=>x.id===el.dataset.id);if(it){if(el.dataset.it==='name'){it.name=el.value;schedRefresh({a:1})}else if(el.dataset.it==='qty')it.qty=Math.max(1,Math.round(num(el.value))||1)}return}
+  if(el.dataset.ac){if(el.dataset.ac==='mode'){d.acMode=el.value;refreshAc('ac_mode');return}d.acManual=el.value;const av=document.getElementById('ac_val');if(av)av.textContent=effAc(d);return}
+  if(el.dataset.hp){const h=el.dataset.hp;
+    if(h==='mode'){d.hpMode=el.value;refreshHp('hp_mode');return}
+    if(h==='cur')d.hpCur=el.value===''?null:Math.max(0,Math.round(num(el.value)));
+    else if(h==='temp')d.hpTemp=Math.max(0,Math.round(num(el.value)));
+    else if(h==='manual')d.hpManual=el.value;
+    updateHpBar();return}
+  if(el.dataset.a){d.abil[el.dataset.a]=Number(el.value)||10;const m=$('#m_'+el.dataset.a);if(m)m.textContent=sgn(mod(d.abil[el.dataset.a]));$('#derived').innerHTML=derived(d);schedRefresh({h:el.dataset.a==='con',a:el.dataset.a==='dex'||el.dataset.a==='str'})}
+  else if(el.dataset.f&&el.tagName!=='SELECT'){
+    const f=el.dataset.f;d[f]=el.type==='number'?Number(el.value):el.value;
+    if(f==='level'||f==='dex')$('#derived').innerHTML=derived(d);
+    if(f==='level')schedRefresh({h:1,f:1});
+  }
+});
+document.addEventListener('change',e=>{
+  const el=e.target;
+  if(el.dataset.bk==='file'){const f=el.files&&el.files[0];if(!f)return;const fr=new FileReader();fr.onload=()=>{bkText=String(fr.result||'');bkMsg=fill(t('bkLoaded'),{n:Math.round(bkText.length/1024)});dataArm=null;render()};fr.onerror=()=>{bkMsg=t('bkBad');render()};fr.readAsText(f);return}
+  if(el.dataset.sk){render();return}
+  if(el.dataset.ini){iniChange(el);return}
+  if(el.dataset.it&&edit){itChange(el);return}
+  if(el.dataset.ac&&edit&&el.dataset.ac==='mode'){edit.draft.acMode=el.value;refreshAc('ac_mode');return}
+  if(el.dataset.seat!==undefined){const rm=rooms.find(r=>r.id===roomOpen);if(rm){rm.assign[Number(el.dataset.seat)]=el.value;saveRooms();render()}return}
+  if(el.dataset.img){
+    const f=el.files&&el.files[0];if(!f)return;const k=el.dataset.img;siteErr='';
+    readImage(f,k==='logo'?256:1600,k==='logo'?'image/png':'image/jpeg',.82).then(u=>{siteDraft[k]=u;render()}).catch(()=>{siteErr=t('sImgErr');render()});return}
+  if(el.dataset.act==='role'){
+    const u=users.find(x=>x.id===el.dataset.id),admins=users.filter(x=>x.role==='admin').length;
+    if(u.role==='admin'&&el.value==='player'&&admins<2){flashMsg=t('lastAdmin');render();return}
+    const prev=u.role;u.role=el.value;put('dd_users',users);flashMsg='';
+    if(REMOTE)api('POST','api/users/'+u.id+'/role',{role:u.role}).catch(e=>{u.role=prev;flashMsg=e.code==='last_admin'?t('lastAdmin'):t('netSaveFail');render()});
+    if(u.id===session&&u.role!=='admin')view='players';render();return}
+  if(edit&&el.dataset.wk){const r=edit.draft.weapons.find(x=>x.id===el.dataset.id);if(r){if(el.dataset.wk==='p')r.p=el.checked;else r.bonus=Math.round(num(el.value))}refreshWeapons();return}
+  if(edit&&el.dataset.pk){const a=edit.draft.pick[el.dataset.pk]=edit.draft.pick[el.dataset.pk]||[];a[Number(el.dataset.pi)]=el.value;return}
+  if(!edit||!el.dataset.f)return;const d=edit.draft,f=el.dataset.f;
+  if(f==='insp')d.insp=el.value==='1';else d[f]=el.value;
+  if(f==='cls'){d.sub='';$('#e_sub').innerHTML=subOpts(d.cls,'')}
+  if(f==='bg'){syncBgItems(d);render()}
+  if(f==='cls'||f==='sub'||f==='race'){refreshHp();refreshExtra()}
+});
+window.addEventListener('hashchange',()=>{const h=location.hash.slice(1);if(me()&&['players','npcs','data','games','site','adventure'].includes(h)&&h!==view&&(isAdmin()||h==='players')){view=h;edit=null;dedit=null;roomOpen=null;roomEdit=null;siteDraft=h==='site'?clone(SITE):null;render()}});
+document.addEventListener('visibilitychange',()=>{if(!document.hidden)pull()});
+async function boot(){
+  const served=!!document.querySelector('meta[name=dd-server]');
+  if(served)try{
+    const ac=new AbortController(),tm=setTimeout(()=>ac.abort(),8000);
+    const r=await fetch('api/boot',{credentials:'same-origin',headers:{'X-Requested-With':'dd'},signal:ac.signal});clearTimeout(tm);
+    if(r.ok&&/json/.test(r.headers.get('content-type')||''))applyBoot(await r.json());
+    else throw new Error('boot');
+  }catch(e){
+    {$('#root').innerHTML='<div class="login"><div class="login-card"><h1 style="margin:0">'+t('netDown')+'</h1><button class="btn primary" id="retryBoot" type="button">'+t('netRetry')+'</button></div></div>';document.getElementById('retryBoot').onclick=()=>location.reload();return}
+  }
+  const h=location.hash.slice(1);if(['players','npcs','data','games','site','adventure'].includes(h))view=h;
+  if(session&&!me())session=null;
+  render();
+}
+boot();
+</script>
+</body></html>

@@ -1,0 +1,17 @@
+/* button effects (admin picks style, speed, strength, color in site settings) */
+:root{--fx-ms:160ms;--fx-amt:3;--fx-color:var(--accent)}
+.btn,.gtab,.dice button{position:relative;touch-action:manipulation;-webkit-tap-highlight-color:transparent;transition:transform var(--fx-ms) cubic-bezier(.2,.7,.3,1),border-color .15s,background-color .15s,color .15s}
+.btn::after,.gtab::after,.dice button::after{content:"";position:absolute;inset:0;border-radius:inherit;pointer-events:none;opacity:0;transition:opacity var(--fx-ms) ease}
+html[data-fx=glow] .btn::after,html[data-fx=glow] .gtab::after,html[data-fx=glow] .dice button::after{box-shadow:0 0 calc(var(--fx-amt)*3px) calc(var(--fx-amt)*.5px) var(--fx-color)}
+html[data-fx=lift] .btn::after,html[data-fx=lift] .gtab::after,html[data-fx=lift] .dice button::after{box-shadow:0 calc(var(--fx-amt)*2px) calc(var(--fx-amt)*3px) color-mix(in srgb,var(--fx-color) 40%,transparent)}
+html[data-fx=shine] .btn,html[data-fx=shine] .gtab,html[data-fx=shine] .dice button{overflow:hidden}
+html[data-fx=shine] .btn::before,html[data-fx=shine] .gtab::before,html[data-fx=shine] .dice button::before{content:"";position:absolute;top:0;bottom:0;left:0;width:55%;background:linear-gradient(100deg,transparent,color-mix(in srgb,var(--fx-color) 55%,#fff),transparent);opacity:.55;transform:translateX(-140%) skewX(-18deg);pointer-events:none}
+@media (hover:hover){
+ html[data-fx=lift] .btn:not([disabled]):hover,html[data-fx=lift] .gtab:not(:disabled):hover,html[data-fx=lift] .dice button:hover{transform:translateY(calc(var(--fx-amt)*-1px))}
+ html[data-fx=bounce] .btn:not([disabled]):hover,html[data-fx=bounce] .gtab:not(:disabled):hover,html[data-fx=bounce] .dice button:hover{transform:scale(calc(1 + var(--fx-amt) / 100));transition-timing-function:cubic-bezier(.34,1.56,.64,1)}
+ html[data-fx=lift] .btn:not([disabled]):hover::after,html[data-fx=glow] .btn:not([disabled]):hover::after,html[data-fx=lift] .gtab:not(:disabled):hover::after,html[data-fx=glow] .gtab:not(:disabled):hover::after,html[data-fx=lift] .dice button:hover::after,html[data-fx=glow] .dice button:hover::after{opacity:1}
+ html[data-fx=shine] .btn:not([disabled]):hover::before,html[data-fx=shine] .gtab:not(:disabled):hover::before,html[data-fx=shine] .dice button:hover::before{transform:translateX(280%) skewX(-18deg);transition:transform calc(var(--fx-ms)*3) ease}
+}
+html:not([data-fx=none]) .btn:not([disabled]):active,html:not([data-fx=none]) .gtab:not(:disabled):active,html:not([data-fx=none]) .dice button:active{transform:scale(.96)}
+.fxprev{display:flex;gap:12px;flex-wrap:wrap;align-items:center;padding:0 16px 16px}
+@media (prefers-reduced-motion:reduce){.btn,.gtab,.dice button,.btn::before,.btn::after,.gtab::before,.gtab::after{transition:none!important}html .btn:hover,html .btn:active,html .gtab:hover,html .gtab:active,html .dice button:hover,html .dice button:active{transform:none!important}}

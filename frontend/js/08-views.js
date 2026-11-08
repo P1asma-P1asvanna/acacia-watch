@@ -1,0 +1,142 @@
+/* ---------- views ---------- */
+function renderApp(){
+  const u=me(), adm=isAdmin();
+  const items=[['players','players'],...(adm?[['npcs','npcs'],['data','data'],['adventure','adventure'],['games','games'],['site','site']]:[])];
+  if(!adm&&view!=='players')view='players';
+  const stage=inStage();
+  return`<div class="app${stage?' stagemode':''}"><aside class="side">
+   <div class="brand">${brandHtml()}</div>
+   <nav class="nav" aria-label="Main">${items.map(([k,ic])=>`<button data-act="nav" data-v="${k}" ${view===k?'aria-current="page"':''}>${ICON[ic]}<span>${t(k)}</span></button>`).join('')}</nav>
+   <div class="side-foot"><div class="me"><b>${esc(u.disp)}</b><span>${adm?t('admin'):t('player')}</span></div>${langSwitch()}<button class="btn small" data-act="logout">${t('logout')}</button></div>
+  </aside><main class="main${stage?' stage':''}" id="main">${view==='players'?renderPlayers():view==='npcs'?renderNpcs():view==='data'?renderData():view==='site'?renderSite():view==='adventure'?renderAdventure():renderGames()}</main></div>`;
+}
+function head(title,sub,btn){return`<div class="head"><div><h1>${title}</h1><p>${sub}</p></div>${btn||''}</div>`}
+function table(kind){
+  const adm=isAdmin();
+  let rows=list(kind);
+  if(kind==='pc'&&!adm)rows=rows.filter(r=>r.owner===session);
+  if(!rows.length)return`<div class="empty"><div>${t('noRows')}</div><button class="btn" data-act="sample" data-k="${kind}">${t('addSample')}</button><div class="note">${t('sampleNote')}</div></div>`;
+  const typeLbl={ally:t('tAlly'),neutral:t('tNeutral'),villain:t('tVillain')};
+  return`<div class="scroll"><table><thead><tr><th>${t('colChar')}</th><th>${kind==='pc'?t('colPlayer'):t('colType')}</th><th>${t('colRace')}</th><th>${t('colClass')}</th><th class="num">${t('colHp')}</th><th class="num">${t('colAc')}</th><th></th></tr></thead><tbody>
+  ${rows.map(r=>`<tr><td><b>${esc(r.name)||'—'}</b><span class="sub">${esc(r.bg)}</span></td>
+   <td>${kind==='pc'?(esc(ownerName(r.owner))||'<span class="muted">'+t('unassigned')+'</span>'):`<span class="pill">${esc(typeLbl[r.type]||'')}</span>`}</td>
+   <td>${esc(r.race)}</td><td>${esc(r.cls)} ${r.level}<span class="sub">${esc(r.sub)}</span></td>
+   <td class="num">${curHp(r)} / ${r.hp}${num(r.hpTemp)?' <span class="tt">+'+num(r.hpTemp)+'</span>':''}</td><td class="num">${r.ac}</td>
+   <td><div class="acts"><button class="btn small" data-act="edit" data-k="${kind}" data-id="${r.id}">${t('edit')}</button><button class="btn small danger" data-act="del" data-k="${kind}" data-id="${r.id}">${delArm===r.id?t('delSure'):t('del')}</button></div></td></tr>`).join('')}
+  </tbody></table></div>`;
+}
+function renderPlayers(){
+  if(edit&&edit.kind==='pc')return renderEditor();
+  const adm=isAdmin();
+  let h=head(t('players'),adm?t('playersSub'):t('playersSubMine'),`<button class="btn primary" data-act="new" data-k="pc">+ ${t('add')}</button>`);
+  h+=`<section class="panel">${table('pc')}</section>`;
+  if(adm)h+=`<section class="panel"><div class="ph"><div><h2>${t('accounts')}</h2><div class="note">${t('accSub')}</div></div></div><div class="scroll"><table><thead><tr><th>${t('user')}</th><th>${t('disp')}</th><th>${t('role')}</th>${REMOTE?`<th>${t('colAct')}</th>`:''}</tr></thead><tbody>
+   ${users.map(u=>`<tr><td>${esc(u.name)}</td><td>${esc(u.disp)}</td><td><label class="field" style="max-width:170px"><span class="lbl" style="display:none">${t('role')}</span><select data-act="role" data-id="${u.id}" aria-label="${t('role')} ${esc(u.name)}"><option value="player" ${u.role==='player'?'selected':''}>${t('player')}</option><option value="admin" ${u.role==='admin'?'selected':''}>${t('admin')}</option></select></label></td>${REMOTE?`<td><div class="pwrow"><input type="password" id="pw_${u.id}" autocomplete="new-password" placeholder="${t('pwNew')}" aria-label="${t('pwNew')} ${esc(u.name)}"><button type="button" class="btn small" data-act="pwset" data-id="${u.id}">${t('pwSet')}</button>${u.id!==session?`<button type="button" class="btn small danger" data-act="userdel" data-id="${u.id}">${dataArm==='udel_'+u.id?t('userDelSure'):t('userDel')}</button>`:''}</div></td>`:''}</tr>`).join('')}
+   </tbody></table></div><div class="err" id="accErr" style="padding:0 16px 12px">${flashMsg}</div></section>`;
+  return h;
+}
+function renderNpcs(){
+  if(edit&&edit.kind==='npc')return renderEditor();
+  return head(t('npcs'),t('npcsSub'),`<button class="btn primary" data-act="new" data-k="npc">+ ${t('add')}</button>`)+`<section class="panel">${table('npc')}</section>`;
+}
+const opt=(arr,sel)=>arr.map(v=>`<option value="${esc(v)}" ${v===sel?'selected':''}>${esc(v)}</option>`).join('');
+const optCur=(arr,cur)=>opt(arr,cur)+(cur&&!arr.includes(cur)?`<option value="${esc(cur)}" selected>${esc(cur)} ${t('removed')}</option>`:'');
+function subOpts(cls,sel){return`<option value="">${t('none')}</option>`+optCur(subsOf(cls),sel)}
+const skName=k=>(SKILLS.find(x=>x[0]===k)||[k,k])[1];
+const bgOf=d=>CAT.backgrounds.find(x=>x.name===d.bg);
+const bgSkills=d=>{const b=bgOf(d);return b&&Array.isArray(b.sk)?b.sk:[]};
+const profLevel=(d,kind,k)=>{const st=(d.prof&&d.prof[kind]&&d.prof[kind][k])||0;return kind==='skill'&&bgSkills(d).includes(k)?Math.max(st,1):st};
+function derived(d){
+  const pb=prof(d.level),dx=mod(d.abil.dex),nx=nextXp(Number(d.level));
+  return`<div class="chip"><span>${t('pb')}</span><b>${sgn(pb)}</b></div><div class="chip"><span>${t('init')}</span><b>${sgn(dx)}</b></div><div class="chip"><span>${t('next')}</span><b>${nx===null?t('max'):nx}</b></div><div class="chip"><span>${t('passive')}</span><b>${10+mod(d.abil.wis)+pb*profLevel(d,'skill','perception')}</b></div>`;
+}
+const SAVE_NAMES={str:'Strength',dex:'Dexterity',con:'Constitution',int:'Intelligence',wis:'Wisdom',cha:'Charisma'};
+const SKILLS=[['acrobatics','Acrobatics','dex'],['animal','Animal Handling','wis'],['arcana','Arcana','int'],['athletics','Athletics','str'],['deception','Deception','cha'],['history','History','int'],['insight','Insight','wis'],['intimidation','Intimidation','cha'],['investigation','Investigation','int'],['medicine','Medicine','wis'],['nature','Nature','int'],['perception','Perception','wis'],['performance','Performance','cha'],['persuasion','Persuasion','cha'],['religion','Religion','int'],['sleight','Sleight of Hand','dex'],['stealth','Stealth','dex'],['survival','Survival','wis']];
+const num=v=>{const n=Number(v);return Number.isFinite(n)?n:0};
+const fill=(str,o)=>str.replace(/\{(\w+)\}/g,(_,k)=>o[k]);
+const dieOf=cls=>{const c=CAT.classes.find(x=>x.name===cls),m=c&&String(c.hd).match(/(\d+)/);return m?Number(m[1]):0};
+/* HP: level 1 takes the full hit die, later levels take the fixed average, each plus CON and never less than 1.
+   entries is a list so multiclass can add more rows later; the first row's level 1 gets the full die. */
+function hpCalc(d){
+  const lvl=Math.max(1,Math.min(20,Math.round(num(d.level))||1)),con=mod(d.abil.con),lines=[];
+  const entries=[{cls:d.cls,sub:d.sub,level:lvl}];
+  let total=0,first=true,missing=false;
+  entries.forEach(e=>{
+    const die=dieOf(e.cls),avg=Math.floor(die/2)+1;if(!die)missing=true;let from=1;
+    if(first){const g=Math.max(1,die+con);total+=g;lines.push(fill(t('hpL1'),{d:die,con:sgn(con),v:g}));from=2;first=false}
+    const n=e.level-from+1;
+    if(n>0){const g=Math.max(1,avg+con);total+=g*n;lines.push(fill(t('hpLn'),{range:from===e.level?from:from+'–'+e.level,avg,con:sgn(con),n,v:g*n}))}
+  });
+  const race=CAT.races.find(x=>x.name===d.race),co=CAT.classes.find(x=>x.name===d.cls),so=co&&co.subs.find(x=>x.name===d.sub);
+  [['hsRace',d.race,num(race&&race.bhp)],['hsClass',d.cls,num(co&&co.bhp)],['hsSub',d.sub,num(so&&so.bhp)]].forEach(([src,name,b])=>{
+    if(!b)return;total+=b*lvl;lines.push(fill(t('hpBonus'),{src:t(src),name:esc(name),b:sgn(b),lvl,v:sgn(b*lvl)}))});
+  total=Math.max(1,total);
+  return{max:total,lines,lvl,die:dieOf(d.cls),missing};
+}
+function effMax(d){return d.hpMode==='manual'&&num(d.hpManual)>=1?Math.round(num(d.hpManual)):hpCalc(d).max}
+const curOf=(d,max)=>d.hpCur==null?max:Math.max(0,Math.min(num(d.hpCur),max));
+const curHp=r=>curOf(r,r.hp);
+function normHp(d){
+  if(d.hpMode===undefined){const man=d.kind==='npc';d.hpMode=man?'manual':'auto';d.hpManual=man?d.hp:''}
+  if(d.hpTemp===undefined)d.hpTemp=0;if(d.hpCur===undefined)d.hpCur=null;if(d.hdUsed===undefined)d.hdUsed=0;if(!d.death)d.death={s:0,f:0};
+}
+function hpBody(d){
+  const c=hpCalc(d),max=effMax(d),cur=curOf(d,max),tmp=Math.max(0,Math.round(num(d.hpTemp))),adm=isAdmin(),manual=d.hpMode==='manual'&&num(d.hpManual)>=1;
+  const total=Math.max(1,max+tmp),used=Math.min(c.lvl,Math.max(0,Math.round(num(d.hdUsed)))),left=c.lvl-used;
+  const dots=(k,cls)=>[0,1,2].map(i=>`<button type="button" class="dot ${cls} ${d.death[k]>i?'on':''}" id="ds_${k}${i}" data-hpa="ds:${k}:${i}" aria-pressed="${d.death[k]>i}" aria-label="${t(k==='s'?'dsSucc':'dsFail')} ${i+1}"></button>`).join('');
+  return`<div class="hpmax"><div><span class="lbl">${t('hpMax')}</span><div><b id="hp_max">${max}</b></div></div><span class="pill ${manual?'admin':''}">${manual?t('hpManualBadge'):t('hpAuto')}</span></div>
+  <div><div class="hpbar" role="img" aria-label="${t('hpCur')} ${cur} / ${max}, ${t('hpTemp')} ${tmp}"><i class="cur ${cur<=max/4?'low':''}" id="hp_bc" style="width:${cur/total*100}%"></i><i class="tmp" id="hp_bt" style="width:${tmp/total*100}%"></i></div>
+   <div class="hpnums"><span id="hp_txt">${cur} / ${max}</span><span class="tt" id="hp_ttxt">${tmp?'+'+tmp+' temp':''}</span></div></div>
+  <div class="hpgrid"><div class="field"><label for="hp_cur">${t('hpCur')}</label><input id="hp_cur" data-hp="cur" type="number" min="0" value="${cur}"></div>
+   <div class="field"><label for="hp_temp">${t('hpTemp')}</label><input id="hp_temp" data-hp="temp" type="number" min="0" value="${tmp}"></div>
+   <div class="field"><label for="hp_amt">${t('hpAmt')}</label><input id="hp_amt" type="number" min="0" placeholder="0"></div>
+   <div class="hpbtns"><button type="button" class="btn" id="hpb_dmg" data-hpa="dmg">${t('hpDamage')}</button><button type="button" class="btn" id="hpb_heal" data-hpa="heal">${t('hpHeal')}</button><button type="button" class="btn" id="hpb_grant" data-hpa="grant">${t('hpGrant')}</button></div></div>
+  <p class="note" style="margin:0">${t('hpRule')}</p>
+  <div class="hpsub"><div><span class="lbl">${t('hdTitle')}</span><div class="stepper"><button type="button" class="btn small" id="hd_m" data-hpa="hd-" aria-label="${t('hdUsed')} −">−</button><span class="mono">d${c.die||'?'} · ${t('hdUsed')} ${used} · ${t('hdLeft')} ${left} / ${c.lvl}</span><button type="button" class="btn small" id="hd_p" data-hpa="hd+" aria-label="${t('hdUsed')} +">+</button></div></div>
+   <div><span class="lbl">${t('deathTitle')}</span><div class="stepper"><span class="note">${t('dsSucc')}</span><div class="dots">${dots('s','ok')}</div><span class="note">${t('dsFail')}</span><div class="dots">${dots('f','bad')}</div></div></div>
+   <button type="button" class="btn small" id="hp_long" data-hpa="long" title="${t('longRestHint')}">${t('longRest')}</button></div>
+  ${adm?`<div class="hpgrid"><div class="field"><label for="hp_mode">${t('hpMode')}</label><select id="hp_mode" data-hp="mode"><option value="auto" ${d.hpMode==='manual'?'':'selected'}>${t('hpModeAuto')}</option><option value="manual" ${d.hpMode==='manual'?'selected':''}>${t('hpModeManual')}</option></select></div>
+   ${d.hpMode==='manual'?`<div class="field"><label for="hp_manual">${t('hpManualVal')}</label><input id="hp_manual" data-hp="manual" type="number" min="1" value="${esc(d.hpManual)}"></div>`:''}</div>`:`<p class="note" style="margin:0">${manual?t('hpLockedManual'):t('hpLocked')}</p>`}
+  <details class="how"><summary>${t('hpHow')}</summary><ul>${c.lines.map(l=>`<li>${l}</li>`).join('')}<li><b>${fill(t('hpTotal'),{v:c.max})}</b></li>${manual?`<li>${fill(t('hpOver'),{v:c.max})}</li>`:''}${c.missing?`<li class="err">${t('hpNoDie')}</li>`:''}</ul></details>`;
+}
+const hpPanel=d=>`<section class="panel"><div class="ph"><h2>${t('hpTitle')}</h2></div><div class="hpwrap" id="hpbody">${hpBody(d)}</div></section>`;
+function refreshHp(focusId){const b=document.getElementById('hpbody');if(!b||!edit)return;const open=b.querySelector('details.how')?.open;b.innerHTML=hpBody(edit.draft);if(open)b.querySelector('details.how').open=true;if(focusId){const el=document.getElementById(focusId);if(el)el.focus()}}
+function updateHpBar(){
+  const d=edit.draft,max=effMax(d),cur=curOf(d,max),tmp=Math.max(0,Math.round(num(d.hpTemp))),tot=Math.max(1,max+tmp),g=id=>document.getElementById(id);
+  if(g('hp_max'))g('hp_max').textContent=max;if(g('hp_bc')){g('hp_bc').style.width=cur/tot*100+'%';g('hp_bc').classList.toggle('low',cur<=max/4)}
+  if(g('hp_bt'))g('hp_bt').style.width=tmp/tot*100+'%';if(g('hp_txt'))g('hp_txt').textContent=cur+' / '+max;if(g('hp_ttxt'))g('hp_ttxt').textContent=tmp?'+'+tmp+' temp':'';
+}
+function hpAction(a,id){
+  const d=edit.draft,max=effMax(d),cur=curOf(d,max),lvl=hpCalc(d).lvl,amtEl=document.getElementById('hp_amt'),amt=Math.max(0,Math.round(num(amtEl&&amtEl.value)));
+  if(a==='dmg'){let r=amt,tmp=Math.max(0,Math.round(num(d.hpTemp)));const ab=Math.min(tmp,r);tmp-=ab;r-=ab;d.hpTemp=tmp;d.hpCur=Math.max(0,cur-r)}
+  else if(a==='heal'){d.hpCur=Math.min(max,cur+amt);if(d.hpCur>0&&amt>0)d.death={s:0,f:0}}
+  else if(a==='grant'){d.hpTemp=Math.max(Math.round(num(d.hpTemp)),amt)}
+  else if(a==='long'){d.hpCur=null;d.hpTemp=0;d.hdUsed=Math.max(0,Math.round(num(d.hdUsed))-Math.max(1,Math.floor(lvl/2)));d.death={s:0,f:0}}
+  else if(a==='hd-'){d.hdUsed=Math.max(0,Math.round(num(d.hdUsed))-1)}
+  else if(a==='hd+'){d.hdUsed=Math.min(lvl,Math.round(num(d.hdUsed))+1)}
+  else if(a.startsWith('ds:')){const[,k,i]=a.split(':'),n=Number(i)+1;d.death[k]=d.death[k]===n?n-1:n}
+  refreshHp(id);
+}
+function profRow(d,kind,k,name,ab){
+  const st=profLevel(d,kind,k),bgG=kind==='skill'&&bgSkills(d).includes(k),m=mod(d.abil[ab])+prof(d.level)*st,lab=[t('pNone'),t('pOne'),t('pTwo')][st]+(bgG?' ('+t('fromBg')+')':'');
+  return`<div class="prow s${st}"><button type="button" class="pt s${st}" id="pt_${kind}_${k}" data-pt="${kind}:${k}" aria-label="${esc(name)}: ${lab}" title="${lab}"></button><span class="pv" data-pv="${kind}:${k}:${ab}">${sgn(m)}</span><span class="pn">${esc(name)}</span>${kind==='skill'?`<span class="pa">${ab.toUpperCase()}${bgG?' · BG':''}</span>`:'<span></span>'}</div>`;
+}
+const profBody=d=>`<div class="pcol"><h3>${t('pSaves')}</h3>${ABS.map(k=>profRow(d,'save',k,SAVE_NAMES[k],k)).join('')}</div><div class="pcol"><h3>${t('pSkills')}</h3>${SKILLS.map(([k,n,a])=>profRow(d,'skill',k,n,a)).join('')}</div>`;
+const profPanel=d=>`<section class="panel"><div class="ph"><h2>${t('secProf')}</h2><span class="note">${t('profHint')}</span></div><div class="profgrid" id="profbody">${profBody(d)}</div></section>`;
+function refreshProf(focusId){const b=document.getElementById('profbody');if(!b||!edit)return;b.innerHTML=profBody(edit.draft);if(focusId){const el=document.getElementById(focusId);if(el)el.focus()}}
+function bgPanel(d){
+  const b=CAT.backgrounds.find(x=>x.name===d.bg);if(!b)return'';
+  const groups=[['lang','languages','nLang','fLangPick'],['tool','tools','nTool','fToolPick'],['veh','vehicles','nVeh','fVehPick']];
+  const html=groups.map(([k,cat,nk,lab])=>{const n=Number(b[nk])||0;
+    return Array.from({length:n},(_,i)=>{const cur=(d.pick[k]||[])[i]||'';
+      return`<div class="field"><label for="p_${k}${i}">${t(lab)}${n>1?' '+(i+1):''}</label><select id="p_${k}${i}" data-pk="${k}" data-pi="${i}"><option value="">—</option>${optCur(names(cat),cur)}</select></div>`}).join('')}).join('');
+  return html?`<section class="panel"><div class="ph"><h2>${t('secBgPick')}</h2><span class="note">${esc(b.name)}</span></div><div class="grid">${html}</div></section>`:'';
+}
+const toks=x=>String(x||'').split(',').map(v=>v.trim()).filter(Boolean);
+function classProfs(d){
+  const c=CAT.classes.find(x=>x.name===d.cls),r=CAT.races.find(x=>x.name===d.race),armor=[],weap=[],tool=[];
+  toks(c&&c.first).concat(toks(r&&r.prof)).forEach(x=>{/armor|shield/i.test(x)?armor.push(x):/tool|instrument/i.test(x)?tool.push(x):weap.push(x)});
+  return{armor,weap,tool};
+}
+const parseEquip=txt=>String(txt||'').split(/\r?\n/).map(l=>l.trim()).filter(Boolean).map(l=>{const m=l.match(/^(\d+)\s*[x×]\s*(.+)$/i);return m?{name:m[2].trim(),qty:Math.max(1,+m[1])}:{name:l,qty:1}});
+function syncBgItems(d){const b=bgOf(d);d.items=(d.items||[]).filter(i=>i.src!=='bg');if(b)parseEquip(b.equip).forEach(e=>d.items.push({id:uid(),name:e.name,qty:e.qty,src:'bg'}))}

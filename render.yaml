@@ -1,0 +1,15 @@
+services:
+  - type: web
+    name: acacia-watch
+    runtime: python
+    plan: free
+    buildCommand: pip install -r backend/requirements.txt
+    startCommand: python backend/server.py
+    healthCheckPath: /healthz
+    envVars:
+      - key: DATABASE_URL
+        sync: false
+      - key: DD_COOKIE_SECURE
+        value: "1"
+      - key: DD_TRUST_PROXY
+        value: "1"

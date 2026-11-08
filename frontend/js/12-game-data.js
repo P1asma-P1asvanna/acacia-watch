@@ -1,0 +1,85 @@
+/* ---------- game data (admin edits the catalogs that characters draw from) ---------- */
+const FL={name:['ชื่อ','Name'],asi:['ค่าพลังที่เพิ่ม','Ability score increases'],nac:['AC ธรรมชาติ','Natural AC'],speed:['ความเร็ว (ฟุต)','Speed (ft)'],bhp:['HP โบนัสต่อเลเวล','Bonus HP per level'],
+ res:['ความต้านทานและคุณลักษณะ','Resistances and traits'],lang:['ภาษา','Languages'],nat:['การโจมตีตามธรรมชาติ','Natural attack'],prof:['ความชำนาญอาวุธและเกราะ','Weapon and armor proficiencies'],other:['ฟีเจอร์อื่น','Other features'],
+ hd:['ลูกเต๋า HP','Hit die'],alt:['AC ทางเลือก','Alt AC'],init:['โบนัส Initiative','Init bonus'],saves:['Saving throw และทักษะอาชีพ','Saving throws and class skills'],first:['ความชำนาญเลเวล 1','1st-level proficiencies'],
+ multi:['ความชำนาญเพิ่ม / multiclass','Additional / multiclass proficiencies'],spellType:['ประเภทการร่ายเวท','Spellcasting type'],spellAb:['พลังร่ายเวท','Spellcasting ability'],speedInc:['ความเร็วที่เพิ่ม','Speed increase'],subs:['สายอาชีพ','Subclasses'],
+ die:['ลูกเต๋าดาเมจ','Damage die'],dtype:['ประเภทดาเมจ','Damage type'],pcat:['หมวดความชำนาญ','Proficiency category'],range:['ระยะ','Range'],monk:['อาวุธ Monk','Monk weapon'],ench:['โบนัสมนตร์','Enchantment bonus'],
+ bdie:['ลูกเต๋าดาเมจเพิ่ม','Bonus damage die'],btype:['ประเภทดาเมจเพิ่ม','Bonus damage type'],abil:['พลังที่ใช้โจมตีแทน','Attack ability override'],props:['คุณสมบัติ','Properties'],apply:['บวกค่าพลัง','Apply ability mod'],
+ ac:['โบนัส AC','AC bonus'],maxdex:['Dex สูงสุด','Max Dex modifier'],acat:['หมวด','Category'],str:['STR ที่ต้องการ','Strength required'],stealth:['Stealth','Stealth'],pb:['โบนัส Proficiency','Proficiency bonus bonus'],skills:['โบนัสทักษะ','Skills bonus'],saves2:['โบนัส Saves','Saves bonus']};
+const fl=k=>(FL[k]||[k,k])[lang==='th'?0:1];
+Object.assign(FL,{nLang:['จำนวนภาษาที่เลือกได้','Languages to choose'],nTool:['จำนวน Tool Proficiencies ที่เลือกได้','Tool proficiencies to choose'],nVeh:['จำนวน Vehicle Proficiencies ที่เลือกได้','Vehicle proficiencies to choose']});
+/* field types: t text, a long text, n number, b yes/no */
+const SCHEMA={
+ races:{cols:['name','asi','speed','lang'],f:[['name','t'],['asi','t'],['nac','t'],['speed','n'],['bhp','t'],['res','a'],['lang','t'],['nat','t'],['prof','t'],['other','a']]},
+ classes:{cols:['name','hd','spellType','subs'],f:[['name','t'],['hd','t'],['alt','t'],['init','t'],['bhp','t'],['saves','a'],['first','t'],['multi','t'],['spellType','t'],['spellAb','t'],['speedInc','t']]},
+ weapons:{cols:['name','die','dtype','pcat','range'],f:[['name','t'],['die','t'],['dtype','t'],['pcat','t'],['range','t'],['monk','b'],['ench','t'],['bdie','t'],['btype','t'],['abil','t'],['props','t'],['apply','b']]},
+ armor:{cols:['name','ac','acat','maxdex'],f:[['name','t'],['ac','n'],['maxdex','t'],['acat','t'],['str','t'],['stealth','t'],['ench','t'],['pb','t'],['skills','t'],['saves','t'],['props','t']]},
+ alignments:{cols:['name'],f:[['name','t']]},
+ backgrounds:{cols:['name','nLang','nTool','nVeh','sk'],f:[['name','t'],['nLang','n'],['nTool','n'],['nVeh','n'],['equip','a']]},
+ languages:{cols:['name'],f:[['name','t']]},
+ tools:{cols:['name'],f:[['name','t']]},
+ vehicles:{cols:['name'],f:[['name','t']]}};
+Object.assign(FL,{sk:['Skill Proficiencies ที่ได้','Skill proficiencies granted'],equip:['อุปกรณ์เริ่มต้น (หนึ่งรายการต่อบรรทัด เช่น 2x Torch)','Starting equipment (one item per line, e.g. 2x Torch)']});
+FL.saves=['Saving throw และทักษะอาชีพ','Saving throws and class skills']; /* class saves; armor uses the same key with its own label below */
+const flFor=(cat,k)=>cat==='armor'&&k==='saves'?(lang==='th'?'โบนัส Saves':'Saves bonus'):fl(k);
+const usageKey={races:'race',classes:'cls',alignments:'align',backgrounds:'bg'};
+const pickKey={languages:'lang',tools:'tool',vehicles:'veh'};
+const usage=(c,it)=>usageKey[c]?[...pcs,...npcs].filter(r=>r[usageKey[c]]===it.name).length:pickKey[c]?[...pcs,...npcs].filter(r=>(r.pick&&r.pick[pickKey[c]]||[]).includes(it.name)).length:0;
+function blankItem(c){const o={id:uid()};SCHEMA[c].f.forEach(([k,ty])=>o[k]=ty==='b'?0:(ty==='n'&&/^n[A-Z]/.test(k)?0:''));if(c==='classes'){o.subs=[];o.feats=[]}if(c==='backgrounds'){o.sk=[];o.feats=[]}return o}
+const cell=v=>{const s=String(v??'').replace(/\s+/g,' ').trim();return s?esc(s.length>60?s.slice(0,57)+'…':s):'<span class="muted">—</span>'};
+function renderData(){
+  if(dedit)return renderDataEditor();
+  const sc=SCHEMA[dataTab],L=CAT[dataTab];
+  const tabs=Object.keys(SCHEMA).map(k=>`<button role="tab" data-act="dtab" data-v="${k}" aria-selected="${k===dataTab}">${t(k)} <span class="cnt">${CAT[k].length}</span></button>`).join('');
+  const body=L.length?`<div class="scroll"><table><thead><tr>${sc.cols.map(c=>`<th>${flFor(dataTab,c)}</th>`).join('')}<th></th></tr></thead><tbody>
+   ${L.map(r=>{const n=usage(dataTab,r);return`<tr>${sc.cols.map(c=>c==='subs'?`<td>${r.subs.length?esc(r.subs.map(s=>s.name).join(', ')):'<span class="muted">'+t('noSub')+'</span>'}</td>`:c==='name'?`<td><b>${cell(r.name)}</b></td>`:c==='sk'?`<td>${(r.sk||[]).length?esc(r.sk.map(skName).join(', ')):'<span class="muted">—</span>'}</td>`:`<td>${cell(r[c])}</td>`).join('')}
+   <td><div class="acts"><button class="btn small" data-act="dedit" data-id="${r.id}">${t('edit')}</button><button class="btn small danger" data-act="ddel" data-id="${r.id}">${dataArm===r.id?(n?t('delInUse').replace('{n}',n):t('delSure')):t('del')}</button></div></td></tr>`}).join('')}
+   </tbody></table></div>`:`<div class="empty"><div>${t('noRows')}</div></div>`;
+  return head(t('data'),t('dataSub'),`<button class="btn primary" data-act="dnew">+ ${t('addItem')}</button>`)
+   +`<div class="tabs2" role="tablist">${tabs}</div><section class="panel">${body}<div class="bar"><span class="note">${t('dataNote')}</span><button class="btn small" data-act="dreset">${dataArm==='reset'?t('resetSure'):t('resetDefaults')}</button></div></section>`;
+}
+function renderDataEditor(){
+  const d=dedit.draft,c=dedit.cat,sc=SCHEMA[c];
+  const fields=sc.f.map(([k,ty])=>{
+    const lab=flFor(c,k),id='c_'+k;
+    if(ty==='a')return`<div class="field full"><label for="${id}">${lab}</label><textarea id="${id}" data-cf="${k}">${esc(d[k])}</textarea></div>`;
+    if(ty==='b')return`<div class="field"><label for="${id}">${lab}</label><select id="${id}" data-cf="${k}"><option value="0" ${d[k]?'':'selected'}>${t('no')}</option><option value="1" ${d[k]?'selected':''}>${t('yes')}</option></select></div>`;
+    return`<div class="field"><label for="${id}">${lab}</label><input id="${id}" data-cf="${k}" type="${ty==='n'?'number':'text'}" ${/^n[A-Z]/.test(k)?'min="0" max="10" ':''}value="${esc(d[k])}"></div>`}).join('');
+  const subs=c==='classes'?`<section class="panel"><div class="ph"><div><h2>${t('subs')||fl('subs')}</h2><div class="note">${t('subHint')}</div></div><button class="btn small" data-act="subadd">${t('subAdd')}</button></div>
+   <div class="subs">${d.subs.length?d.subs.map((s,i)=>`<div class="subrow"><div class="field"><label for="s_n${i}">${t('name')||fl('name')}</label><input id="s_n${i}" data-sf="name" data-si="${i}" value="${esc(s.name)}"></div>
+     <div class="field"><label for="s_a${i}">${fl('alt')}</label><input id="s_a${i}" data-sf="alt" data-si="${i}" value="${esc(s.alt)}"></div>
+     <div class="field"><label for="s_b${i}">${fl('bhp')}</label><input id="s_b${i}" data-sf="bhp" data-si="${i}" value="${esc(s.bhp)}"></div>
+     <div class="field"><label for="s_p${i}">${fl('multi')}</label><input id="s_p${i}" data-sf="prof" data-si="${i}" value="${esc(s.prof)}"></div>
+     <button class="btn small danger" data-act="subdel" data-i="${i}">${t('subRemove')}</button></div>`).join(''):`<div class="empty" style="padding:18px">${t('noSub')}</div>`}</div></section>`:'';
+  const skSec=c==='backgrounds'?`<section class="panel"><div class="ph"><div><h2>${fl('sk')}</h2><div class="note">${t('skHint')}</div></div></div><div class="chkgrid">${SKILLS.map(([k,n,a])=>`<label class="chk"><input type="checkbox" data-bgs="${k}" ${(d.sk||[]).includes(k)?'checked':''}> ${n} <span class="pa">${a.toUpperCase()}</span></label>`).join('')}</div></section>`:'';
+  const featSec=(c==='classes'||c==='backgrounds')?`<section class="panel"><div class="ph"><div><h2>${t('featTitle')}</h2><div class="note">${t(c==='classes'?'featHintC':'featHintB')}</div></div><button class="btn small" data-act="ftadd">${t('featAdd')}</button></div>
+   <div class="subs">${(d.feats||[]).length?d.feats.map((f,i)=>`<div class="featrow ${c==='classes'?'withlvl':''}"><div class="field"><label for="f_n${i}">${t('featName')}</label><input id="f_n${i}" data-ftf="name" data-fti="${i}" value="${esc(f.name)}"></div>${c==='classes'?`<div class="field"><label for="f_l${i}">${t('featLvl')}</label><input id="f_l${i}" type="number" min="1" max="20" data-ftf="lvl" data-fti="${i}" value="${esc(f.lvl||1)}"></div>`:''}<button class="btn small danger" data-act="ftdel" data-i="${i}">${t('subRemove')}</button><div class="field full"><label for="f_d${i}">${t('featDesc')}</label><textarea id="f_d${i}" data-ftf="desc" data-fti="${i}">${esc(f.desc)}</textarea></div></div>`).join(''):`<div class="empty" style="padding:18px">${t('featNone')}</div>`}</div></section>`:'';
+  return`${head(esc(d.name)||t('addItem'),t(c),`<button class="btn" data-act="dback">← ${t('back')}</button>`)}
+   <section class="panel"><div class="grid wide">${fields}</div></section>${skSec}${subs}${featSec}
+   <div class="bar" style="padding:0"><div>${dedit.isNew?'':`<button class="btn danger" data-act="ddel-edit">${dataArm===d.id?(usage(c,d)?t('delInUse').replace('{n}',usage(c,d)):t('delSure')):t('del')}</button>`}</div>
+   <div style="display:flex;gap:12px;align-items:center"><span class="err" role="alert">${esc(dataErr)}</span><button class="btn primary" data-act="dsave">${t('save')}</button></div></div>`;
+}
+function cascade(c,old,d){
+  if(pickKey[c]){if(old.name!==d.name){let c2=false;[...pcs,...npcs].forEach(r=>{const a=r.pick&&r.pick[pickKey[c]];if(a)a.forEach((x,i)=>{if(x===old.name){a[i]=d.name;c2=true}})});if(c2){commit('pc');commit('npc')}}return}
+  const key=usageKey[c];if(!key)return;let ch=false;
+  [...pcs,...npcs].forEach(r=>{if(old.name!==d.name&&r[key]===old.name){r[key]=d.name;ch=true}});
+  if(c==='classes')(old.subs||[]).forEach(os=>{const ns=d.subs.find(s=>s.id===os.id);
+    if(ns&&ns.name!==os.name)[...pcs,...npcs].forEach(r=>{if(r.cls===d.name&&r.sub===os.name){r.sub=ns.name;ch=true}})});
+  if(ch){commit('pc');commit('npc')}
+}
+function saveData(){
+  const d=dedit.draft,c=dedit.cat,L=CAT[c];
+  d.name=String(d.name||'').trim();
+  if(c==='backgrounds')['nLang','nTool','nVeh'].forEach(k=>d[k]=Math.max(0,Math.min(10,Math.round(Number(d[k])||0))));
+  if(!d.name){dataErr=t('errName');return render()}
+  if(L.some(x=>x.id!==d.id&&x.name.toLowerCase()===d.name.toLowerCase())){dataErr=t('errDup');return render()}
+  if(c==='classes'||c==='backgrounds')d.feats=(d.feats||[]).map(f=>({...f,name:String(f.name||'').trim(),lvl:Math.max(1,Math.min(20,Math.round(Number(f.lvl)||1)))})).filter(f=>f.name||String(f.desc||'').trim());
+  if(c==='classes'){
+    d.subs=d.subs.map(s=>({...s,name:s.name.trim()})).filter(s=>s.name);
+    if(new Set(d.subs.map(s=>s.name.toLowerCase())).size!==d.subs.length){dataErr=t('errSubDup');return render()}
+  }
+  const i=L.findIndex(x=>x.id===d.id);
+  if(i>=0){cascade(c,L[i],d);L[i]=d}else L.push(d);
+  put('dd_cat',CAT);dedit=null;dataErr='';render();
+}
+

@@ -1,0 +1,26 @@
+/* initiative */
+.ini{display:flex;flex-direction:column;gap:14px}
+.ini-top{display:flex;gap:10px;flex-wrap:wrap;align-items:center;padding:14px 16px}
+.ini-round{font-family:var(--display);font-weight:700;font-size:1.4rem;margin-right:auto;font-variant-numeric:tabular-nums}
+.ini-add{display:flex;gap:10px 16px;flex-wrap:wrap;align-items:flex-end;padding:0 16px 14px}
+.ini-add .field{min-width:0}
+.ini-add .sm{width:84px}
+.ini-list{list-style:none;margin:0;padding:0}
+.ini-row{display:grid;grid-template-columns:28px minmax(0,1fr) 84px auto auto;gap:10px;align-items:center;padding:8px 16px;border-top:1px solid var(--line)}
+.ini-row.now{background:color-mix(in srgb,var(--turn-now) 24%,var(--surface));box-shadow:inset 5px 0 0 var(--turn-now)}
+.ini-row.next{background:color-mix(in srgb,var(--turn-next) 15%,var(--surface));box-shadow:inset 4px 0 0 var(--turn-next)}
+.ini-row.done{background:color-mix(in srgb,var(--turn-done) 14%,var(--surface));box-shadow:inset 3px 0 0 var(--turn-done)}
+.ini-row.done .ini-name b{color:var(--muted)}
+.ini-row.now .ini-name b{font-weight:800}
+.ini-mark{font-size:1.1rem;text-align:center;color:var(--muted)}
+.ini-row.now .ini-mark{color:var(--turn-now)}.ini-row.next .ini-mark{color:var(--turn-next)}
+.ini-legend{display:flex;gap:16px;flex-wrap:wrap;padding:0 16px 12px;font-size:.85rem;color:var(--muted)}
+.ini-legend i{display:inline-block;width:12px;height:12px;border-radius:3px;margin-right:6px;vertical-align:-1px}
+.ini-name{min-width:0;display:flex;flex-direction:column}
+.ini-name b{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.ini-name small{color:var(--muted)}
+.ini-row input{width:100%;text-align:center;min-height:36px;border:1px solid var(--line);border-radius:calc(var(--r)*.75);background:var(--surface);font-variant-numeric:tabular-nums}
+.ini-hp{font-family:var(--mono);font-size:.85rem;color:var(--muted);white-space:nowrap}
+.ini-hp input{width:64px}
+.ini-act{display:flex;gap:6px}
+@media(max-width:700px){.ini-row{grid-template-columns:24px minmax(0,1fr) 70px;}.ini-hp,.ini-act{grid-column:2/-1}}
