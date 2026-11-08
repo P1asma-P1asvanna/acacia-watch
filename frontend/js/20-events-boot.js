@@ -129,7 +129,7 @@ document.addEventListener('change',e=>{
   if(f==='bg'){syncBgItems(d);render()}
   if(f==='cls'||f==='sub'||f==='race'){refreshHp();refreshExtra()}
 });
-window.addEventListener('hashchange',()=>{const h=location.hash.slice(1);if(me()&&['players','npcs','data','games','site','adventure'].includes(h)&&h!==view&&(isAdmin()||h==='players')){view=h;edit=null;dedit=null;roomOpen=null;roomEdit=null;siteDraft=h==='site'?clone(SITE):null;render()}});
+window.addEventListener('hashchange',()=>{const h=location.hash.slice(1);if(me()&&['players','npcs','data','games','site','adventure'].includes(h)&&h!==view&&(isAdmin()||h==='players'||h==='adventure')){view=h;edit=null;dedit=null;roomOpen=null;roomEdit=null;siteDraft=h==='site'?clone(SITE):null;render()}});
 document.addEventListener('visibilitychange',()=>{if(!document.hidden)pull()});
 async function boot(){
   const served=!!document.querySelector('meta[name=dd-server]');

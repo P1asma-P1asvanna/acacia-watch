@@ -10,14 +10,15 @@ function netErr(e){
   if(e&&e.status===401&&session){session=null;users=[];pcs=[];npcs=[];rooms=[];edit=null;dedit=null;siteDraft=null;authTab='signin';authErr=t('netLogin');netBar('');render();return}
   netBar(t(e&&e.code==='rejected'?'netRejected':'netSaveFail'));
 }
+let prooms=[];  /* players only: the rooms they sit in, as the server lets them see them */
 const synced={pc:new Map(),npc:new Map()};
 let syncChain=Promise.resolve(),inflight=0;const kvTimers={};
 function resetSynced(){synced.pc=new Map(pcs.map(r=>[r.id,JSON.stringify(r)]));synced.npc=new Map(npcs.map(r=>[r.id,JSON.stringify(r)]))}
 function applyBoot(j){
   REMOTE=true;SITE=Object.assign({},j.site||{});firstRun=!j.hasUsers;
-  if(j.me){users=j.users||[j.me];session=j.me.id;pcs=j.pcs||[];npcs=j.npcs||[];rooms=j.rooms||[];CAT=j.cat||clone(SEED);normCat();
+  if(j.me){users=j.users||[j.me];session=j.me.id;pcs=j.pcs||[];npcs=j.npcs||[];rooms=j.rooms||[];prooms=j.prooms||[];CAT=j.cat||clone(SEED);normCat();
     if(!j.cat&&j.me.role==='admin')api('POST','api/kv/cat',{value:CAT}).catch(netErr)}
-  else{users=[];session=null;pcs=[];npcs=[];rooms=[]}
+  else{users=[];session=null;pcs=[];npcs=[];rooms=[];prooms=[]}
   resetSynced();
 }
 function pushKv(k,v){

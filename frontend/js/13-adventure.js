@@ -34,3 +34,23 @@ function renderStage(rm){
   <aside class="rail" aria-label="${t('playersRail')}"><div class="rail-head"><span>${t('playersRail')}</span><span class="pill">${used.size} / ${n}</span></div><div class="rail-list ${dens}" style="--n:${n}">${seats}</div></aside></div>`;
 }
 
+
+/* players: read-only view of the rooms they sit in (data comes from the server already trimmed) */
+function renderPlayerAdv(){
+  const body=prooms.length?prooms.map(playerRoom).join(''):`<section class="panel"><div class="empty"><div>${t('pAdvEmpty')}</div></div></section>`;
+  return head(t('adventure'),t('pAdvSub'),'')+body;
+}
+function playerRoom(rm){
+  const act=rm.list,ci=rm.cur?act.findIndex(e=>e.id===rm.cur):-1,started=ci>=0,
+    nextId=started&&act.length>1?act[(ci+1)%act.length].id:null,done=new Set(started?act.slice(0,ci).map(e=>e.id):[]),mineNow=started&&act[ci].mine;
+  const rows=act.map(e=>{
+    const now=started&&e.id===rm.cur,nxt=e.id===nextId,dn=done.has(e.id),c=e.pc?pcs.find(x=>x.id===e.pc):null;
+    return`<li class="ini-row ro ${now?'now':nxt?'next':dn?'done':''}" ${now?'aria-current="true"':''}><span class="ini-mark" aria-hidden="true">${now?'▶':nxt?'→':dn?'✓':''}</span>
+     <div class="ini-name"><b>${esc(e.name)}</b><small>${e.kind==='pc'?t('iniPc'):t('iniGm')}${now?' · '+t('iniNow'):nxt?' · '+t('iniNextTag'):dn?' · '+t('iniDoneTag'):''}</small></div>
+     <span class="ini-num" aria-label="${t('iniInit')}">${esc(e.init)}</span>${c?`<span class="ini-hp">HP ${curHp(c)}/${c.hp}</span>`:'<span></span>'}</li>`}).join('');
+  return`<section class="panel ini"><div class="ph"><h2>${esc(rm.name)}</h2></div>
+   ${mineNow?`<div class="turn-banner" role="status">${t('pAdvYourTurn')}</div>`:''}
+   <div class="ini-top"><span class="ini-round">${t('iniRound')} ${rm.round}</span></div>
+   <div class="ini-add"><span class="note" style="width:100%">${t('pAdvParty')}</span>${rm.party.map(p=>`<span class="pill">${esc(p.name)}${p.mine?' ★':''}</span>`).join('')}</div>
+   ${act.length?`<ul class="ini-list">${rows}</ul>`:`<p class="note" style="padding:0 16px 16px">${t('pAdvNoInit')}</p>`}</section>`;
+}

@@ -1,14 +1,14 @@
 /* ---------- views ---------- */
 function renderApp(){
   const u=me(), adm=isAdmin();
-  const items=[['players','players'],...(adm?[['npcs','npcs'],['data','data'],['adventure','adventure'],['games','games'],['site','site']]:[])];
-  if(!adm&&view!=='players')view='players';
+  const items=adm?[['players','players'],['npcs','npcs'],['data','data'],['adventure','adventure'],['games','games'],['site','site']]:[['players','players'],['adventure','adventure']];
+  if(!adm&&view!=='players'&&view!=='adventure')view='players';
   const stage=inStage();
   return`<div class="app${stage?' stagemode':''}"><aside class="side">
    <div class="brand">${brandHtml()}</div>
    <nav class="nav" aria-label="Main">${items.map(([k,ic])=>`<button data-act="nav" data-v="${k}" ${view===k?'aria-current="page"':''}>${ICON[ic]}<span>${t(k)}</span></button>`).join('')}</nav>
    <div class="side-foot"><div class="me"><b>${esc(u.disp)}</b><span>${adm?t('admin'):t('player')}</span></div>${langSwitch()}<button class="btn small" data-act="logout">${t('logout')}</button></div>
-  </aside><main class="main${stage?' stage':''}" id="main">${view==='players'?renderPlayers():view==='npcs'?renderNpcs():view==='data'?renderData():view==='site'?renderSite():view==='adventure'?renderAdventure():renderGames()}</main></div>`;
+  </aside><main class="main${stage?' stage':''}" id="main">${view==='players'?renderPlayers():view==='npcs'?renderNpcs():view==='data'?renderData():view==='site'?renderSite():view==='adventure'?(adm?renderAdventure():renderPlayerAdv()):renderGames()}</main></div>`;
 }
 function head(title,sub,btn){return`<div class="head"><div><h1>${title}</h1><p>${sub}</p></div>${btn||''}</div>`}
 function table(kind){

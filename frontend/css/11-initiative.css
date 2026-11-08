@@ -24,3 +24,8 @@
 .ini-hp input{width:64px}
 .ini-act{display:flex;gap:6px}
 @media(max-width:700px){.ini-row{grid-template-columns:24px minmax(0,1fr) 70px;}.ini-hp,.ini-act{grid-column:2/-1}}
+
+.ini-row.ro{grid-template-columns:28px minmax(0,1fr) 56px 84px}
+.ini-num{font-family:var(--display);font-weight:700;font-size:1.25rem;text-align:center;font-variant-numeric:tabular-nums}
+.turn-banner{margin:0 16px 12px;padding:12px 14px;border-radius:var(--r);background:var(--turn-now);color:#14201d;font-weight:800;text-align:center;font-size:1.1rem}
+@media(max-width:700px){.ini-row.ro{grid-template-columns:24px minmax(0,1fr) 48px 72px}.ini-row.ro .ini-hp{grid-column:auto}}

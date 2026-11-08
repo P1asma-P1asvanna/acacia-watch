@@ -4,7 +4,7 @@
    and nobody is typing, so the page never jumps under a finger. */
 const LIVE={v:null,run:false,ac:null,fails:0,dirty:false,timer:0};
 const liveSleep=ms=>new Promise(r=>setTimeout(r,ms));
-const liveSig=()=>JSON.stringify([users,pcs,npcs,rooms,SITE,CAT]);
+const liveSig=()=>JSON.stringify([users,pcs,npcs,rooms,prooms,SITE,CAT]);
 function liveBusy(){
   if(edit||dedit||roomEdit||siteDraft||inflight)return true;
   const a=document.activeElement;
