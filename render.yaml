@@ -1,6 +1,6 @@
 services:
   - type: web
-    name: acacia-watch
+    name: acacia-watch-techtale
     runtime: python
     plan: free
     buildCommand: pip install -r backend/requirements.txt
