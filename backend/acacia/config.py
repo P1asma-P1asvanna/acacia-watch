@@ -15,3 +15,5 @@ MAX_BODY = 12 * 1024 * 1024
 
 LOCK = threading.Lock()  # all database work happens under this lock
 FAILS = {}  # (ip, name) -> [timestamps of failed logins]
+
+POLL_SECONDS = float(os.environ.get("DD_POLL_SECONDS", "25"))  # how long a live-update question is held open

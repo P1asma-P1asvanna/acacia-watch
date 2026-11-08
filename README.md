@@ -101,7 +101,9 @@ frontend/                  หน้าเว็บ (ไม่มี build step 
   js/12-game-data.js       แก้ข้อมูลเกม (admin)
   js/13-adventure.js · 14-initiative.js · 15-minigames.js
   js/16-site-settings.js · 17-backup.js
-  js/18-shell.js · 19-events-boot.js    โครงหน้า, event ทั้งหมด, เริ่มระบบ
+  js/18-shell.js            โครงหน้า
+  js/19-live.js            อัปเดตสดแบบ long polling (ถามเซิร์ฟเวอร์ว่ามีอะไรเปลี่ยนไหม)
+  js/20-events-boot.js     event ทั้งหมด, เริ่มระบบ
 backend/
   server.py                จุดเริ่มรัน (python backend/server.py)
   requirements.txt         psycopg (ใช้เมื่อต่อ PostgreSQL/Neon)
@@ -114,6 +116,7 @@ backend/
     validation.py          ตรวจและทำความสะอาดข้อมูลตัวละคร (กันโกง)
     store.py               ข้อมูลที่ส่งให้หน้าเว็บตอนเริ่ม + kv
     routes.py              API ทั้งหมด (/api/...)
+    live.py                เลขเวอร์ชันข้อมูล + long polling (/api/poll)
     handler.py             HTTP, session, ส่งไฟล์ frontend (gzip + ETag)
     cli.py                 คำสั่ง list-users / make-admin / reset-password
 tools/build_single.py      รวมหน้าเว็บเป็นไฟล์ HTML ไฟล์เดียว (สำหรับ demo/ออฟไลน์)
@@ -121,3 +124,10 @@ tools/build_single.py      รวมหน้าเว็บเป็นไฟ�
 
 เพิ่มไฟล์ JS ใหม่: สร้างใน `frontend/js/` แล้วเพิ่มบรรทัด `<script src="js/...">` ใน `frontend/index.html` (ทุกไฟล์ใช้ตัวแปรร่วมกัน เรียงตามลำดับที่เขียนไว้)
 สร้างไฟล์เดียว: `python3 tools/build_single.py` → `dist/acacia-watch.html`
+
+## อัปเดตสด (Live updates)
+
+เมื่อมีคนบันทึกอะไร คนอื่นที่เปิดเว็บอยู่จะเห็นภายในไม่ถึงวินาที (ไม่ต้องรีเฟรช) หลักการ: เซิร์ฟเวอร์เก็บเลขเวอร์ชันในหน่วยความจำ เบราว์เซอร์ถาม `/api/poll?v=N` ค้างไว้ได้สูงสุด ~25 วินาที (ไม่แตะฐานข้อมูล จึงไม่ปลุก Neon) พอเลขเปลี่ยนก็ตอบทันที แล้วหน้าเว็บโหลดข้อมูลใหม่
+- ไม่วาดหน้าใหม่ถ้าข้อมูลไม่ต่างจากเดิม และไม่แตะหน้าจอขณะมีคนกำลังพิมพ์/แก้ฟอร์ม (รอจนพิมพ์เสร็จค่อยอัปเดต)
+- แท็บที่ถูกซ่อน (สลับไปแอปอื่น เช่น Owlbear) จะหยุดถามเอง และกลับมาโหลดข้อมูลล่าสุดทันทีที่เปิดกลับมา
+- ตัวแปรสภาพแวดล้อม `DD_POLL_SECONDS` (ค่าเริ่มต้น 25) ปรับเวลาค้างคำถามได้

@@ -8,9 +8,10 @@ import sys
 import time
 from http import cookies
 from http.server import BaseHTTPRequestHandler
-from urllib.parse import unquote, urlparse
+from urllib.parse import parse_qs, unquote, urlparse
 
-from .config import COOKIE, FRONTEND_DIR, LOCK, MAX_BODY, SESSION_DAYS
+from . import live
+from .config import COOKIE, FRONTEND_DIR, LOCK, MAX_BODY, POLL_SECONDS, SESSION_DAYS
 from .database import run
 from .errors import Err
 from .routes import Routes
@@ -19,6 +20,7 @@ from .store import boot_state
 MIME = {".html": "text/html", ".css": "text/css", ".js": "application/javascript", ".json": "application/json",
         ".svg": "image/svg+xml", ".png": "image/png", ".jpg": "image/jpeg", ".jpeg": "image/jpeg", ".webp": "image/webp",
         ".gif": "image/gif", ".ico": "image/x-icon", ".woff2": "font/woff2", ".txt": "text/plain"}
+QUIET = ("/api/login", "/api/logout", "/api/me/password")  # these change nothing others can see
 STATIC = {}  # full path -> ((mtime, size), bytes, gzipped bytes or None, etag)
 
 
@@ -97,11 +99,26 @@ class H(Routes, BaseHTTPRequestHandler):
                 with LOCK:
                     res = run(lambda c: boot_state(c, self.session_user(c)))
                 return self.send(200, res)
+            if path == "/api/poll":
+                return self.poll()
             if path.startswith("/api/"):
                 return self.send(404, {"error": "not_found"})
             return self.static(path)
         except Err as e:
             return self.send(e.code, {"error": e.msg})
+
+    def poll(self):
+        """Live updates: answer when the data version differs from ?v=, or after POLL_SECONDS (see live.py)."""
+        if COOKIE not in cookies.SimpleCookie(self.headers.get("Cookie") or ""):
+            raise Err(401, "unauthorized")
+        try:
+            since = int(parse_qs(urlparse(self.path).query).get("v", [""])[0])
+        except ValueError:
+            since = None
+        cur = live.wait(since, POLL_SECONDS)
+        if cur is None:
+            raise Err(503, "busy")
+        return self.send(200, {"v": cur})
 
     def static(self, path):
         """Serve a file from frontend/. index.html gets the marker that tells the page it has a server."""
@@ -165,6 +182,8 @@ class H(Routes, BaseHTTPRequestHandler):
 
             with LOCK:
                 res = run(work)
+            if path not in QUIET:
+                live.bump()  # tell everybody who is waiting that something changed
             self.send(200, res, extra=extra)
         except Err as e:
             self.send(e.code, {"error": e.msg})
