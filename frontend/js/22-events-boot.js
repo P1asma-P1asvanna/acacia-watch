@@ -60,6 +60,9 @@ document.addEventListener('click',e=>{
     if(PREFS.lay)p.lay=PREFS.lay;else delete p.lay;
     PREFS=p;ok=savePrefs()&&ok;siteMsg=ok?t('sSaved'):t('sSavedTemp');siteDraft=siteInit();render()}
   else if(a==='sresetall'){if(dataArm!=='siteReset'){dataArm='siteReset';render();return}PREFS={};savePrefs();siteDraft=siteInit();dataArm=null;siteMsg=t('sSaved');render()}
+  else if(a==='cond'){condOpen.has(id)?condOpen.delete(id):condOpen.add(id);render()}
+  else if(a==='cond-all'){condOpen=v==='1'?new Set((CAT.conditions||[]).map(c=>c.id)):new Set();render()}
+  else if(a==='cond-edit'){view='data';dataTab='conditions';dataPage=0;dedit=null;location.hash='data';render()}
   else if(a==='dtab'){dataTab=v;dataPage=0;dataArm=null;render()}
   else if(a==='dpage'){dataPage+=Number(v)||0;render()}
   else if(a==='dnew'){dedit={cat:dataTab,draft:blankItem(dataTab),isNew:true};dataErr='';dataArm=null;render()}
@@ -136,7 +139,7 @@ document.addEventListener('change',e=>{
   if(f==='bg'){syncBgItems(d);render()}
   if(f==='cls'||f==='sub'||f==='race'){refreshHp();refreshExtra()}
 });
-window.addEventListener('hashchange',()=>{const h=location.hash.slice(1);if(me()&&['players','npcs','data','games','site','adventure'].includes(h)&&h!==view&&(isAdmin()||h==='players'||h==='adventure'||h==='site')){view=h;edit=null;dedit=null;roomOpen=null;roomEdit=null;siteDraft=h==='site'?siteInit():null;render()}});
+window.addEventListener('hashchange',()=>{const h=location.hash.slice(1);if(me()&&['players','npcs','data','games','site','adventure','conditions'].includes(h)&&h!==view&&(isAdmin()||h==='players'||h==='adventure'||h==='site'||h==='conditions')){view=h;edit=null;dedit=null;roomOpen=null;roomEdit=null;siteDraft=h==='site'?siteInit():null;render()}});
 document.addEventListener('visibilitychange',()=>{if(!document.hidden)pull()});
 async function boot(){
   const served=!!document.querySelector('meta[name=dd-server]');

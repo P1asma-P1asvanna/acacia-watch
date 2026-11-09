@@ -1,14 +1,14 @@
 /* ---------- views ---------- */
 function renderApp(){
   const u=me(), adm=isAdmin();
-  const items=adm?[['players','players'],['npcs','npcs'],['data','data'],['adventure','adventure'],['games','games'],['site','site']]:[['players','players'],['adventure','adventure'],['site','site']];
-  if(!adm&&!['players','adventure','site'].includes(view))view='players';
+  const items=adm?[['players','players'],['npcs','npcs'],['data','data'],['adventure','adventure'],['conditions','conditions'],['games','games'],['site','site']]:[['players','players'],['adventure','adventure'],['conditions','conditions'],['site','site']];
+  if(!adm&&!['players','adventure','conditions','site'].includes(view))view='players';
   const stage=inStage();
   return`<div class="app${stage?' stagemode':''}"><aside class="side">
    <div class="brand">${brandHtml()}</div>
    <nav class="nav" aria-label="Main">${items.map(([k,ic])=>`<button data-act="nav" data-v="${k}" ${view===k?'aria-current="page"':''}>${ICON[ic]}<span>${t(k)}</span></button>`).join('')}</nav>
    <div class="side-foot"><div class="me"><b>${esc(u.disp)}</b><span>${adm?t('admin'):t('player')}</span></div>${langSwitch()}<button class="btn small" data-act="logout">${t('logout')}</button></div>
-  </aside><main class="main${stage?' stage':''}" id="main">${view==='players'?renderPlayers():view==='npcs'?renderNpcs():view==='data'?renderData():view==='site'?renderSite():view==='adventure'?(adm?renderAdventure():renderPlayerAdv()):renderGames()}</main></div>`;
+  </aside><main class="main${stage?' stage':''}" id="main">${view==='players'?renderPlayers():view==='npcs'?renderNpcs():view==='data'?renderData():view==='site'?renderSite():view==='conditions'?renderConditions():view==='adventure'?(adm?renderAdventure():renderPlayerAdv()):renderGames()}</main></div>`;
 }
 function head(title,sub,btn){return`<div class="head"><div><h1>${title}</h1><p>${sub}</p></div>${btn||''}</div>`}
 function table(kind){
@@ -141,3 +141,14 @@ function classProfs(d){
 }
 const parseEquip=txt=>String(txt||'').split(/\r?\n/).map(l=>l.trim()).filter(Boolean).map(l=>{const m=l.match(/^(\d+)\s*[x×]\s*(.+)$/i);return m?{name:m[2].trim(),qty:Math.max(1,+m[1])}:{name:l,qty:1}});
 function syncBgItems(d){const b=bgOf(d);d.items=(d.items||[]).filter(i=>i.src!=='bg');if(b)parseEquip(b.equip).forEach(e=>d.items.push({id:uid(),name:e.name,qty:e.qty,src:'bg'}))}
+
+/* ---------- conditions: read-only reference for everyone; the admin edits the list in Game data ---------- */
+let condOpen=new Set();
+function renderConditions(){
+  const L=CAT.conditions||[],adm=isAdmin();
+  const acts=`<div class="acts">${L.length?`<button class="btn small" data-act="cond-all" data-v="1">${t('condOpenAll')}</button><button class="btn small" data-act="cond-all" data-v="0">${t('condCloseAll')}</button>`:''}${adm?`<button class="btn" data-act="cond-edit">${t('condEdit')}</button>`:''}</div>`;
+  const body=L.length?`<div class="condlist">${L.map(c=>{const o=condOpen.has(c.id),nm=lang==='th'&&c.th?c.th:'';
+   return`<div class="cond${o?' open':''}"><button class="condhead" data-act="cond" data-id="${c.id}" aria-expanded="${o}"><b>${esc(c.name)}</b>${nm?`<span class="condth">${esc(nm)}</span>`:''}<span class="condsum">${esc(c.sum)}</span><span class="condcar" aria-hidden="true">${o?'−':'+'}</span></button>${o?`<div class="condbody">${esc(c.desc||c.sum).replace(/\n/g,'<br>')}</div>`:''}</div>`}).join('')}</div>`
+   :`<div class="empty"><div>${t('condNone')}</div></div>`;
+  return head(t('conditions'),t('condSub'),acts)+`<section class="panel">${body}</section>`;
+}

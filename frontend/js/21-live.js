@@ -20,7 +20,7 @@ async function livePull(){
   applyBoot(j);
   if(JSON.stringify([SITE,PREFS])!==siteBefore){applySite(curTheme());const bd=document.querySelector('.side .brand');if(bd)bd.innerHTML=brandHtml()}
   if(liveSig()===before)return;
-  if(!session||['players','npcs','adventure','data'].includes(view))render();
+  if(!session||['players','npcs','adventure','data','conditions'].includes(view))render();
 }
 async function liveLoop(){
   if(LIVE.run)return;LIVE.run=true;

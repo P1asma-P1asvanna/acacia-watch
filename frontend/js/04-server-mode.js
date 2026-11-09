@@ -39,7 +39,7 @@ function syncKind(k){
 }
 async function pull(){
   if(!REMOTE||!session||edit||dedit||inflight)return;
-  if(view!=='players'&&view!=='npcs')return;
+  if(view!=='players'&&view!=='npcs'&&view!=='conditions')return;
   try{applyBoot(await api('GET','api/boot'));if(!edit&&!dedit&&!inflight)render()}catch(e){if(e.status===401)netErr(e)}
 }
 

@@ -18,7 +18,9 @@ const SCHEMA={
  backgrounds:{cols:['name','nLang','nTool','nVeh','sk'],f:[['name','t'],['nLang','n'],['nTool','n'],['nVeh','n'],['equip','a']]},
  languages:{cols:['name'],f:[['name','t']]},
  tools:{cols:['name'],f:[['name','t']]},
- vehicles:{cols:['name'],f:[['name','t']]}};
+ vehicles:{cols:['name'],f:[['name','t']]},
+ conditions:{cols:['name','th','sum'],f:[['name','t'],['th','t'],['sum','t'],['desc','a']]}};
+Object.assign(FL,{th:['ชื่อภาษาไทย','Thai name'],sum:['สรุปสั้น','Short summary'],desc:['รายละเอียดผลของสถานะ','Full effects']});
 Object.assign(FL,{sk:['Skill Proficiencies ที่ได้','Skill proficiencies granted'],equip:['อุปกรณ์เริ่มต้น (หนึ่งรายการต่อบรรทัด เช่น 2x Torch)','Starting equipment (one item per line, e.g. 2x Torch)']});
 FL.saves=['Saving throw และทักษะอาชีพ','Saving throws and class skills']; /* class saves; armor uses the same key with its own label below */
 const flFor=(cat,k)=>cat==='armor'&&k==='saves'?(lang==='th'?'โบนัส Saves':'Saves bonus'):fl(k);
