@@ -3,6 +3,7 @@ services:
     name: acacia-watch
     runtime: python
     plan: free
+    region: singapore
     buildCommand: pip install -r backend/requirements.txt
     startCommand: python backend/server.py
     healthCheckPath: /healthz
