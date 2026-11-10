@@ -8,7 +8,7 @@ function renderApp(){
    <div class="brand">${brandHtml()}</div>
    <nav class="nav" aria-label="Main">${items.map(([k,ic])=>`<button data-act="nav" data-v="${k}" ${view===k?'aria-current="page"':''}>${ICON[ic]}<span>${t(k)}</span></button>`).join('')}</nav>
    <div class="side-foot"><div class="me"><b>${esc(u.disp)}</b><span>${adm?t('admin'):t('player')}</span></div>${langSwitch()}<button class="btn small" data-act="logout">${t('logout')}</button></div>
-  </aside><main class="main${stage?' stage':''}" id="main">${view==='players'?renderPlayers():view==='npcs'?renderNpcs():view==='data'?renderData():view==='site'?renderSite():view==='conditions'?renderConditions():view==='adventure'?(adm?renderAdventure():renderPlayerAdv()):renderGames()}</main></div>`;
+  </aside><main class="main${stage?' stage':''}" id="main">${view==='players'?renderPlayers():view==='npcs'?renderNpcs():view==='data'?renderData():view==='site'?renderSite():view==='conditions'?renderConditions():view==='adventure'?(adm?renderAdventure():renderPlayerAdv()):renderGames()}</main>${condPopHtml()}</div>`;
 }
 function head(title,sub,btn){return`<div class="head"><div><h1>${title}</h1><p>${sub}</p></div>${btn||''}</div>`}
 function table(kind){
@@ -142,13 +142,36 @@ function classProfs(d){
 const parseEquip=txt=>String(txt||'').split(/\r?\n/).map(l=>l.trim()).filter(Boolean).map(l=>{const m=l.match(/^(\d+)\s*[x×]\s*(.+)$/i);return m?{name:m[2].trim(),qty:Math.max(1,+m[1])}:{name:l,qty:1}});
 function syncBgItems(d){const b=bgOf(d);d.items=(d.items||[]).filter(i=>i.src!=='bg');if(b)parseEquip(b.equip).forEach(e=>d.items.push({id:uid(),name:e.name,qty:e.qty,src:'bg'}))}
 
-/* ---------- conditions: read-only reference for everyone; the admin edits the list in Game data ---------- */
-let condOpen=new Set();
+/* ---------- conditions: read-only reference for everyone; the admin edits the list (with icon and colour) in Game data ---------- */
+let condOpen=new Set(),condPop=null;
+const animOn=()=>{const a=typeof PREFS!=='undefined'&&PREFS&&PREFS.anim;return a?a==='on':!REDUCED};
+const ccs=c=>c&&c.color?` style="--cc:${esc(c.color)}"`:'';
+const reEsc=x=>x.replace(/[.*+?^${}()|[\]\\]/g,'\\$&');
+function condIcon(c,px){
+  if(!c.icon)return'';
+  return`<img class="cicon" src="${esc(c.icon)}" width="${px}" height="${px}" alt="" loading="lazy" decoding="async" ${isGif(c.icon)?'data-gif="1"':''}>`}
+/* text with **bold italic** lead-ins, and every condition name turned into a coloured, tappable highlight (not the condition's own name) */
+function condText(src,selfId){
+  const L=(CAT.conditions||[]).filter(c=>c.id!==selfId),names=[];
+  L.forEach(c=>{[c.name,c.th].forEach(n=>{n=String(n||'').trim();if(n.length>=3)names.push([n,c.id])})});
+  names.sort((a,b)=>b[0].length-a[0].length);
+  const map=new Map(names.map(([n,id])=>[esc(n).toLowerCase(),id]));
+  const rx=names.length?new RegExp('(?<![A-Za-z])('+names.map(([n])=>reEsc(esc(n))).join('|')+')(?![A-Za-z])','gi'):null;
+  return esc(src).replace(/\*\*(.+?)\*\*/g,'<b><i>$1</i></b>').replace(/\n/g,'<br>').split(/(<[^>]+>)/).map(part=>{
+    if(!rx||part[0]==='<')return part;
+    return part.replace(rx,m=>{const id=map.get(m.toLowerCase()),c=L.find(x=>x.id===id);
+      return`<button class="cref" data-act="cpop" data-id="${id}" ${ccs(c)}>${m}</button>`})}).join('')}
+function condPopHtml(){
+  const c=condPop&&(CAT.conditions||[]).find(x=>x.id===condPop);if(!c)return'';
+  const nm=lang==='th'&&c.th?`<span class="condth">${esc(c.th)}</span>`:'';
+  return`<div class="cpop" role="dialog" aria-label="${esc(c.name)}"${ccs(c)}><div class="cpop-h">${condIcon(c,40)}<h3>${esc(c.name)}</h3>${nm}<button class="btn small" data-act="cpop-x" aria-label="${t('close')}">✕</button></div><div class="cpop-b">${condText(c.desc||c.sum,c.id)}</div></div>`}
+function condStills(){if(animOn())return;document.querySelectorAll('img.cicon[data-gif]').forEach(im=>{const u=im.getAttribute('src');stillOf(u).then(d=>{if(im.getAttribute('src')===u)im.src=d})})}
 function renderConditions(){
   const L=CAT.conditions||[],adm=isAdmin();
   const acts=`<div class="acts">${L.length?`<button class="btn small" data-act="cond-all" data-v="1">${t('condOpenAll')}</button><button class="btn small" data-act="cond-all" data-v="0">${t('condCloseAll')}</button>`:''}${adm?`<button class="btn" data-act="cond-edit">${t('condEdit')}</button>`:''}</div>`;
   const body=L.length?`<div class="condlist">${L.map(c=>{const o=condOpen.has(c.id),nm=lang==='th'&&c.th?c.th:'';
-   return`<div class="cond${o?' open':''}"><button class="condhead" data-act="cond" data-id="${c.id}" aria-expanded="${o}"><b>${esc(c.name)}</b>${nm?`<span class="condth">${esc(nm)}</span>`:''}<span class="condsum">${esc(c.sum)}</span><span class="condcar" aria-hidden="true">${o?'−':'+'}</span></button>${o?`<div class="condbody">${esc(c.desc||c.sum).replace(/\n/g,'<br>')}</div>`:''}</div>`}).join('')}</div>`
+   return`<div class="cond${o?' open':''}"${ccs(c)}><button class="condhead" data-act="cond" data-id="${c.id}" aria-expanded="${o}">${condIcon(c,40)}<b>${esc(c.name)}</b>${nm?`<span class="condth">${esc(nm)}</span>`:''}<span class="condsum">${esc(c.sum)}</span><span class="condcar" aria-hidden="true">${o?'−':'+'}</span></button>${o?`<div class="condbody">${condText(c.desc||c.sum,c.id)}</div>`:''}</div>`}).join('')}</div>`
    :`<div class="empty"><div>${t('condNone')}</div></div>`;
+  setTimeout(condStills,0);
   return head(t('conditions'),t('condSub'),acts)+`<section class="panel">${body}</section>`;
 }

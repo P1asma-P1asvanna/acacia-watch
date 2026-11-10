@@ -18,7 +18,7 @@ document.addEventListener('click',e=>{
   if(a==='lang'){lang=v;put('dd_lang',lang);render()}
   else if(a==='tab'){authTab=v;authErr='';render()}
   else if(a==='logout'){if(REMOTE){api('POST','api/logout',{}).catch(()=>{});users=[];pcs=[];npcs=[];rooms=[];netBar('')}session=null;put('dd_session',null);edit=null;dedit=null;siteDraft=null;roomOpen=null;roomEdit=null;authTab='signin';render()}
-  else if(a==='nav'){view=v;edit=null;dedit=null;delArm=null;dataArm=null;flashMsg='';siteDraft=v==='site'?siteInit():null;siteMsg='';siteErr='';roomOpen=null;roomEdit=null;location.hash=v;render();pull()}
+  else if(a==='nav'){condPop=null;view=v;edit=null;dedit=null;delArm=null;dataArm=null;flashMsg='';siteDraft=v==='site'?siteInit():null;siteMsg='';siteErr='';roomOpen=null;roomEdit=null;location.hash=v;render();pull()}
   else if(a==='new'){edit={kind:k,draft:blank(k),isNew:true};delArm=null;render()}
   else if(a==='edit'){const r=list(k).find(x=>x.id===id);edit={kind:k,draft:JSON.parse(JSON.stringify(r)),isNew:false};delArm=null;render()}
   else if(a==='back'){edit=null;delArm=null;render()}
@@ -60,6 +60,10 @@ document.addEventListener('click',e=>{
     if(PREFS.lay)p.lay=PREFS.lay;else delete p.lay;
     PREFS=p;ok=savePrefs()&&ok;siteMsg=ok?t('sSaved'):t('sSavedTemp');siteDraft=siteInit();render()}
   else if(a==='sresetall'){if(dataArm!=='siteReset'){dataArm='siteReset';render();return}PREFS={};savePrefs();siteDraft=siteInit();dataArm=null;siteMsg=t('sSaved');render()}
+  else if(a==='cpop'){condPop=id;render()}
+  else if(a==='cpop-x'){condPop=null;render()}
+  else if(a==='cicon-rm'){dedit.draft.icon='';imgMsg='';render()}
+  else if(a==='ccol-reset'){dedit.draft.color='';render()}
   else if(a==='cond'){condOpen.has(id)?condOpen.delete(id):condOpen.add(id);render()}
   else if(a==='cond-all'){condOpen=v==='1'?new Set((CAT.conditions||[]).map(c=>c.id)):new Set();render()}
   else if(a==='cond-edit'){view='data';dataTab='conditions';dataPage=0;dedit=null;location.hash='data';render()}
@@ -156,3 +160,5 @@ async function boot(){
   render();
 }
 boot();
+
+document.addEventListener('keydown',e=>{if(e.key==='Escape'&&condPop){condPop=null;render()}});

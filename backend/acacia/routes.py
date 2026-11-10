@@ -9,7 +9,7 @@ from http import cookies
 from .config import COOKIE, FAILS
 from .errors import Err
 from .security import check_pw, hash_pw, new_user_row
-from .store import boot_state, clean_site, kv_get, kv_set, user_pub
+from .store import boot_state, clean_cat, clean_site, kv_get, kv_set, user_pub
 from . import images
 from .config import IMG_SLOTS
 from .validation import ID_RE, clean_prefs, clean_record, ADMIN_ONLY
@@ -142,8 +142,10 @@ class Routes:
                 raise Err(400, "bad_rooms")
             if key == "site":
                 v = clean_site(c, v)
+            if key == "cat":
+                v = clean_cat(c, v)
             kv_set(c, key, v)
-            if key == "site":
+            if key in ("site", "cat"):
                 images.purge(c, "site")
             return {"ok": True}
 

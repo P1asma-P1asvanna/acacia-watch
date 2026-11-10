@@ -32,6 +32,24 @@ def clean_site(c, v):
     return out
 
 
+def clean_cat(c, v):
+    """Condition icons must be pictures stored for the site; colours must be #rrggbb. Everything else is left as the admin sent it."""
+    import re
+    from . import images
+    own = images.owned_ids(c, "site")
+    L = v.get("conditions")
+    if isinstance(L, list):
+        for x in L:
+            if not isinstance(x, dict):
+                continue
+            ic = x.get("icon")
+            m = images.URL_RE.match(ic) if isinstance(ic, str) else None
+            x["icon"] = ic if (m and m.group(1) in own) else ""
+            col = x.get("color")
+            x["color"] = col if isinstance(col, str) and re.match(r"^#[0-9a-fA-F]{6}$", col) else ""
+    return v
+
+
 def user_pub(r):
     return {"id": r["id"], "name": r["name"], "disp": r["disp"], "role": r["role"]}
 

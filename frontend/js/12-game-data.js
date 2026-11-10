@@ -27,7 +27,7 @@ const flFor=(cat,k)=>cat==='armor'&&k==='saves'?(lang==='th'?'โบนัส Sa
 const usageKey={races:'race',classes:'cls',alignments:'align',backgrounds:'bg'};
 const pickKey={languages:'lang',tools:'tool',vehicles:'veh'};
 const usage=(c,it)=>usageKey[c]?[...pcs,...npcs].filter(r=>r[usageKey[c]]===it.name).length:pickKey[c]?[...pcs,...npcs].filter(r=>(r.pick&&r.pick[pickKey[c]]||[]).includes(it.name)).length:0;
-function blankItem(c){const o={id:uid()};SCHEMA[c].f.forEach(([k,ty])=>o[k]=ty==='b'?0:(ty==='n'&&/^n[A-Z]/.test(k)?0:''));if(c==='classes'){o.subs=[];o.feats=[]}if(c==='backgrounds'){o.sk=[];o.feats=[]}return o}
+function blankItem(c){const o={id:uid()};SCHEMA[c].f.forEach(([k,ty])=>o[k]=ty==='b'?0:(ty==='n'&&/^n[A-Z]/.test(k)?0:''));if(c==='classes'){o.subs=[];o.feats=[]}if(c==='backgrounds'){o.sk=[];o.feats=[]}if(c==='conditions'){o.icon='';o.color=''}return o}
 const cell=v=>{const s=String(v??'').replace(/\s+/g,' ').trim();return s?esc(s.length>60?s.slice(0,57)+'…':s):'<span class="muted">—</span>'};
 let dataPage=0;
 function renderData(){
@@ -36,7 +36,7 @@ function renderData(){
   dataPage=Math.min(Math.max(0,dataPage),pages-1);const shown=L.slice(dataPage*ps,dataPage*ps+ps);
   const tabs=Object.keys(SCHEMA).map(k=>`<button role="tab" data-act="dtab" data-v="${k}" aria-selected="${k===dataTab}">${t(k)} <span class="cnt">${CAT[k].length}</span></button>`).join('');
   const body=L.length?`<div class="scroll"><table><thead><tr>${sc.cols.map(c=>`<th>${flFor(dataTab,c)}</th>`).join('')}<th></th></tr></thead><tbody>
-   ${shown.map(r=>{const n=usage(dataTab,r);return`<tr>${sc.cols.map(c=>c==='subs'?`<td>${r.subs.length?esc(r.subs.map(s=>s.name).join(', ')):'<span class="muted">'+t('noSub')+'</span>'}</td>`:c==='name'?`<td><b>${cell(r.name)}</b></td>`:c==='sk'?`<td>${(r.sk||[]).length?esc(r.sk.map(skName).join(', ')):'<span class="muted">—</span>'}</td>`:`<td>${cell(r[c])}</td>`).join('')}
+   ${shown.map(r=>{const n=usage(dataTab,r);return`<tr>${sc.cols.map(c=>c==='subs'?`<td>${r.subs.length?esc(r.subs.map(s=>s.name).join(', ')):'<span class="muted">'+t('noSub')+'</span>'}</td>`:c==='name'?`<td>${dataTab==='conditions'?condIcon(r,28):''}<b${dataTab==='conditions'&&r.color?` style="color:${esc(r.color)}"`:''}>${cell(r.name)}</b></td>`:c==='sk'?`<td>${(r.sk||[]).length?esc(r.sk.map(skName).join(', ')):'<span class="muted">—</span>'}</td>`:`<td>${cell(r[c])}</td>`).join('')}
    <td><div class="acts"><button class="btn small" data-act="dedit" data-id="${r.id}">${t('edit')}</button><button class="btn small danger" data-act="ddel" data-id="${r.id}">${dataArm===r.id?(n?t('delInUse').replace('{n}',n):t('delSure')):t('del')}</button></div></td></tr>`}).join('')}
    </tbody></table></div>${pages>1?`<div class="pager"><button class="btn small" data-act="dpage" data-v="-1" ${dataPage?'':'disabled'}>‹ ${t('pgPrev')}</button><span class="note" role="status">${t('pgInfo').replace('{p}',dataPage+1).replace('{n}',pages).replace('{c}',L.length)}</span><button class="btn small" data-act="dpage" data-v="1" ${dataPage<pages-1?'':'disabled'}>${t('pgNext')} ›</button></div>`:''}`:`<div class="empty"><div>${t('noRows')}</div></div>`;
   return head(t('data'),t('dataSub'),`<button class="btn primary" data-act="dnew">+ ${t('addItem')}</button>`)
@@ -44,7 +44,7 @@ function renderData(){
 }
 function renderDataEditor(){
   const d=dedit.draft,c=dedit.cat,sc=SCHEMA[c];
-  const fields=sc.f.map(([k,ty])=>{
+  const fields=sc.f.filter(([k])=>k!=='color').map(([k,ty])=>{
     const lab=flFor(c,k),id='c_'+k;
     if(ty==='a')return`<div class="field full"><label for="${id}">${lab}</label><textarea id="${id}" data-cf="${k}">${esc(d[k])}</textarea></div>`;
     if(ty==='b')return`<div class="field"><label for="${id}">${lab}</label><select id="${id}" data-cf="${k}"><option value="0" ${d[k]?'':'selected'}>${t('no')}</option><option value="1" ${d[k]?'selected':''}>${t('yes')}</option></select></div>`;
@@ -58,8 +58,15 @@ function renderDataEditor(){
   const skSec=c==='backgrounds'?`<section class="panel"><div class="ph"><div><h2>${fl('sk')}</h2><div class="note">${t('skHint')}</div></div></div><div class="chkgrid">${SKILLS.map(([k,n,a])=>`<label class="chk"><input type="checkbox" data-bgs="${k}" ${(d.sk||[]).includes(k)?'checked':''}> ${n} <span class="pa">${a.toUpperCase()}</span></label>`).join('')}</div></section>`:'';
   const featSec=(c==='classes'||c==='backgrounds')?`<section class="panel"><div class="ph"><div><h2>${t('featTitle')}</h2><div class="note">${t(c==='classes'?'featHintC':'featHintB')}</div></div><button class="btn small" data-act="ftadd">${t('featAdd')}</button></div>
    <div class="subs">${(d.feats||[]).length?d.feats.map((f,i)=>`<div class="featrow ${c==='classes'?'withlvl':''}"><div class="field"><label for="f_n${i}">${t('featName')}</label><input id="f_n${i}" data-ftf="name" data-fti="${i}" value="${esc(f.name)}"></div>${c==='classes'?`<div class="field"><label for="f_l${i}">${t('featLvl')}</label><input id="f_l${i}" type="number" min="1" max="20" data-ftf="lvl" data-fti="${i}" value="${esc(f.lvl||1)}"></div>`:''}<button class="btn small danger" data-act="ftdel" data-i="${i}">${t('subRemove')}</button><div class="field full"><label for="f_d${i}">${t('featDesc')}</label><textarea id="f_d${i}" data-ftf="desc" data-fti="${i}">${esc(f.desc)}</textarea></div></div>`).join(''):`<div class="empty" style="padding:18px">${t('featNone')}</div>`}</div></section>`:'';
+  const condSec=c==='conditions'?`<section class="panel"><div class="ph"><div><h2>${t('cLook')}</h2><div class="note">${t('cLookHint')}</div></div></div>
+   <div class="condedit"><div class="media"><div class="lbl">${t('cIcon')}</div>
+    <div class="thumb cond">${d.icon?`<img src="${esc(d.icon)}" alt="">`:`<span class="muted">${t('sNoImg')}</span>`}</div>
+    <div class="acts" style="justify-content:flex-start"><label class="btn small">${t('sUpload')}<input class="sr" type="file" accept="image/jpeg,image/png,image/webp,image/gif" data-img="cond" aria-label="${t('cIcon')}"></label>${d.icon?`<button class="btn small" data-act="cicon-rm">${t('sRemove')}</button>`:''}</div>
+    <p class="rules">${ruleText('cond')}</p>${imgMsg?`<p class="err" role="alert">${esc(imgMsg)}</p>`:''}</div>
+    <div class="media"><div class="lbl">${t('cColor')}</div><div class="crow"><input type="color" id="c_color" data-cf="color" value="${hexOf(d.color||getComputedStyle(document.documentElement).getPropertyValue('--ink').trim())}" aria-label="${t('cColor')}"><code>${esc(d.color||t('sDefault'))}</code>${d.color?`<button class="btn small" data-act="ccol-reset">${t('sDefault')}</button>`:''}</div>
+    <p class="rules">${t('cColorHint')}</p><div class="cprev">${t('cPrev')} <span class="cref"${ccs(d)}>${esc(d.name||'—')}</span></div></div></div></section>`:'';
   return`${head(esc(d.name)||t('addItem'),t(c),`<button class="btn" data-act="dback">← ${t('back')}</button>`)}
-   <section class="panel"><div class="grid wide">${fields}</div></section>${skSec}${subs}${featSec}
+   <section class="panel"><div class="grid wide">${fields}</div></section>${condSec}${skSec}${subs}${featSec}
    <div class="bar" style="padding:0"><div>${dedit.isNew?'':`<button class="btn danger" data-act="ddel-edit">${dataArm===d.id?(usage(c,d)?t('delInUse').replace('{n}',usage(c,d)):t('delSure')):t('del')}</button>`}</div>
    <div style="display:flex;gap:12px;align-items:center"><span class="err" role="alert">${esc(dataErr)}</span><button class="btn primary" data-act="dsave">${t('save')}</button></div></div>`;
 }

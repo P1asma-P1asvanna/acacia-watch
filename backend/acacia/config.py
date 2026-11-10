@@ -27,10 +27,11 @@ IMG_SLOTS = {
     "cover": {"scope": "site", "min_short": 480, "min_long": 800, "out": 1920, "in_bytes": 5 << 20, "out_bytes": 450 * 1024, "gif_bytes": 2 << 20, "gif_side": 1280},
     "bg":    {"scope": "user", "min_short": 480, "min_long": 800, "out": 1920, "in_bytes": 5 << 20, "out_bytes": 450 * 1024, "gif_bytes": 2 << 20, "gif_side": 1280},
     "panel": {"scope": "user", "min_short": 256, "min_long": 256, "out": 1024, "in_bytes": 3 << 20, "out_bytes": 300 * 1024, "gif_bytes": 1 << 20, "gif_side": 800},
+    "cond":  {"scope": "site", "min_short": 128, "min_long": 128, "out": 512,  "in_bytes": 2 << 20, "out_bytes": 150 * 1024, "gif_bytes": 1 << 20, "gif_side": 512},
     "deco":  {"scope": "user", "min_short": 64,  "min_long": 64,  "out": 512,  "in_bytes": 1 << 20, "out_bytes": 200 * 1024, "gif_bytes": 1 << 20, "gif_side": 512},
 }
 IMG_USER_MAX_COUNT = 6          # pictures one person can keep
 IMG_USER_MAX_BYTES = 3 * 1024 * 1024  # total size one person can keep
-IMG_SITE_MAX_COUNT = 4
-IMG_SITE_MAX_BYTES = 4 * 1024 * 1024
+IMG_SITE_MAX_COUNT = 60         # logo + cover + condition icons
+IMG_SITE_MAX_BYTES = 10 * 1024 * 1024
 IMG_GRACE = 600                 # seconds an uploaded but not yet saved picture is kept

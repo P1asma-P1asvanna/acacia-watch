@@ -6,7 +6,9 @@ const IMG_SLOTS={
   cover:{key:'cover',minShort:480,minLong:800,out:1920,inBytes:5*MB,outBytes:450*KB,gifBytes:2*MB,gifSide:1280},
   bg:{key:'imgBg',minShort:480,minLong:800,out:1920,inBytes:5*MB,outBytes:450*KB,gifBytes:2*MB,gifSide:1280},
   panel:{key:'imgPanel',minShort:256,minLong:256,out:1024,inBytes:3*MB,outBytes:300*KB,gifBytes:1*MB,gifSide:800},
+  cond:{key:'icon',minShort:128,minLong:128,out:512,inBytes:2*MB,outBytes:150*KB,gifBytes:1*MB,gifSide:512},
   deco:{key:'imgDeco',minShort:64,minLong:64,out:512,inBytes:1*MB,outBytes:200*KB,gifBytes:1*MB,gifSide:512}};
+const SITE_SLOTS=['logo','cover','cond'];
 const IMG_MAXPX=6000,IMG_MINBYTES=1*KB,IMG_TYPES=['image/jpeg','image/png','image/webp','image/gif'];
 let imgMsg='',imgBusy=false;
 const fmtB=n=>n>=MB?(n/MB).toFixed(n%MB?1:0)+' MB':Math.round(n/KB)+' KB';
@@ -17,7 +19,7 @@ function ruleText(slot){
     +' · '+t('rGif').replace('{b}',fmtB(s.gifBytes)).replace('{p}',s.gifSide);
 }
 const imgFail=code=>{const e=new Error(code);e.code=code;return e};
-const imgErrText=(code,slot)=>{const s=IMG_SLOTS[slot]||{};return (t('e_'+code)||t('sImgErr')).replace('{in}',fmtB(s.inBytes||0)).replace('{gif}',fmtB(s.gifBytes||0)).replace('{out}',fmtB(s.outBytes||0)).replace('{s}',s.minShort).replace('{l}',s.minLong).replace('{max}',IMG_MAXPX).replace('{gp}',s.gifSide).replace('{q}',t('rQuota'))};
+const imgErrText=(code,slot)=>{const s=IMG_SLOTS[slot]||{};return (t('e_'+code+(code==='img_quota'&&SITE_SLOTS.includes(slot)?'_site':''))||t('sImgErr')).replace('{in}',fmtB(s.inBytes||0)).replace('{gif}',fmtB(s.gifBytes||0)).replace('{out}',fmtB(s.outBytes||0)).replace('{s}',s.minShort).replace('{l}',s.minLong).replace('{max}',IMG_MAXPX).replace('{gp}',s.gifSide).replace('{q}',t('rQuota'))};
 const loadImg=url=>new Promise((res,rej)=>{const i=new Image();i.onload=()=>res(i);i.onerror=()=>rej(imgFail('img_read'));i.src=url});
 const toB64=blob=>new Promise((res,rej)=>{const r=new FileReader();r.onload=()=>res(String(r.result).split(',')[1]);r.onerror=()=>rej(imgFail('img_read'));r.readAsDataURL(blob)});
 const toBlob=(c,type,q)=>new Promise(r=>c.toBlob(r,type,q));
@@ -50,15 +52,17 @@ async function prepImage(file,slot){
 }
 /* upload one picture for a slot and put it in the settings draft (nothing is final until Save) */
 async function uploadSlot(slot,file){
-  if(imgBusy)return;imgBusy=true;imgMsg=t('rWorking');if(view==='site')render();
+  if(imgBusy)return;const tgt=slot==='cond'?(dedit&&dedit.draft):siteDraft;if(!tgt)return;
+  const redraw=()=>{if(view==='site'||(slot==='cond'&&view==='data'))render()};
+  imgBusy=true;imgMsg=t('rWorking');redraw();
   try{
     const p=await prepImage(file,slot);
     let url;
     if(REMOTE){const r=await api('POST','api/img',{slot,data:p.b64});url=r.url}
     else url='data:'+p.mime+';base64,'+p.b64;
-    siteDraft[IMG_SLOTS[slot].key]=url;imgMsg='';
+    tgt[IMG_SLOTS[slot].key]=url;imgMsg='';
   }catch(e){imgMsg=imgErrText(e.code||(e.status===409?'img_quota':e.message),slot);if(e.status===409)imgMsg=imgErrText('img_quota',slot)}
-  imgBusy=false;if(view==='site')render();
+  imgBusy=false;redraw();
 }
 /* ---- drawing: background, panel texture and corner picture. One fixed layer each, no filters (keeps phones smooth) ---- */
 const REDUCED=window.matchMedia&&matchMedia('(prefers-reduced-motion: reduce)').matches;

@@ -87,6 +87,7 @@ def referenced(c, owner):
     from .store import kv_get
     if owner == "site":
         vals = [(kv_get(c, "site") or {}).get(k) for k in ("logo", "cover")]
+        vals += [x.get("icon") for x in ((kv_get(c, "cat") or {}).get("conditions") or []) if isinstance(x, dict)]
     else:
         p = kv_get(c, "prefs:" + owner) or {}
         vals = [p.get(k) for k in ("imgBg", "imgPanel", "imgDeco")]
