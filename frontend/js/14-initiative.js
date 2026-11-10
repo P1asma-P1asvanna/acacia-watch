@@ -36,7 +36,7 @@ function iniPanel(rm){
     <div class="field sm"><label for="ini_mod">${t('iniMod')}</label><input id="ini_mod" type="number" value="0"></div>
     <div class="field sm"><label for="ini_hp">${t('iniHpF')}</label><input id="ini_hp" type="number" min="0"></div>
     <button class="btn" data-act="ini-addcustom">${t('iniAdd')}</button><span class="err" role="alert">${esc(iniErr)}</span></div>
-   ${cbQueue(I)}${started?`<div class="ini-legend"><span><i style="background:var(--turn-now)"></i>${t('iniNow')}</span><span><i style="background:var(--turn-next)"></i>${t('iniNextTag')}</span><span><i style="background:var(--turn-done)"></i>${t('iniDoneTag')}</span></div>`:''}${I.list.length?`<ul class="ini-list">${rows}</ul><p class="note" style="margin:0;padding:10px 16px 14px">${t('iniTies')} · ${t('iniHpNote')}</p>`:`<div class="empty"><div>${t('iniEmpty')}</div></div>`}${cbLogHtml(I)}</section>`;
+   ${cbEvtHtml(I.evt,I.list,true)}${cbQueue(I)}${cbHowHtml()}${started?`<div class="ini-legend"><span><i style="background:var(--turn-now)"></i>${t('iniNow')}</span><span><i style="background:var(--turn-next)"></i>${t('iniNextTag')}</span><span><i style="background:var(--turn-done)"></i>${t('iniDoneTag')}</span></div>`:''}${I.list.length?`<ul class="ini-list">${rows}</ul><p class="note" style="margin:0;padding:10px 16px 14px">${t('iniTies')} · ${t('iniHpNote')}</p>`:`<div class="empty"><div>${t('iniEmpty')}</div></div>`}${cbLogHtml(I)}</section>`;
 }
 function iniAction(a,id){
   const rm=rooms.find(r=>r.id===roomOpen);if(!rm)return;const I=iniData(rm);iniErr='';

@@ -51,3 +51,12 @@
 .cbq-b{display:flex;gap:6px;flex-wrap:wrap}
 .cblog{margin:0;padding:8px 16px 14px;border-top:1px solid var(--line)}.cblog summary{cursor:pointer;color:var(--muted)}.cblog ul{margin:8px 0 0;padding-left:1.1rem;font-size:.88rem}
 @media(max-width:700px){.ini-sub{padding-left:0}}
+
+.fxchip.hit{border-color:var(--cc);box-shadow:0 0 0 2px color-mix(in srgb,var(--cc) 45%,transparent)}
+.fxnow{font-style:normal;font-size:.72rem;font-weight:700;border-radius:999px;padding:0 6px;background:var(--cc);color:var(--bg,#000)}
+.evtbox{margin:10px 16px;border:1px solid var(--turn-next);border-radius:var(--r);background:color-mix(in srgb,var(--turn-next) 10%,var(--surface));padding:8px 12px}
+.evt-h{font-weight:700;margin-bottom:4px}
+.evt-row{padding:4px 0;border-top:1px dashed var(--line)}.evt-row:first-of-type{border-top:0}
+.evt-row .cb-fx{margin-top:4px}
+.k-expire{color:var(--muted)}
+.howfx{margin:6px 16px 10px;color:var(--muted);font-size:.9rem}.howfx summary{cursor:pointer}.howfx ul{margin:6px 0 0;padding-left:1.2rem;line-height:1.55}

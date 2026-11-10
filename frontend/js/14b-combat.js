@@ -12,8 +12,17 @@ const CB={
   rollFor:['🎲 ทอยให้','🎲 Roll'],pass:['ผ่าน','Pass'],fail:['ไม่ผ่าน','Fail'],use:['ใช้ผล','Apply'],skip:['ข้าม','Skip'],clearQ:['ล้างทั้งหมด','Clear all'],
   rmFx:['ลบสถานะ','Remove condition'],lvUp:['เพิ่มระดับ','Raise level'],lvDn:['ลดระดับ','Lower level'],
   w_start_turn:['เริ่ม Turn','Start of turn'],w_end_turn:['จบ Turn','End of turn'],w_start_round:['เริ่ม Round','Start of round'],w_end_round:['จบ Round','End of round'],w_lastturn:['Turn สุดท้าย','Last turn'],w_apply:['ได้รับสถานะ','Gained'],w_remove:['สถานะจบ','Ended'],w_damaged:['โดนดาเมจ','Damaged'],w_attack:['ทอยโจมตี','Attack'],w_hit:['ถูกโจมตีโดน','Hit'],w_move:['เคลื่อนที่','Move'],w_action:['ใช้ Action','Action'],w_healed:['ได้รับการรักษา','Healed'],
-  trig:['ใช้กฎ…','Trigger…'],hp0:['HP 0','HP 0'],none:['ไม่มีสถานะ','No conditions'],
-  sheetOnly:['(ตั้งเอง)','(by hand)'],roundLbl:['Round','Round']};
+  trig:['ใช้กฎ…','Trigger…'],unitTurn:['Turn (นับเมื่อจบตาตัวเอง)','Turn (counts at the end of its own turn)'],unitRound:['Round (นับเมื่อจบรอบ)','Round (counts at the end of the round)'],hp0:['HP 0','HP 0'],none:['ไม่มีสถานะ','No conditions'],
+  sheetOnly:['(ตั้งเอง)','(by hand)'],inEffect:['มีผลตอนนี้','in effect'],left:['เหลือ','left'],
+  e_turn_start:['▶ ถึงตาของ {n} — สถานะที่ติดอยู่มีผลตอนนี้','▶ {n}\'s turn — these conditions are in effect now'],
+  e_round_start:['🔔 เริ่ม Round {r} — {n} ยังติดสถานะ','🔔 Round {r} begins — {n} still has'],
+  e_expire:['⌛ {n}: {c} หมดเวลาแล้ว','⌛ {n}: {c} has run out'],evtTitle:['เกิดอะไรขึ้นตอนนี้','What just happened'],
+  howT:['อ่านสถานะยังไง?','How to read conditions?'],
+  how1:['ป้ายสีใต้ชื่อ = สถานะที่ติดอยู่ ตัวเลข "เหลือ" = เวลาที่เหลือ','A coloured tag under a name is a condition on that creature. "left" is the time remaining.'],
+  how2:['ป้ายที่มี ● มีผลตอนนี้ = เพิ่งถึงตาของตัวนั้น หรือเพิ่งเปลี่ยนรอบ สถานะนี้กำลังทำงานอยู่','A tag marked ● in effect means it just became that creature\'s turn, or the round just changed: the condition is working right now.'],
+  how3:['"Turn" นับลดเมื่อจบตาของตัวที่ติดสถานะ · "Round" นับลดเมื่อจบรอบ (ทุกคนเล่นครบแล้ว)','"Turn" counts down when the affected creature\'s own turn ends · "Round" counts down when the round ends (everyone has played).'],
+  how4:['กดที่ป้ายเพื่อดูว่าสถานะนั้นทำอะไร','Tap a tag to see what the condition does.'],
+roundLbl:['Round','Round']};
 const cb=k=>(CB[k]||[k,k])[lang==='th'?0:1];
 const cbCond=id=>(CAT.conditions||[]).find(c=>c.id===id)||null;
 const cbEntry=(I,id)=>I.list.find(e=>e.id===id)||null;
@@ -93,23 +102,34 @@ function cbFire(I,e,when,unit,only){
         if(r.unit!==unit)return;const k=(unit==='turn'?f.tc:f.rc)+1,ev=Math.max(1,r.every||1);if(k%ev!==0)return}
       if(!(r.ok||[]).length&&!(r.no||[]).length)return;
       I.q.push({id:uid(),eid:e.id,cid:f.cid,rid:r.id,why:when==='start'||when==='end'?`${when}_${unit}`:when,lv:f.lv||1})})})}
-/* ---- turn / round flow ---- */
+/* ---- turn / round flow ----
+   "Turn" durations tick down when the owner's own turn ends. "Round" durations tick down when the round ends (everybody has played).
+   Every step records what is in effect (I.evt, and fx.hl on each condition) so both the GM and the players can see it. */
+const cbEvt=(I,k,e,cid)=>{I.evt=I.evt||[];I.evt.push({k,eid:e.id,cid:cid||'',r:I.round})};
+function cbClearHl(I){I.evt=[];I.list.forEach(e=>(e.fx||[]).forEach(f=>{f.hl=''}))}
+function cbMark(I,k,e,hl){(e.fx||[]).forEach(f=>{cbEvt(I,k,e,f.cid);f.hl=hl})}
+function cbExpire(I,e,f){cbEvt(I,'expire',e,f.cid);cbDelFx(I,e,f,lang==='th'?'หมดเวลา':'expired')}
 function cbEndTurn(I,e){
   if(!e)return;
   cbFire(I,e,'end','turn');
-  (e.fx||[]).slice().forEach(f=>{if(f.left===1&&(f.u==='turn'||f.u==='round'))cbFire(I,e,'lastturn','',f)});
-  (e.fx||[]).slice().forEach(f=>{f.tc=(f.tc||0)+1;if(f.left!=null&&(f.u==='turn'||f.u==='round')){f.left--;if(f.left<=0)cbDelFx(I,e,f,lang==='th'?'หมดเวลา':'expired')}})}
-const cbEachFx=(I,fn)=>I.list.forEach(e=>fn(e));
-function cbEndRound(I){cbEachFx(I,e=>{cbFire(I,e,'end','round');(e.fx||[]).forEach(f=>{f.rc=(f.rc||0)+1})})}
-function cbStartRound(I){cbEachFx(I,e=>cbFire(I,e,'start','round'))}
+  (e.fx||[]).slice().forEach(f=>{if(f.left===1&&f.u==='turn')cbFire(I,e,'lastturn','',f)});
+  (e.fx||[]).slice().forEach(f=>{f.tc=(f.tc||0)+1;if(f.left!=null&&f.u==='turn'){f.left--;if(f.left<=0)cbExpire(I,e,f)}})}
+function cbEndRound(I){
+  I.list.forEach(e=>{
+    cbFire(I,e,'end','round');
+    (e.fx||[]).slice().forEach(f=>{if(f.left===1&&f.u==='round')cbFire(I,e,'lastturn','',f)});
+    (e.fx||[]).slice().forEach(f=>{f.rc=(f.rc||0)+1;if(f.left!=null&&f.u==='round'){f.left--;if(f.left<=0)cbExpire(I,e,f)}})})}
+function cbStartRound(I){I.list.forEach(e=>{cbMark(I,'round_start',e,'round');cbFire(I,e,'start','round')})}
+function cbStartTurn(I,e){cbMark(I,'turn_start',e,'turn');cbFire(I,e,'start','turn')}
 function cbNext(I){
   const act=iniActive(I);if(!act.length)return;const i=act.findIndex(x=>x.id===I.cur);
-  if(i<0){I.cur=act[0].id;I.round=Math.max(1,I.round);cbStartRound(I);cbFire(I,act[0],'start','turn');return}
+  cbClearHl(I);
+  if(i<0){I.cur=act[0].id;I.round=Math.max(1,I.round);cbStartRound(I);cbStartTurn(I,act[0]);return}
   cbEndTurn(I,act[i]);
   if(i+1>=act.length){cbEndRound(I);I.cur=act[0].id;I.round++;cbStartRound(I)}else I.cur=act[i+1].id;
-  const nx=cbEntry(I,I.cur);if(nx)cbFire(I,nx,'start','turn')}
+  const nx=cbEntry(I,I.cur);if(nx)cbStartTurn(I,nx)}
 function cbPrev(I){   /* going back only moves the marker; it does not undo effects */
-  const act=iniActive(I);if(!act.length)return;const i=act.findIndex(x=>x.id===I.cur);
+  const act=iniActive(I);if(!act.length)return;cbClearHl(I);const i=act.findIndex(x=>x.id===I.cur);
   if(i<0){I.cur=act[0].id;I.round=Math.max(1,I.round)}
   else if(i===0){if(I.round>1){I.round--;I.cur=act[act.length-1].id}}else I.cur=act[i-1].id}
 /* ---- run the effects of a rule outcome (only what can safely be done is done; the rest is logged for the GM) ---- */
@@ -165,11 +185,11 @@ function cbAction(a,b){
     else if(a==='fx-trig'){const f=(e.fx||[]).find(x=>x.id===b.dataset.fx),c=f&&cbCond(f.cid),r=c&&(c.rules||[]).find(x=>x.id===b.dataset.rid);if(r)I.q.push({id:uid(),eid:e.id,cid:f.cid,rid:r.id,why:r.when,lv:f.lv||1})}}
   saveRooms();render()}
 /* ---- markup ---- */
-const cbUnitTxt=(f)=>f.left!=null&&f.u?` · ${f.left} ${cr(f.u)}`:'';
+const cbUnitTxt=(f)=>f.left!=null&&f.u?` · ${cb('left')} ${f.left} ${cr(f.u)}`:'';
 function cbChip(e,f,gm){
   const c=cbCond(f.cid);if(!c)return'';
-  const lv=c.stack==='level'?` ${f.lv||1}`:'';
-  return`<span class="fxchip"${ccs(c)}><button class="fxb" data-act="cpop" data-id="${c.id}" title="${esc(c.sum||'')}">${condIcon(c,16)}<span>${esc(c.name)}${lv}${cbUnitTxt(f)}</span></button>${gm?`${c.stack==='level'?`<button class="fxs" data-act="fx-lv" data-id="${e.id}" data-fx="${f.id}" data-d="-1" aria-label="${cb('lvDn')}">−</button><button class="fxs" data-act="fx-lv" data-id="${e.id}" data-fx="${f.id}" data-d="1" aria-label="${cb('lvUp')}">+</button>`:''}<button class="fxs fxx" data-act="fx-del" data-id="${e.id}" data-fx="${f.id}" aria-label="${cb('rmFx')}: ${esc(c.name)}">✕</button>`:''}</span>`}
+  const lv=c.stack==='level'?` ${f.lv||1}`:'',hit=f.hl?` hit`:'';
+  return`<span class="fxchip${hit}"${ccs(c)}><button class="fxb" data-act="cpop" data-id="${c.id}" title="${esc(c.sum||'')}">${condIcon(c,16)}<span>${esc(c.name)}${lv}${cbUnitTxt(f)}</span>${f.hl?`<em class="fxnow">● ${cb('inEffect')}</em>`:''}</button>${gm?`${c.stack==='level'?`<button class="fxs" data-act="fx-lv" data-id="${e.id}" data-fx="${f.id}" data-d="-1" aria-label="${cb('lvDn')}">−</button><button class="fxs" data-act="fx-lv" data-id="${e.id}" data-fx="${f.id}" data-d="1" aria-label="${cb('lvUp')}">+</button>`:''}<button class="fxs fxx" data-act="fx-del" data-id="${e.id}" data-fx="${f.id}" aria-label="${cb('rmFx')}: ${esc(c.name)}">✕</button>`:''}</span>`}
 /* the manual triggers (attack, hit, move, action) the GM can fire on a combatant */
 function cbManual(e){
   const out=[];(e.fx||[]).forEach(f=>{const c=cbCond(f.cid);if(!c)return;(c.rules||[]).forEach(r=>{if(['attack','hit','move','action'].includes(r.when)&&((r.ok||[]).length||(r.no||[]).length))out.push(`<button class="btn small" data-act="fx-trig" data-id="${e.id}" data-fx="${f.id}" data-rid="${r.id}" title="${esc(crRuleText(r))}">⚡ ${esc(c.name)}: ${esc(cr('w_'+r.when))}</button>`)})});
@@ -183,7 +203,7 @@ function cbSub(e){
   const fx=`<div class="cb-fx">${(e.fx||[]).map(f=>cbChip(e,f,true)).join('')||`<span class="note">${cb('none')}</span>`}</div>
     <div class="cb-add"><select data-cbfx="${e.id}" aria-label="${cb('pick')}"><option value="">${cb('pick')}</option>${conds.map(c=>`<option value="${c.id}">${esc(c.name)}</option>`).join('')}</select>
     <input type="number" min="1" max="999" class="cb-n" data-cbn="${e.id}" placeholder="${cb('dN')}" aria-label="${cb('dN')}">
-    <select data-cbu="${e.id}" aria-label="${cb('dN')}"><option value="">${cb('dDef')}</option><option value="turn">${cr('turn')}</option><option value="round">${cr('round')}</option><option value="minute">${cr('minute')}</option><option value="hour">${cr('hour')}</option></select>
+    <select data-cbu="${e.id}" aria-label="${cb('dN')}"><option value="">${cb('dDef')}</option><option value="turn">${cb('unitTurn')}</option><option value="round">${cb('unitRound')}</option><option value="minute">${cr('minute')}</option><option value="hour">${cr('hour')}</option></select>
     <button class="btn small" data-act="fx-add" data-id="${e.id}">${cb('addFx')}</button>${cbManual(e)}</div>`;
   return`<div class="ini-sub">${hp}${fx}</div>`}
 function cbQueue(I){
@@ -197,3 +217,17 @@ function cbQueue(I){
 function cbLogHtml(I){
   const L=I.log||[];
   return`<details class="cblog"><summary>${cb('log')} (${L.length})</summary>${L.length?`<ul>${L.slice(0,25).map(x=>`<li>${esc(x)}</li>`).join('')}</ul>`:`<p class="note">${cb('noLog')}</p>`}</details>`}
+
+/* "What just happened" strip (GM and players): built from I.evt / room.evt, grouped per combatant */
+function cbEvtHtml(evt,list,gm){
+  if(!evt||!evt.length)return'';
+  const by=new Map(list.map(e=>[e.id,e])),groups=new Map(),nameOf=e=>gm?iniName(e):e.name;
+  evt.forEach(x=>{const e=by.get(x.eid);if(!e)return;const key=x.k+'|'+x.eid;if(!groups.has(key))groups.set(key,{k:x.k,e,r:x.r,cids:[]});groups.get(key).cids.push(x.cid)});
+  if(!groups.size)return'';
+  const fill=(s,o)=>s.replace(/\{(\w+)\}/g,(m,k)=>o[k]!==undefined?o[k]:m);
+  const rows=[...groups.values()].map(g=>{
+    if(g.k==='expire')return g.cids.map(cid=>{const c=cbCond(cid);return`<div class="evt-row k-expire">${esc(fill(cb('e_expire'),{n:nameOf(g.e),c:c?c.name:'?'}))}</div>`}).join('');
+    const chips=g.cids.map(cid=>{const c=cbCond(cid),f=(g.e.fx||[]).find(x=>x.cid===cid)||{cid,hl:'x'};return c?cbChip(g.e,Object.assign({},f,{hl:f.hl||'x'}),false):''}).join('');
+    return`<div class="evt-row k-${g.k}">${esc(fill(cb('e_'+g.k),{n:nameOf(g.e),r:g.r}))}<div class="cb-fx">${chips}</div></div>`}).join('');
+  return rows?`<div class="evtbox" role="status"><div class="evt-h">${cb('evtTitle')}</div>${rows}</div>`:''}
+function cbHowHtml(){return`<details class="howfx"><summary>${cb('howT')}</summary><ul><li>${cb('how1')}</li><li>${cb('how2')}</li><li>${cb('how3')}</li><li>${cb('how4')}</li></ul></details>`}

@@ -51,7 +51,7 @@ function playerRoom(rm){
      <span class="ini-num" aria-label="${t('iniInit')}">${esc(e.init)}</span>${c?`<span class="ini-hp">HP ${curHp(c)}/${c.hp}</span>`:'<span></span>'}</li>`}).join('');
   return`<section class="panel ini"><div class="ph"><h2>${esc(rm.name)}</h2></div>
    ${mineNow?`<div class="turn-banner" role="status">${t('pAdvYourTurn')}</div>`:''}
-   <div class="ini-top"><span class="ini-round">${t('iniRound')} ${rm.round}</span></div>
+   <div class="ini-top"><span class="ini-round">${t('iniRound')} ${rm.round}</span></div>${cbEvtHtml(rm.evt,rm.list,false)}${act.some(e=>(e.fx||[]).length)?cbHowHtml():''}
    <div class="ini-add"><span class="note" style="width:100%">${t('pAdvParty')}</span>${rm.party.map(p=>`<span class="pill">${esc(p.name)}${p.mine?' ★':''}</span>`).join('')}</div>
    ${act.length?`<ul class="ini-list">${rows}</ul>`:`<p class="note" style="padding:0 16px 16px">${t('pAdvNoInit')}</p>`}</section>`;
 }

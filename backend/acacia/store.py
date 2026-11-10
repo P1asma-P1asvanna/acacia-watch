@@ -67,7 +67,8 @@ def public_fx(fx):
         u = f.get("u") if f.get("u") in ("turn", "round", "minute", "hour") else ""
         left = f.get("left")
         out.append({"id": str(f.get("id"))[:40], "cid": f["cid"][:40], "u": u,
-                    "left": clampi(left, 0, 999, 0) if left is not None and u else None, "lv": clampi(f.get("lv"), 1, 20, 1)})
+                    "left": clampi(left, 0, 999, 0) if left is not None and u else None, "lv": clampi(f.get("lv"), 1, 20, 1),
+                    "hl": f.get("hl") if f.get("hl") in ("turn", "round", "x") else ""})
     return out
 
 
@@ -110,7 +111,11 @@ def player_rooms(c, me):
             entries.append({"id": str(e.get("id")), "name": (name or "—")[:80], "init": int(v) if v == int(v) else v,
                             "kind": "pc" if is_pc else "other", "mine": is_pc and cid in mine, "pc": cid if cid in mine else "",
                             "fx": public_fx(e.get("fx"))})
-        out.append({"id": str(rm.get("id")), "name": str(rm.get("name") or "")[:80], "round": clampi(ini.get("round"), 1, 9999, 1),
+        seen = {x["id"] for x in entries}
+        evt = [{"k": x.get("k"), "eid": str(x.get("eid")), "cid": str(x.get("cid") or "")[:40], "r": clampi(x.get("r"), 1, 9999, 1)}
+               for x in (ini.get("evt") if isinstance(ini.get("evt"), list) else [])[:60]
+               if isinstance(x, dict) and x.get("k") in ("turn_start", "turn_end", "round_start", "round_end", "expire") and str(x.get("eid")) in seen]
+        out.append({"id": str(rm.get("id")), "name": str(rm.get("name") or "")[:80], "round": clampi(ini.get("round"), 1, 9999, 1), "evt": evt,
                     "cur": str(ini.get("cur") or ""), "list": entries,
                     "party": [{"name": pc_name.get(a, "—"), "mine": a in mine} for a in assign]})
     return out
