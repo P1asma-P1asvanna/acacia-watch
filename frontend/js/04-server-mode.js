@@ -17,8 +17,8 @@ function resetSynced(){synced.pc=new Map(pcs.map(r=>[r.id,JSON.stringify(r)]));s
 function applyBoot(j){
   if(j&&j.v!=null&&LIVE.v==null)LIVE.v=j.v;   /* remember which version this state is: the first poll then answers at once if anything changed since */
   REMOTE=true;SITE=Object.assign({},j.site||{});firstRun=!j.hasUsers;
-  if(j.me){users=j.users||[j.me];session=j.me.id;PREFS=j.prefs||{};put('dd_theme',PREFS);pcs=j.pcs||[];npcs=j.npcs||[];rooms=j.rooms||[];prooms=j.prooms||[];CAT=j.cat||clone(SEED);normCat();
-    if(!j.cat&&j.me.role==='admin')api('POST','api/kv/cat',{value:CAT}).catch(netErr)}
+  if(j.me){users=j.users||[j.me];session=j.me.id;PREFS=j.prefs||{};put('dd_theme',PREFS);pcs=j.pcs||[];npcs=j.npcs||[];rooms=j.rooms||[];prooms=j.prooms||[];const needF=!!j.cat&&!Array.isArray(j.cat.feats);CAT=j.cat||clone(SEED);normCat();
+    if((!j.cat||needF)&&j.me.role==='admin')api('POST','api/kv/cat',{value:CAT}).catch(netErr)}
   else{users=[];session=null;pcs=[];npcs=[];rooms=[];prooms=[]}
   resetSynced();
 }
@@ -53,7 +53,8 @@ function crMig(r){if(r&&('save' in r||'acts' in r)){const sv=r.save,acts=(r.acts
   if(r){if(!r.every)r.every=1;if(!r.rest)r.rest='any';if(!Array.isArray(r.ok))r.ok=[];if(!Array.isArray(r.no))r.no=[]}return r}
 function normCat(){for(const k in SEED)if(!Array.isArray(CAT[k]))CAT[k]=clone(SEED[k]);
 CAT.backgrounds.forEach(b=>{if(!Array.isArray(b.sk))b.sk=clone(BGSK[b.name]||[]);if(typeof b.equip!=='string')b.equip='';if(!Array.isArray(b.feats))b.feats=[]});
-CAT.classes.forEach(c=>{if(!Array.isArray(c.feats))c.feats=[]});
+CAT.classes.forEach(c=>{if(!Array.isArray(c.feats))c.feats=[];if(typeof c.asiLv!=='string'||!c.asiLv.trim())c.asiLv=ASI_DEF[c.name]||'4,8,12,16,19'});
+CAT.backgrounds.forEach(b=>{if(typeof b.originFeat!=='string')b.originFeat=ORIGIN_DEF[b.name]||''});
 CAT.conditions.forEach(c=>{if(!Array.isArray(c.rules)){const sd=SEED.conditions.find(x=>x.name===c.name);c.rules=sd?clone(sd.rules):[]}if(!c.dur||typeof c.dur!=='object')c.dur={u:'',n:0};if(!c.stack){c.stack='no';c.maxLv=0}if(!Array.isArray(c.ends))c.ends=[];c.rules.forEach(crMig);delete c.th});
 CAT.backgrounds.forEach(b=>{const sd=SEED.backgrounds.find(x=>x.name===b.name);['nLang','nTool','nVeh'].forEach(k=>{if(b[k]===undefined||b[k]==='')b[k]=sd?sd[k]:0})});
 }

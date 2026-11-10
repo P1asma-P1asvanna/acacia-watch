@@ -3,8 +3,8 @@
    The person's layout lives in PREFS.lay[page] = {o:[order], h:[hidden ids], s:{id:1 = half width}} and is turned into
    CSS rules (order / grid-column / display) in one <style>, so re-rendering never loses it and the page DOM stays as is. */
 const LAYOUT={
-  sheet:{ids:['basic','bgpick','abil','prof','hp','weapons','profs','items','ac','feat','combat'],
-    label:{basic:'secBasic',bgpick:'secBgPick',abil:'secAbil',prof:'secProf',hp:'hpTitle',weapons:'wTitle',profs:'prTitle',items:'itTitle',ac:'acTitle',feat:'featTitleP',combat:'secCombat'}},
+  sheet:{ids:['basic','bgpick','abil','asi','prof','hp','weapons','profs','items','ac','feat','combat'],
+    label:{basic:'secBasic',bgpick:'secBgPick',abil:'secAbil',asi:'secAsi',prof:'secProf',hp:'hpTitle',weapons:'wTitle',profs:'prTitle',items:'itTitle',ac:'acTitle',feat:'featTitleP',combat:'secCombat'}},
   players:{ids:['list','accounts'],label:{list:'players',accounts:'accounts'}},
   site:{ids:['identity','colors','decor','fx','shape','backup'],label:{identity:'sIdentity',colors:'sColors',decor:'sDecor',fx:'sFx',shape:'sShape',backup:'bkTitle'}},
   stage:{ids:['main','rail'],label:{main:'advMain',rail:'playersRail'},nosize:true}

@@ -5,7 +5,7 @@ const itemEnch=it=>{const m=String(it.name||'').match(/\+(\d+)\s*$/);return m?+m
 const isShield=a=>/shield/i.test(a.acat||'');
 /* catalog armor AC is the bonus over 10 (Leather 1 = AC 11). one body armor and one shield count. */
 function acCalc(d){
-  const dx=mod(d.abil.dex),lines=[],warns=[];let body=null,sh=null;
+  const dx=mod(abT(d,'dex')),lines=[],warns=[];let body=null,sh=null;
   (d.items||[]).filter(i=>i.eq).forEach(it=>{const a=armorOf(it);if(!a)return;
     if(isShield(a)){if(!sh)sh={it,a};else warns.push(fill(t('acIgnored'),{name:esc(it.name)}))}
     else{if(!body)body={it,a};else warns.push(fill(t('acIgnored'),{name:esc(it.name)}))}});
@@ -16,7 +16,7 @@ function acCalc(d){
     const dp=heavy?0:(md===null?dx:Math.min(dx,md));
     const note=heavy?' ('+t('acHeavyNoDex')+')':(md!==null&&dx>md?' ('+fill(t('acCap'),{n:md})+')':'');
     total=armor+dp;lines.push(fill(t('acBody'),{name:esc(body.it.name),armor,dex:sgn(dp),note,v:total}));
-    if(num(a.str)>0&&num(d.abil.str)<num(a.str))warns.push(fill(t('acStr'),{name:esc(body.it.name),n:num(a.str),s:num(d.abil.str)}));
+    if(num(a.str)>0&&num(abT(d,'str'))<num(a.str))warns.push(fill(t('acStr'),{name:esc(body.it.name),n:num(a.str),s:num(abT(d,'str'))}));
     if(/disadv/i.test(a.stealth||''))warns.push(fill(t('acStealth'),{name:esc(body.it.name)}));
   }else{total=10+dx;lines.push(fill(t('acNone'),{dx:sgn(dx),v:total}))}
   if(sh){const v=Math.round(num(sh.a.ac))+itemEnch(sh.it)+Math.round(num(sh.a.ench));total+=v;lines.push(fill(t('acShield'),{name:esc(sh.it.name),v:sgn(v)}))}

@@ -48,8 +48,8 @@ const bgOf=d=>CAT.backgrounds.find(x=>x.name===d.bg);
 const bgSkills=d=>{const b=bgOf(d);return b&&Array.isArray(b.sk)?b.sk:[]};
 const profLevel=(d,kind,k)=>{const st=(d.prof&&d.prof[kind]&&d.prof[kind][k])||0;return kind==='skill'&&bgSkills(d).includes(k)?Math.max(st,1):st};
 function derived(d){
-  const pb=prof(d.level),dx=mod(d.abil.dex),nx=nextXp(Number(d.level));
-  return`<div class="chip"><span>${t('pb')}</span><b>${sgn(pb)}</b></div><div class="chip"><span>${t('init')}</span><b>${sgn(dx)}</b></div><div class="chip"><span>${t('next')}</span><b>${nx===null?t('max'):nx}</b></div><div class="chip"><span>${t('passive')}</span><b>${10+mod(d.abil.wis)+pb*profLevel(d,'skill','perception')}</b></div>`;
+  const pb=prof(d.level),dx=mod(abT(d,'dex')),nx=nextXp(Number(d.level));
+  return`<div class="chip"><span>${t('pb')}</span><b>${sgn(pb)}</b></div><div class="chip"><span>${t('init')}</span><b>${sgn(dx)}</b></div><div class="chip"><span>${t('next')}</span><b>${nx===null?t('max'):nx}</b></div><div class="chip"><span>${t('passive')}</span><b>${10+mod(abT(d,'wis'))+pb*profLevel(d,'skill','perception')}</b></div>`;
 }
 const SAVE_NAMES={str:'Strength',dex:'Dexterity',con:'Constitution',int:'Intelligence',wis:'Wisdom',cha:'Charisma'};
 const SKILLS=[['acrobatics','Acrobatics','dex'],['animal','Animal Handling','wis'],['arcana','Arcana','int'],['athletics','Athletics','str'],['deception','Deception','cha'],['history','History','int'],['insight','Insight','wis'],['intimidation','Intimidation','cha'],['investigation','Investigation','int'],['medicine','Medicine','wis'],['nature','Nature','int'],['perception','Perception','wis'],['performance','Performance','cha'],['persuasion','Persuasion','cha'],['religion','Religion','int'],['sleight','Sleight of Hand','dex'],['stealth','Stealth','dex'],['survival','Survival','wis']];
@@ -59,7 +59,7 @@ const dieOf=cls=>{const c=CAT.classes.find(x=>x.name===cls),m=c&&String(c.hd).ma
 /* HP: level 1 takes the full hit die, later levels take the fixed average, each plus CON and never less than 1.
    entries is a list so multiclass can add more rows later; the first row's level 1 gets the full die. */
 function hpCalc(d){
-  const lvl=Math.max(1,Math.min(20,Math.round(num(d.level))||1)),con=mod(d.abil.con),lines=[];
+  const lvl=Math.max(1,Math.min(20,Math.round(num(d.level))||1)),con=mod(abT(d,'con')),lines=[];
   const entries=[{cls:d.cls,sub:d.sub,level:lvl}];
   let total=0,first=true,missing=false;
   entries.forEach(e=>{
@@ -119,7 +119,7 @@ function hpAction(a,id){
   refreshHp(id);
 }
 function profRow(d,kind,k,name,ab){
-  const st=profLevel(d,kind,k),bgG=kind==='skill'&&bgSkills(d).includes(k),m=mod(d.abil[ab])+prof(d.level)*st,lab=[t('pNone'),t('pOne'),t('pTwo')][st]+(bgG?' ('+t('fromBg')+')':'');
+  const st=profLevel(d,kind,k),bgG=kind==='skill'&&bgSkills(d).includes(k),m=mod(abT(d,ab))+prof(d.level)*st,lab=[t('pNone'),t('pOne'),t('pTwo')][st]+(bgG?' ('+t('fromBg')+')':'');
   return`<div class="prow s${st}"><button type="button" class="pt s${st}" id="pt_${kind}_${k}" data-pt="${kind}:${k}" aria-label="${esc(name)}: ${lab}" title="${lab}"></button><span class="pv" data-pv="${kind}:${k}:${ab}">${sgn(m)}</span><span class="pn">${esc(name)}</span>${kind==='skill'?`<span class="pa">${ab.toUpperCase()}${bgG?' · BG':''}</span>`:'<span></span>'}</div>`;
 }
 const profBody=d=>`<div class="pcol"><h3>${t('pSaves')}</h3>${ABS.map(k=>profRow(d,'save',k,SAVE_NAMES[k],k)).join('')}</div><div class="pcol"><h3>${t('pSkills')}</h3>${SKILLS.map(([k,n,a])=>profRow(d,'skill',k,n,a)).join('')}</div>`;

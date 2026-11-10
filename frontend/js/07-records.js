@@ -1,7 +1,7 @@
 /* ---------- records ---------- */
 function blank(kind){
   return{id:uid(),kind,owner:kind==='pc'?(isAdmin()?'':session):'',name:'',race:pick(names('races'),'Human'),cls:pick(names('classes'),'Fighter'),sub:'',level:1,xp:0,bg:'',align:pick(names('alignments'),'True Neutral'),
-    abil:{str:10,dex:10,con:10,int:10,wis:10,cha:10},ac:10,speed:30,hp:10,insp:false,notes:'',type:'neutral',pick:{lang:[],tool:[],veh:[]},prof:{save:{},skill:{}},items:[],weapons:[],profOther:'',speeds:'',hpMode:'auto',hpManual:'',hpCur:null,hpTemp:0,hdUsed:0,death:{s:0,f:0},acMode:'auto',acManual:''};
+    abil:{str:10,dex:10,con:10,int:10,wis:10,cha:10},ac:10,speed:30,hp:10,insp:false,notes:'',type:'neutral',pick:{lang:[],tool:[],veh:[]},asi:{},xf:[],prof:{save:{},skill:{}},items:[],weapons:[],profOther:'',speeds:'',hpMode:'auto',hpManual:'',hpCur:null,hpTemp:0,hdUsed:0,death:{s:0,f:0},acMode:'auto',acManual:''};
 }
 function sample(kind){
   const mk=(o)=>{const r=Object.assign(blank(kind),o);if(kind==='npc'){r.hpMode='manual';r.hpManual=r.hp;r.acMode='manual';r.acManual=r.ac}else{r.hp=effMax(r);r.ac=effAc(r)}return r};

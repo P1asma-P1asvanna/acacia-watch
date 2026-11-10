@@ -13,7 +13,7 @@ let _rf=0,_need={};
 function schedRefresh(n){Object.assign(_need,n);if(_rf)return;_rf=requestAnimationFrame(()=>{_rf=0;const q=_need;_need={};if(!edit)return;const d=edit.draft;updateProfVals(d);refreshWeapons();if(q.h)refreshHp();if(q.f)refreshFeat();if(q.a)refreshAc()})}
 function renderEditor(){
   const d=edit.draft,pc=edit.kind==='pc',adm=isAdmin();
-  d.pick=d.pick||{lang:[],tool:[],veh:[]};
+  d.pick=d.pick||{lang:[],tool:[],veh:[]};d.asi=d.asi||{};d.xf=d.xf||[];
   d.prof=d.prof||{save:{},skill:{}};
   d.items=d.items||[];d.weapons=d.weapons||[];d.profOther=d.profOther||'';d.speeds=d.speeds||'';
   normHp(d);normAc(d);
@@ -31,14 +31,14 @@ function renderEditor(){
    <div class="field"><label for="e_align">${t('fAlign')}</label><select id="e_align" data-f="align">${optCur(names('alignments'),d.align)}</select></div>
   </div></section>`,
    abil=`<section class="panel"><div class="ph"><h2>${t('secAbil')}</h2></div><div class="abilities">
-   ${ABS.map(k=>`<div class="ab"><span class="k">${k.toUpperCase()}</span><div class="mod" id="m_${k}">${sgn(mod(d.abil[k]))}</div><input id="e_${k}" aria-label="${k.toUpperCase()}" data-a="${k}" type="number" min="1" max="30" value="${d.abil[k]}"></div>`).join('')}
+   ${ABS.map(k=>`<div class="ab"><span class="k">${k.toUpperCase()}</span><div class="mod" id="m_${k}">${sgn(mod(abT(d,k)))}</div><span class="abt" id="t_${k}">${abT(d,k)!==Math.max(1,Math.min(30,Math.round(num(d.abil[k]))))?'= '+abT(d,k):''}</span><input id="e_${k}" aria-label="${k.toUpperCase()}" data-a="${k}" type="number" min="1" max="30" value="${d.abil[k]}"></div>`).join('')}
   </div><div class="derived" id="derived">${derived(d)}</div></section>`,
    combat=`<section class="panel"><div class="ph"><h2>${t('secCombat')}</h2></div><div class="grid">
    <div class="field"><label for="e_speed">${t('fSpeed')}</label><input id="e_speed" data-f="speed" type="number" min="0" value="${d.speed}"></div>
    <div class="field"><label for="e_insp">${t('fInsp')}</label><select id="e_insp" data-f="insp"><option value="0" ${d.insp?'':'selected'}>—</option><option value="1" ${d.insp?'selected':''}>✓</option></select></div>
   </div><div class="grid wide" style="padding-top:0"><div class="field"><label for="e_notes">${t('fNotes')}</label><textarea id="e_notes" data-f="notes">${esc(d.notes)}</textarea></div></div></section>`;
   return`${head(esc(d.name)||t('add'),pc?t('players'):t('npcs'),`<div class="acts">${arrangeBtn('sheet')}<button class="btn" data-act="back">← ${t('back')}</button></div>`)}
-  ${arrangeBar('sheet')}${wgrid('sheet',[['basic',basic],['bgpick',bgPanel(d)],['abil',abil],['prof',profPanel(d)],['hp',hpPanel(d)],['weapons',weaponsPanel(d)],['profs',profsPanel(d)],['items',itemsPanel(d)],['ac',acPanel(d)],['feat',featPanel(d)],['combat',combat]])}
+  ${arrangeBar('sheet')}${wgrid('sheet',[['basic',basic],['bgpick',bgPanel(d)],['abil',abil],['asi',asiPanel(d)],['prof',profPanel(d)],['hp',hpPanel(d)],['weapons',weaponsPanel(d)],['profs',profsPanel(d)],['items',itemsPanel(d)],['ac',acPanel(d)],['feat',featPanel(d)],['combat',combat]])}
   <section class="panel"><div class="bar"><button class="btn danger" data-act="del-edit">${delArm===d.id?t('delSure'):t('del')}</button><button class="btn primary" data-act="save">${t('save')}</button></div></section>`;
 }
 

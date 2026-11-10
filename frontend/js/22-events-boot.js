@@ -7,6 +7,8 @@ document.addEventListener('click',e=>{
   if(wa&&edit){const d0=edit.draft;if(wa.dataset.wa==='add'){const v=document.getElementById('w_add').value;if(v){d0.weapons.push({id:uid(),ref:v,bonus:0});refreshWeapons()}}else{d0.weapons=d0.weapons.filter(x=>x.id!==wa.dataset.id);refreshWeapons()}return}
   const ha=e.target.closest('[data-hpa]');
   if(ha&&edit){hpAction(ha.dataset.hpa,ha.id);return}
+  const aa=e.target.closest('[data-asia]');
+  if(aa&&edit){asiClick(aa.dataset.asia,aa);return}
   const pt=e.target.closest('[data-pt]');
   if(pt&&edit){const[kind,k]=pt.dataset.pt.split(':'),dd=edit.draft;dd.prof=dd.prof||{save:{},skill:{}};dd.prof[kind]=dd.prof[kind]||{};const cur=profLevel(dd,kind,k);let nx=(cur+1)%3;if(nx===0&&kind==='skill'&&bgSkills(dd).includes(k))nx=1;dd.prof[kind][k]=nx;refreshProf(pt.id);$('#derived').innerHTML=derived(dd);return}
   const b=e.target.closest('[data-act]');if(!b)return;
@@ -100,7 +102,7 @@ document.addEventListener('input',e=>{
   if(dedit){
     const dd=dedit.draft;
     if(condRuleEdit(el))return;
-    if(el.dataset.cf){const f=el.dataset.cf;dd[f]=el.tagName==='SELECT'?Number(el.value):(el.type==='number'?(el.value===''?'':Number(el.value)):el.value)}
+    if(el.dataset.cf){const f=el.dataset.cf;dd[f]=el.tagName==='SELECT'?(f==='cat'?el.value:Number(el.value)):(el.type==='number'?(el.value===''?'':Number(el.value)):el.value)}
     else if(el.dataset.sf){dd.subs[Number(el.dataset.si)][el.dataset.sf]=el.value}
     else if(el.dataset.ftf){const f=(dd.feats||[])[Number(el.dataset.fti)];if(f)f[el.dataset.ftf]=el.dataset.ftf==='lvl'?Number(el.value):el.value}
     else if(el.dataset.bgs){const a=dd.sk=dd.sk||[],k=el.dataset.bgs,ix=a.indexOf(k);if(el.checked&&ix<0)a.push(k);if(!el.checked&&ix>=0)a.splice(ix,1)}
@@ -115,11 +117,11 @@ document.addEventListener('input',e=>{
     else if(h==='temp')d.hpTemp=Math.max(0,Math.round(num(el.value)));
     else if(h==='manual')d.hpManual=el.value;
     updateHpBar();return}
-  if(el.dataset.a){d.abil[el.dataset.a]=Number(el.value)||10;const m=$('#m_'+el.dataset.a);if(m)m.textContent=sgn(mod(d.abil[el.dataset.a]));$('#derived').innerHTML=derived(d);schedRefresh({h:el.dataset.a==='con',a:el.dataset.a==='dex'||el.dataset.a==='str'})}
+  if(el.dataset.a){d.abil[el.dataset.a]=Number(el.value)||10;refreshAbil(d);schedRefresh({h:el.dataset.a==='con',a:el.dataset.a==='dex'||el.dataset.a==='str'})}
   else if(el.dataset.f&&el.tagName!=='SELECT'){
     const f=el.dataset.f;d[f]=el.type==='number'?Number(el.value):el.value;
     if(f==='level'||f==='dex')$('#derived').innerHTML=derived(d);
-    if(f==='level')schedRefresh({h:1,f:1});
+    if(f==='level'){schedRefresh({h:1,f:1});refreshAsi()}
   }
 });
 document.addEventListener('change',e=>{
@@ -139,11 +141,13 @@ document.addEventListener('change',e=>{
     if(REMOTE)api('POST','api/users/'+u.id+'/role',{role:u.role}).catch(e=>{u.role=prev;flashMsg=e.code==='last_admin'?t('lastAdmin'):t('netSaveFail');render()});
     if(u.id===session&&u.role!=='admin')view='players';render();return}
   if(edit&&el.dataset.wk){const r=edit.draft.weapons.find(x=>x.id===el.dataset.id);if(r){if(el.dataset.wk==='p')r.p=el.checked;else r.bonus=Math.round(num(el.value))}refreshWeapons();return}
+  if(edit&&(el.dataset.asi||el.dataset.xf)){asiChange(el);return}
   if(edit&&el.dataset.pk){const a=edit.draft.pick[el.dataset.pk]=edit.draft.pick[el.dataset.pk]||[];a[Number(el.dataset.pi)]=el.value;return}
   if(!edit||!el.dataset.f)return;const d=edit.draft,f=el.dataset.f;
   if(f==='insp')d.insp=el.value==='1';else d[f]=el.value;
   if(f==='cls'){d.sub='';$('#e_sub').innerHTML=subOpts(d.cls,'')}
   if(f==='bg'){syncBgItems(d);render()}
+  if(f==='cls'||f==='bg')refreshAsi();
   if(f==='cls'||f==='sub'||f==='race'){refreshHp();refreshExtra()}
 });
 window.addEventListener('hashchange',()=>{const h=location.hash.slice(1);if(me()&&['players','npcs','data','games','site','adventure','conditions'].includes(h)&&h!==view&&(isAdmin()||h==='players'||h==='adventure'||h==='site'||h==='conditions')){view=h;edit=null;dedit=null;roomOpen=null;roomEdit=null;siteDraft=h==='site'?siteInit():null;render()}});

@@ -10,9 +10,9 @@ function weaponStats(d,row){
   const w=wFind(row.ref);if(!w)return null;const props=String(w.props||'').toLowerCase();let ab;
   if(w.abil&&ABS.includes(String(w.abil).toLowerCase()))ab=String(w.abil).toLowerCase();
   else if(/^ranged$/i.test(w.range))ab='dex';
-  else if(/finesse/.test(props))ab=mod(d.abil.dex)>mod(d.abil.str)?'dex':'str';
+  else if(/finesse/.test(props))ab=mod(abT(d,'dex'))>mod(abT(d,'str'))?'dex':'str';
   else ab='str';
-  const m=mod(d.abil[ab]),p=isProf(d,w,row),magic=Math.round(num(w.ench))+Math.round(num(row.bonus)),atk=m+(p?prof(d.level):0)+magic,db=(w.apply?m:0)+magic;
+  const m=mod(abT(d,ab)),p=isProf(d,w,row),magic=Math.round(num(w.ench))+Math.round(num(row.bonus)),atk=m+(p?prof(d.level):0)+magic,db=(w.apply?m:0)+magic;
   let dmg=String(w.die||'').trim();
   if(dmg)dmg+=db?(db>0?'+':'−')+Math.abs(db):'';else dmg=db?sgn(db):'';
   if(w.dtype)dmg+=' '+w.dtype;if(w.bdie)dmg+=' + '+w.bdie+(w.btype?' '+w.btype:'');
@@ -31,7 +31,7 @@ function weaponsFrame(d){
 }
 const weaponsPanel=d=>`<section class="panel"><div class="ph"><h2>${t('wTitle')}</h2></div><div id="wbody">${weaponsFrame(d)}</div></section>`;
 function refreshWeapons(){const b=document.getElementById('wlist');if(b&&edit)b.innerHTML=weaponsBody(edit.draft)}
-function updateProfVals(d){const pb=prof(d.level);document.querySelectorAll('#profbody .pv').forEach(el=>{const[kind,k,ab]=el.dataset.pv.split(':');el.textContent=sgn(mod(d.abil[ab])+pb*profLevel(d,kind,k))})}
+function updateProfVals(d){const pb=prof(d.level);document.querySelectorAll('#profbody .pv').forEach(el=>{const[kind,k,ab]=el.dataset.pv.split(':');el.textContent=sgn(mod(abT(d,ab))+pb*profLevel(d,kind,k))})}
 /* proficiencies */
 function profsRows(d){
   const p=classProfs(d),r=CAT.races.find(x=>x.name===d.race),ver=(d.pick.veh||[]).filter(Boolean),tl=(d.pick.tool||[]).filter(Boolean).concat(p.tool),lg=toks(r&&r.lang).concat((d.pick.lang||[]).filter(Boolean));

@@ -149,8 +149,8 @@ function cbApply(I,e,f,acts){
       default:cbLog(I,`${iniName(e)}: ${crActText(a)} ${cb('sheetOnly')}`)}})}
 function cbBonus(e,chk){
   const c=iniChar(e);if(!c||!c.abil)return 0;const ab=String(chk.ab||'CON').toLowerCase(),pb=prof(c.level);
-  if(chk.k==='save')return mod(c.abil[ab])+pb*profLevel(c,'save',ab);
-  if(chk.k==='check'){if(chk.skill){const s=(typeof SKILLS!=='undefined'?SKILLS:[]).find(x=>x[0]===chk.skill);const a=s?s[2]:ab;return mod(c.abil[a])+pb*profLevel(c,'skill',chk.skill)}return mod(c.abil[ab])}
+  if(chk.k==='save')return mod(abT(c,ab))+pb*profLevel(c,'save',ab);
+  if(chk.k==='check'){if(chk.skill){const s=(typeof SKILLS!=='undefined'?SKILLS:[]).find(x=>x[0]===chk.skill);const a=s?s[2]:ab;return mod(abT(c,a))+pb*profLevel(c,'skill',chk.skill)}return mod(abT(c,ab))}
   return 0}
 function cbQAction(a,id){
   const rm=rooms.find(r=>r.id===roomOpen);if(!rm)return;const I=iniData(rm);I.q=I.q||[];

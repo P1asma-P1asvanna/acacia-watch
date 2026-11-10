@@ -36,7 +36,7 @@ def clean_site(c, v):
 def clean_cat(c, v):
     """Condition icons must be pictures stored for the site; colours must be #rrggbb. Everything else is left as the admin sent it."""
     import re
-    from . import conditions, images
+    from . import conditions, feats, images
     own = images.owned_ids(c, "site")
     L = v.get("conditions")
     if isinstance(L, list):
@@ -52,6 +52,7 @@ def clean_cat(c, v):
         for x in L:
             if isinstance(x, dict):
                 conditions.clean_condition(x, ids)
+    feats.clean_cat_feats(v)
     return v
 
 

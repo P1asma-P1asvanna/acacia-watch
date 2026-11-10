@@ -1,12 +1,13 @@
 """Game rules the server recomputes itself: hit points and armor class (players cannot fake them)."""
 import re
 
+from . import feats
 from .numbers import clampi, jsround, mod, num, sgn_find
 
 
 def hp_calc(d, cat):
     lvl = max(1, min(20, jsround(num(d.get("level"))) or 1))
-    con = mod((d.get("abil") or {}).get("con"))
+    con = mod(feats.totals(d, cat)["con"])
     classes = (cat or {}).get("classes", [])
     co = sgn_find(classes, d.get("cls"))
     m = re.search(r"(\d+)", str((co or {}).get("hd", "")))
@@ -48,7 +49,7 @@ def item_ench(it):
 
 
 def ac_calc(d, cat):
-    dx = mod((d.get("abil") or {}).get("dex"))
+    dx = mod(feats.totals(d, cat)["dex"])
     body = shield = None
     for it in d.get("items") or []:
         if not isinstance(it, dict) or not it.get("eq"):
