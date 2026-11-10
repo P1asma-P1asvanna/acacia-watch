@@ -47,10 +47,13 @@ let lang=load('dd_lang',null)||((navigator.language||'').startsWith('th')?'th':'
 let users=load('dd_users',[]), pcs=load('dd_pcs',[]), npcs=load('dd_npcs',[]);
 let CAT=load('dd_cat',null)||clone(SEED);
 const BGSK={Acolyte:['insight','religion'],Charlatan:['deception','sleight'],Criminal:['deception','stealth'],Entertainer:['acrobatics','performance'],'Folk Hero':['animal','survival'],'Guild Artisan':['insight','persuasion'],Hermit:['medicine','religion'],Noble:['history','persuasion'],Outlander:['athletics','survival'],Sage:['arcana','history'],Sailor:['athletics','perception'],Soldier:['athletics','intimidation'],Urchin:['sleight','stealth']};
+function crMig(r){if(r&&('save' in r||'acts' in r)){const sv=r.save,acts=(r.acts||[]).map(a=>a.t==='noact'?{t:'flag',f:'noact',ab:''}:a);
+  r.chk=sv?{k:'save',ab:sv.ab,dc:sv.dc,skill:'',dice:''}:null;if(sv&&sv.on!=='pass'){r.ok=[];r.no=acts}else{r.ok=acts;r.no=[]}delete r.save;delete r.acts}
+  if(r){if(!r.every)r.every=1;if(!r.rest)r.rest='any';if(!Array.isArray(r.ok))r.ok=[];if(!Array.isArray(r.no))r.no=[]}return r}
 function normCat(){for(const k in SEED)if(!Array.isArray(CAT[k]))CAT[k]=clone(SEED[k]);
 CAT.backgrounds.forEach(b=>{if(!Array.isArray(b.sk))b.sk=clone(BGSK[b.name]||[]);if(typeof b.equip!=='string')b.equip='';if(!Array.isArray(b.feats))b.feats=[]});
 CAT.classes.forEach(c=>{if(!Array.isArray(c.feats))c.feats=[]});
-CAT.conditions.forEach(c=>{if(!Array.isArray(c.rules)){const sd=SEED.conditions.find(x=>x.name===c.name);c.rules=sd?clone(sd.rules):[]}if(!c.dur||typeof c.dur!=='object')c.dur={u:'',n:0};delete c.th});
+CAT.conditions.forEach(c=>{if(!Array.isArray(c.rules)){const sd=SEED.conditions.find(x=>x.name===c.name);c.rules=sd?clone(sd.rules):[]}if(!c.dur||typeof c.dur!=='object')c.dur={u:'',n:0};if(!c.stack){c.stack='no';c.maxLv=0}if(!Array.isArray(c.ends))c.ends=[];c.rules.forEach(crMig);delete c.th});
 CAT.backgrounds.forEach(b=>{const sd=SEED.backgrounds.find(x=>x.name===b.name);['nLang','nTool','nVeh'].forEach(k=>{if(b[k]===undefined||b[k]==='')b[k]=sd?sd[k]:0})});
 }
 normCat();

@@ -52,3 +52,11 @@
 .crrule select,.crrule input[type=text],.crrule input:not([type]),.crrule input[type=number]{width:100%}
 .crprev{font-size:.88rem;color:var(--muted);background:rgba(255,255,255,.03);border-radius:6px;padding:6px 10px}
 .crrule>.btn{align-self:flex-start}
+
+.crbtns{margin-left:auto;display:flex;gap:8px}
+.crhead .btn.danger{margin-left:0}
+.crends{display:flex;flex-wrap:wrap;gap:6px 16px;align-items:center}
+.crlbl{font-weight:600;font-size:.88rem;margin-bottom:2px}
+.cract select,.crsave select{min-width:140px}
+.cracts>.btn{align-self:flex-start}
+.cract .field{flex:1 1 150px}.cract .btn.danger{flex:none}
