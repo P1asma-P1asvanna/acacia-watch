@@ -60,6 +60,7 @@ document.addEventListener('click',e=>{
     if(PREFS.lay)p.lay=PREFS.lay;else delete p.lay;
     PREFS=p;ok=savePrefs()&&ok;siteMsg=ok?t('sSaved'):t('sSavedTemp');siteDraft=siteInit();render()}
   else if(a==='sresetall'){if(dataArm!=='siteReset'){dataArm='siteReset';render();return}PREFS={};savePrefs();siteDraft=siteInit();dataArm=null;siteMsg=t('sSaved');render()}
+  else if(a.startsWith('cr-')&&dedit){condRuleClick(a,b)}
   else if(a==='cpop'){condPop=id;render()}
   else if(a==='cpop-x'){condPop=null;render()}
   else if(a==='cicon-rm'){dedit.draft.icon='';imgMsg='';render()}
@@ -97,6 +98,7 @@ document.addEventListener('input',e=>{
   if(roomEdit&&el.dataset.r){roomEdit.draft[el.dataset.r]=el.value;return}
   if(dedit){
     const dd=dedit.draft;
+    if(condRuleEdit(el))return;
     if(el.dataset.cf){const f=el.dataset.cf;dd[f]=el.tagName==='SELECT'?Number(el.value):(el.type==='number'?(el.value===''?'':Number(el.value)):el.value)}
     else if(el.dataset.sf){dd.subs[Number(el.dataset.si)][el.dataset.sf]=el.value}
     else if(el.dataset.ftf){const f=(dd.feats||[])[Number(el.dataset.fti)];if(f)f[el.dataset.ftf]=el.dataset.ftf==='lvl'?Number(el.value):el.value}

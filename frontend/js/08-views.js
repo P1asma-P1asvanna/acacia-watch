@@ -153,7 +153,7 @@ function condIcon(c,px){
 /* text with **bold italic** lead-ins, and every condition name turned into a coloured, tappable highlight (not the condition's own name) */
 function condText(src,selfId){
   const L=(CAT.conditions||[]).filter(c=>c.id!==selfId),names=[];
-  L.forEach(c=>{[c.name,c.th].forEach(n=>{n=String(n||'').trim();if(n.length>=3)names.push([n,c.id])})});
+  L.forEach(c=>{const n=String(c.name||'').trim();if(n.length>=3)names.push([n,c.id])});
   names.sort((a,b)=>b[0].length-a[0].length);
   const map=new Map(names.map(([n,id])=>[esc(n).toLowerCase(),id]));
   const rx=names.length?new RegExp('(?<![A-Za-z])('+names.map(([n])=>reEsc(esc(n))).join('|')+')(?![A-Za-z])','gi'):null;
@@ -163,14 +163,13 @@ function condText(src,selfId){
       return`<button class="cref" data-act="cpop" data-id="${id}" ${ccs(c)}>${m}</button>`})}).join('')}
 function condPopHtml(){
   const c=condPop&&(CAT.conditions||[]).find(x=>x.id===condPop);if(!c)return'';
-  const nm=lang==='th'&&c.th?`<span class="condth">${esc(c.th)}</span>`:'';
-  return`<div class="cpop" role="dialog" aria-label="${esc(c.name)}"${ccs(c)}><div class="cpop-h">${condIcon(c,40)}<h3>${esc(c.name)}</h3>${nm}<button class="btn small" data-act="cpop-x" aria-label="${t('close')}">✕</button></div><div class="cpop-b">${condText(c.desc||c.sum,c.id)}</div></div>`}
+  return`<div class="cpop" role="dialog" aria-label="${esc(c.name)}"${ccs(c)}><div class="cpop-h">${condIcon(c,40)}<h3>${esc(c.name)}</h3><button class="btn small" data-act="cpop-x" aria-label="${t('close')}">✕</button></div><div class="cpop-b">${condText(c.desc||c.sum,c.id)}${condRulesHtml(c)}</div></div>`}
 function condStills(){if(animOn())return;document.querySelectorAll('img.cicon[data-gif]').forEach(im=>{const u=im.getAttribute('src');stillOf(u).then(d=>{if(im.getAttribute('src')===u)im.src=d})})}
 function renderConditions(){
   const L=CAT.conditions||[],adm=isAdmin();
   const acts=`<div class="acts">${L.length?`<button class="btn small" data-act="cond-all" data-v="1">${t('condOpenAll')}</button><button class="btn small" data-act="cond-all" data-v="0">${t('condCloseAll')}</button>`:''}${adm?`<button class="btn" data-act="cond-edit">${t('condEdit')}</button>`:''}</div>`;
-  const body=L.length?`<div class="condlist">${L.map(c=>{const o=condOpen.has(c.id),nm=lang==='th'&&c.th?c.th:'';
-   return`<div class="cond${o?' open':''}"${ccs(c)}><button class="condhead" data-act="cond" data-id="${c.id}" aria-expanded="${o}">${condIcon(c,40)}<b>${esc(c.name)}</b>${nm?`<span class="condth">${esc(nm)}</span>`:''}<span class="condsum">${esc(c.sum)}</span><span class="condcar" aria-hidden="true">${o?'−':'+'}</span></button>${o?`<div class="condbody">${condText(c.desc||c.sum,c.id)}</div>`:''}</div>`}).join('')}</div>`
+  const body=L.length?`<div class="condlist">${L.map(c=>{const o=condOpen.has(c.id);
+   return`<div class="cond${o?' open':''}"${ccs(c)}><button class="condhead" data-act="cond" data-id="${c.id}" aria-expanded="${o}">${condIcon(c,40)}<b>${esc(c.name)}</b><span class="condsum">${esc(c.sum)}</span><span class="condcar" aria-hidden="true">${o?'−':'+'}</span></button>${o?`<div class="condbody">${condText(c.desc||c.sum,c.id)}${condRulesHtml(c)}</div>`:''}</div>`}).join('')}</div>`
    :`<div class="empty"><div>${t('condNone')}</div></div>`;
   setTimeout(condStills,0);
   return head(t('conditions'),t('condSub'),acts)+`<section class="panel">${body}</section>`;

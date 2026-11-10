@@ -50,6 +50,7 @@ const BGSK={Acolyte:['insight','religion'],Charlatan:['deception','sleight'],Cri
 function normCat(){for(const k in SEED)if(!Array.isArray(CAT[k]))CAT[k]=clone(SEED[k]);
 CAT.backgrounds.forEach(b=>{if(!Array.isArray(b.sk))b.sk=clone(BGSK[b.name]||[]);if(typeof b.equip!=='string')b.equip='';if(!Array.isArray(b.feats))b.feats=[]});
 CAT.classes.forEach(c=>{if(!Array.isArray(c.feats))c.feats=[]});
+CAT.conditions.forEach(c=>{if(!Array.isArray(c.rules)){const sd=SEED.conditions.find(x=>x.name===c.name);c.rules=sd?clone(sd.rules):[]}if(!c.dur||typeof c.dur!=='object')c.dur={u:'',n:0};delete c.th});
 CAT.backgrounds.forEach(b=>{const sd=SEED.backgrounds.find(x=>x.name===b.name);['nLang','nTool','nVeh'].forEach(k=>{if(b[k]===undefined||b[k]==='')b[k]=sd?sd[k]:0})});
 }
 normCat();

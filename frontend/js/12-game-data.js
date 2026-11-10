@@ -19,15 +19,15 @@ const SCHEMA={
  languages:{cols:['name'],f:[['name','t']]},
  tools:{cols:['name'],f:[['name','t']]},
  vehicles:{cols:['name'],f:[['name','t']]},
- conditions:{cols:['name','th','sum'],f:[['name','t'],['th','t'],['sum','t'],['desc','a']]}};
-Object.assign(FL,{th:['ชื่อภาษาไทย','Thai name'],sum:['สรุปสั้น','Short summary'],desc:['รายละเอียดผลของสถานะ','Full effects']});
+ conditions:{cols:['name','sum'],f:[['name','t'],['sum','t'],['desc','a']]}};
+Object.assign(FL,{sum:['สรุปสั้น','Short summary'],desc:['รายละเอียดผลของสถานะ','Full effects']});
 Object.assign(FL,{sk:['Skill Proficiencies ที่ได้','Skill proficiencies granted'],equip:['อุปกรณ์เริ่มต้น (หนึ่งรายการต่อบรรทัด เช่น 2x Torch)','Starting equipment (one item per line, e.g. 2x Torch)']});
 FL.saves=['Saving throw และทักษะอาชีพ','Saving throws and class skills']; /* class saves; armor uses the same key with its own label below */
 const flFor=(cat,k)=>cat==='armor'&&k==='saves'?(lang==='th'?'โบนัส Saves':'Saves bonus'):fl(k);
 const usageKey={races:'race',classes:'cls',alignments:'align',backgrounds:'bg'};
 const pickKey={languages:'lang',tools:'tool',vehicles:'veh'};
 const usage=(c,it)=>usageKey[c]?[...pcs,...npcs].filter(r=>r[usageKey[c]]===it.name).length:pickKey[c]?[...pcs,...npcs].filter(r=>(r.pick&&r.pick[pickKey[c]]||[]).includes(it.name)).length:0;
-function blankItem(c){const o={id:uid()};SCHEMA[c].f.forEach(([k,ty])=>o[k]=ty==='b'?0:(ty==='n'&&/^n[A-Z]/.test(k)?0:''));if(c==='classes'){o.subs=[];o.feats=[]}if(c==='backgrounds'){o.sk=[];o.feats=[]}if(c==='conditions'){o.icon='';o.color=''}return o}
+function blankItem(c){const o={id:uid()};SCHEMA[c].f.forEach(([k,ty])=>o[k]=ty==='b'?0:(ty==='n'&&/^n[A-Z]/.test(k)?0:''));if(c==='classes'){o.subs=[];o.feats=[]}if(c==='backgrounds'){o.sk=[];o.feats=[]}if(c==='conditions'){o.icon='';o.color='';o.dur={u:'',n:0};o.rules=[]}return o}
 const cell=v=>{const s=String(v??'').replace(/\s+/g,' ').trim();return s?esc(s.length>60?s.slice(0,57)+'…':s):'<span class="muted">—</span>'};
 let dataPage=0;
 function renderData(){
@@ -66,7 +66,7 @@ function renderDataEditor(){
     <div class="media"><div class="lbl">${t('cColor')}</div><div class="crow"><input type="color" id="c_color" data-cf="color" value="${hexOf(d.color||getComputedStyle(document.documentElement).getPropertyValue('--ink').trim())}" aria-label="${t('cColor')}"><code>${esc(d.color||t('sDefault'))}</code>${d.color?`<button class="btn small" data-act="ccol-reset">${t('sDefault')}</button>`:''}</div>
     <p class="rules">${t('cColorHint')}</p><div class="cprev">${t('cPrev')} <span class="cref"${ccs(d)}>${esc(d.name||'—')}</span></div></div></div></section>`:'';
   return`${head(esc(d.name)||t('addItem'),t(c),`<button class="btn" data-act="dback">← ${t('back')}</button>`)}
-   <section class="panel"><div class="grid wide">${fields}</div></section>${condSec}${skSec}${subs}${featSec}
+   <section class="panel"><div class="grid wide">${fields}</div></section>${condSec}${c==='conditions'?condRulesEditor(d):''}${skSec}${subs}${featSec}
    <div class="bar" style="padding:0"><div>${dedit.isNew?'':`<button class="btn danger" data-act="ddel-edit">${dataArm===d.id?(usage(c,d)?t('delInUse').replace('{n}',usage(c,d)):t('delSure')):t('del')}</button>`}</div>
    <div style="display:flex;gap:12px;align-items:center"><span class="err" role="alert">${esc(dataErr)}</span><button class="btn primary" data-act="dsave">${t('save')}</button></div></div>`;
 }
