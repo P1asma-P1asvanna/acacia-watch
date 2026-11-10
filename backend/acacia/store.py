@@ -1,6 +1,7 @@
 """Reading what the browser needs at start-up, and the small key/value store."""
 import json
 
+from . import live
 from .numbers import clampi, num
 
 
@@ -122,7 +123,8 @@ def player_rooms(c, me):
 
 
 def boot_state(c, me):
-    out = {"me": None, "hasUsers": c.execute("SELECT 1 FROM users LIMIT 1").fetchone() is not None,
+    # the version is read BEFORE the data: if somebody saves in between, the next poll sees a newer version and refreshes
+    out = {"v": live.current(), "me": None, "hasUsers": c.execute("SELECT 1 FROM users LIMIT 1").fetchone() is not None,
            "site": kv_get(c, "site") or {}}
     if not me:
         return out

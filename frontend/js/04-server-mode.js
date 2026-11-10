@@ -15,6 +15,7 @@ const synced={pc:new Map(),npc:new Map()};
 let syncChain=Promise.resolve(),inflight=0;const kvTimers={};
 function resetSynced(){synced.pc=new Map(pcs.map(r=>[r.id,JSON.stringify(r)]));synced.npc=new Map(npcs.map(r=>[r.id,JSON.stringify(r)]))}
 function applyBoot(j){
+  if(j&&j.v!=null&&LIVE.v==null)LIVE.v=j.v;   /* remember which version this state is: the first poll then answers at once if anything changed since */
   REMOTE=true;SITE=Object.assign({},j.site||{});firstRun=!j.hasUsers;
   if(j.me){users=j.users||[j.me];session=j.me.id;PREFS=j.prefs||{};put('dd_theme',PREFS);pcs=j.pcs||[];npcs=j.npcs||[];rooms=j.rooms||[];prooms=j.prooms||[];CAT=j.cat||clone(SEED);normCat();
     if(!j.cat&&j.me.role==='admin')api('POST','api/kv/cat',{value:CAT}).catch(netErr)}
@@ -23,7 +24,7 @@ function applyBoot(j){
 }
 function pushKv(k,v){
   clearTimeout(kvTimers[k]);inflight++;
-  kvTimers[k]=setTimeout(()=>{syncChain=syncChain.then(async()=>{try{await api('POST','api/kv/'+REMOTE_KEYS[k],{value:v});netBar('')}catch(e){netErr(e)}finally{inflight--}})},350);
+  kvTimers[k]=setTimeout(()=>{syncChain=syncChain.then(async()=>{try{await api('POST','api/kv/'+REMOTE_KEYS[k],{value:v});netBar('')}catch(e){netErr(e)}finally{inflight--}})},80);
 }
 function syncKind(k){
   const L=list(k),cur=new Map(L.map(r=>[r.id,JSON.stringify(r)]));

@@ -146,6 +146,14 @@ class H(Routes, BaseHTTPRequestHandler):
         cur = live.wait(since, POLL_SECONDS)
         if cur is None:
             raise Err(503, "busy")
+        if since is not None and cur != since:
+            # something changed: send the new state with the answer so the browser needs no second request
+            try:
+                with LOCK:
+                    state = run(lambda c: boot_state(c, self.session_user(c)))
+                return self.send(200, {"v": cur, "boot": state})
+            except Exception:
+                pass  # fall back to the plain answer; the browser then asks for the state itself
         return self.send(200, {"v": cur})
 
     def static(self, path):

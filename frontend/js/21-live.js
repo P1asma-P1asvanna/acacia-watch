@@ -11,12 +11,12 @@ function liveBusy(){
   return !!(a&&a!==document.body&&/^(INPUT|TEXTAREA|SELECT)$/.test(a.tagName)&&a.closest&&a.closest('#root'));
 }
 function liveLater(){clearTimeout(LIVE.timer);LIVE.timer=setTimeout(()=>{if(LIVE.dirty){LIVE.dirty=false;livePull()}},1500)}
-async function livePull(){
+async function livePull(pre){   /* pre = the state that came with the poll answer (no extra request needed) */
   if(!REMOTE||!session)return;
   if(liveBusy()){LIVE.dirty=true;return liveLater()}
   const before=liveSig(),siteBefore=JSON.stringify([SITE,PREFS]);
-  let j;try{j=await api('GET','api/boot')}catch(e){if(e.status===401)netErr(e);return}
-  if(liveBusy()){LIVE.dirty=true;return liveLater()}  /* the user started typing while we were loading */
+  let j=pre;if(!j){try{j=await api('GET','api/boot')}catch(e){if(e.status===401)netErr(e);return}
+    if(liveBusy()){LIVE.dirty=true;return liveLater()}}  /* the user started typing while we were loading */
   applyBoot(j);
   if(JSON.stringify([SITE,PREFS])!==siteBefore){applySite(curTheme());const bd=document.querySelector('.side .brand');if(bd)bd.innerHTML=brandHtml()}
   if(liveSig()===before)return;
@@ -39,7 +39,7 @@ async function liveLoop(){
         LIVE.fails=Math.min(LIVE.fails+1,5);await liveSleep(1000*2**LIVE.fails);continue;
       }
       clearTimeout(tm);
-      if(j.v!==LIVE.v){LIVE.v=j.v;await livePull()}  /* also on the first answer: something may have changed since boot */
+      if(j.v!==LIVE.v){LIVE.v=j.v;await livePull(j.boot)}  /* the first answer also counts: something may have changed since boot */
     }
   }finally{LIVE.run=false;LIVE.ac=null}
 }
