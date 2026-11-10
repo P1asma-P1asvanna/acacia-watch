@@ -15,6 +15,7 @@ document.addEventListener('click',e=>{
   if(['nav','back','edit','new','save','del-edit','open','ropen','rclose'].includes(a))arrangePage=null;
   if(a.startsWith('bk-')){bkAction(a);return}
   if(a.startsWith('ini-')){iniAction(a,id);return}
+  if(a.startsWith('cb-')||a.startsWith('fx-')||a.startsWith('q-')){cbAction(a,b);return}
   if(a==='lang'){lang=v;put('dd_lang',lang);render()}
   else if(a==='tab'){authTab=v;authErr='';render()}
   else if(a==='logout'){if(REMOTE){api('POST','api/logout',{}).catch(()=>{});users=[];pcs=[];npcs=[];rooms=[];netBar('')}session=null;put('dd_session',null);edit=null;dedit=null;siteDraft=null;roomOpen=null;roomEdit=null;authTab='signin';render()}

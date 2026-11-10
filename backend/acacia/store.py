@@ -58,6 +58,19 @@ def user_pub(r):
     return {"id": r["id"], "name": r["name"], "disp": r["disp"], "role": r["role"]}
 
 
+def public_fx(fx):
+    """The conditions a player may see on a combatant: which condition, how long is left, its level. Nothing else."""
+    out = []
+    for f in (fx if isinstance(fx, list) else [])[:20]:
+        if not isinstance(f, dict) or not isinstance(f.get("cid"), str):
+            continue
+        u = f.get("u") if f.get("u") in ("turn", "round", "minute", "hour") else ""
+        left = f.get("left")
+        out.append({"id": str(f.get("id"))[:40], "cid": f["cid"][:40], "u": u,
+                    "left": clampi(left, 0, 999, 0) if left is not None and u else None, "lv": clampi(f.get("lv"), 1, 20, 1)})
+    return out
+
+
 def player_rooms(c, me):
     """What a player may see of the adventure rooms: only rooms where one of their own characters sits,
     and only the turn order (names, rolled initiative, whose turn). No GM notes, hit points or stats of others."""
@@ -95,7 +108,8 @@ def player_rooms(c, me):
                 name = str(e.get("name") or "")
             v = num(e.get("init"))
             entries.append({"id": str(e.get("id")), "name": (name or "—")[:80], "init": int(v) if v == int(v) else v,
-                            "kind": "pc" if is_pc else "other", "mine": is_pc and cid in mine, "pc": cid if cid in mine else ""})
+                            "kind": "pc" if is_pc else "other", "mine": is_pc and cid in mine, "pc": cid if cid in mine else "",
+                            "fx": public_fx(e.get("fx"))})
         out.append({"id": str(rm.get("id")), "name": str(rm.get("name") or "")[:80], "round": clampi(ini.get("round"), 1, 9999, 1),
                     "cur": str(ini.get("cur") or ""), "list": entries,
                     "party": [{"name": pc_name.get(a, "—"), "mine": a in mine} for a in assign]})

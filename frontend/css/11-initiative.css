@@ -29,3 +29,25 @@
 .ini-num{font-family:var(--display);font-weight:700;font-size:1.25rem;text-align:center;font-variant-numeric:tabular-nums}
 .turn-banner{margin:0 16px 12px;padding:12px 14px;border-radius:var(--r);background:var(--turn-now);color:#14201d;font-weight:800;text-align:center;font-size:1.1rem}
 @media(max-width:700px){.ini-row.ro{grid-template-columns:24px minmax(0,1fr) 48px 72px}.ini-row.ro .ini-hp{grid-column:auto}}
+
+/* combat: conditions on combatants, damage / heal, pending rules, log */
+.ini-sub{grid-column:1/-1;display:flex;flex-direction:column;gap:8px;padding:4px 0 6px 38px}
+.cb-hp,.cb-add,.cb-fx{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.cb-hptxt{font-family:var(--mono);font-size:.9rem;min-width:7.5rem}
+.ini-row .cb-amt{width:100px;text-align:center}
+.ini-sub select,.ini-sub input{min-height:34px;border:1px solid var(--line);border-radius:calc(var(--r)*.75);background:var(--surface);color:inherit;padding:0 8px;font:inherit}
+.ini-row .cb-n{width:84px}
+.fxchip{--cc:var(--ink);display:inline-flex;align-items:center;border:1px solid color-mix(in srgb,var(--cc) 55%,transparent);background:color-mix(in srgb,var(--cc) 14%,transparent);border-radius:999px;overflow:hidden}
+.fxb{display:inline-flex;align-items:center;gap:6px;background:none;border:0;color:var(--cc);font:inherit;font-size:.85rem;padding:3px 10px;cursor:pointer}
+.fxb img{border-radius:4px}
+.fxs{background:none;border:0;border-left:1px solid color-mix(in srgb,var(--cc) 30%,transparent);color:var(--cc);cursor:pointer;padding:3px 8px;font:inherit;line-height:1}
+.fxs:hover,.fxb:hover{background:color-mix(in srgb,var(--cc) 25%,transparent)}
+.ini-row.ro .cb-fx{margin-top:4px}
+.cbqwrap{margin:10px 16px;border:1px solid var(--turn-now);border-radius:var(--r);background:color-mix(in srgb,var(--turn-now) 8%,var(--surface))}
+.cbq-h{display:flex;flex-wrap:wrap;gap:8px 14px;align-items:center;padding:10px 12px;border-bottom:1px solid var(--line)}.cbq-h .btn{margin-left:auto}
+.cbq-list{list-style:none;margin:0;padding:0}
+.cbq{display:flex;flex-wrap:wrap;gap:8px 14px;align-items:center;justify-content:space-between;padding:10px 12px;border-top:1px solid var(--line)}.cbq:first-child{border-top:0}
+.cbq-t{flex:1 1 280px;min-width:0}.cbq-t div{color:var(--muted);font-size:.88rem;margin-top:2px}
+.cbq-b{display:flex;gap:6px;flex-wrap:wrap}
+.cblog{margin:0;padding:8px 16px 14px;border-top:1px solid var(--line)}.cblog summary{cursor:pointer;color:var(--muted)}.cblog ul{margin:8px 0 0;padding-left:1.1rem;font-size:.88rem}
+@media(max-width:700px){.ini-sub{padding-left:0}}

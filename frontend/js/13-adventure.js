@@ -18,6 +18,7 @@ function renderRoomForm(){
    <div class="field"><label for="r_seats">${t('seats')}</label><input id="r_seats" data-r="seats" type="number" min="1" max="${MAXSEATS}" value="${esc(d.seats)}"><span class="note">${t('seatsHint')}</span></div></div>
    <div class="bar"><span class="err" role="alert">${esc(roomErr)}</span><button class="btn primary" data-act="rsave">${t('save')}</button></div></section>`;
 }
+function seatFx(rm,cid){const I=rm.init,e=I&&(I.list||[]).find(x=>x.ref==='pc:'+cid);return e&&(e.fx||[]).length?`<div class="cb-fx">${e.fx.map(f=>cbChip(e,f,false)).join('')}</div>`:''}
 function renderStage(rm){
   const n=rm.seats,used=new Set(rm.assign.filter(Boolean)),dens=n<=3?'d1':n<=6?'d2':'d3';
   const tabs=`<button role="tab" class="gtab" aria-selected="${advGame==='dice'}" data-act="rgame" data-v="dice">${t('diceTitle')}</button><button role="tab" class="gtab" aria-selected="${advGame==='init'}" data-act="rgame" data-v="init">${t('iniTab')}</button>`+
@@ -28,7 +29,7 @@ function renderStage(rm){
     const who=ch&&ownerName(ch.owner);
     return`<div class="seat ${ch?'filled':''}"><div class="av" aria-hidden="true">${ch?esc((ch.name||'?').trim().slice(0,1).toUpperCase()):i+1}</div>
      <div class="seat-body"><select class="seat-pick" aria-label="${t('seat')} ${i+1}" data-seat="${i}"><option value="">${t('emptySeat')}</option>${opts}</select>
-     ${ch?`<div class="seat-line2">${esc(ch.race)} · ${esc(ch.cls)} ${ch.level}${who?' · '+esc(who):''}</div><div class="seat-stats"><span>HP ${curHp(ch)}/${ch.hp}${num(ch.hpTemp)?'+'+num(ch.hpTemp):''}</span><span>AC ${ch.ac}</span></div>`:''}</div></div>`}).join('');
+     ${ch?`<div class="seat-line2">${esc(ch.race)} · ${esc(ch.cls)} ${ch.level}${who?' · '+esc(who):''}</div><div class="seat-stats"><span>HP ${curHp(ch)}/${ch.hp}${num(ch.hpTemp)?'+'+num(ch.hpTemp):''}</span><span>AC ${ch.ac}</span></div>${seatFx(rm,ch.id)}`:''}</div></div>`}).join('');
   return`<div class="stagebar"><button class="btn small" data-act="rclose">← ${t('leave')}</button><h1>${esc(rm.name)}</h1><div class="gtabs" role="tablist" aria-label="${t('minigamesBar')}">${tabs}</div>${arrangeBtn('stage')}</div>
   ${arrangeBar('stage')}<div class="stagebody" data-page="stage"><section class="stagemain" data-w="main">${wc('stage','main')}${advGame==='dice'?dicePanel():advGame==='init'?iniPanel(rm):''}</section>
   <aside class="rail" data-w="rail" aria-label="${t('playersRail')}">${wc('stage','rail')}<div class="rail-head"><span>${t('playersRail')}</span><span class="pill">${used.size} / ${n}</span></div><div class="rail-list ${dens}" style="--n:${n}">${seats}</div></aside></div>`;
@@ -46,7 +47,7 @@ function playerRoom(rm){
   const rows=act.map(e=>{
     const now=started&&e.id===rm.cur,nxt=e.id===nextId,dn=done.has(e.id),c=e.pc?pcs.find(x=>x.id===e.pc):null;
     return`<li class="ini-row ro ${now?'now':nxt?'next':dn?'done':''}" ${now?'aria-current="true"':''}><span class="ini-mark" aria-hidden="true">${now?'▶':nxt?'→':dn?'✓':''}</span>
-     <div class="ini-name"><b>${esc(e.name)}</b><small>${e.kind==='pc'?t('iniPc'):t('iniGm')}${now?' · '+t('iniNow'):nxt?' · '+t('iniNextTag'):dn?' · '+t('iniDoneTag'):''}</small></div>
+     <div class="ini-name"><b>${esc(e.name)}</b><small>${e.kind==='pc'?t('iniPc'):t('iniGm')}${now?' · '+t('iniNow'):nxt?' · '+t('iniNextTag'):dn?' · '+t('iniDoneTag'):''}</small>${(e.fx||[]).length?`<div class="cb-fx">${e.fx.map(f=>cbChip(e,f,false)).join('')}</div>`:''}</div>
      <span class="ini-num" aria-label="${t('iniInit')}">${esc(e.init)}</span>${c?`<span class="ini-hp">HP ${curHp(c)}/${c.hp}</span>`:'<span></span>'}</li>`}).join('');
   return`<section class="panel ini"><div class="ph"><h2>${esc(rm.name)}</h2></div>
    ${mineNow?`<div class="turn-banner" role="status">${t('pAdvYourTurn')}</div>`:''}
