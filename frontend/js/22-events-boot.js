@@ -107,7 +107,8 @@ document.addEventListener('input',e=>{
   if(dedit){
     const dd=dedit.draft;
     if(condRuleEdit(el)||featFxEdit(el))return;
-    if(el.dataset.cf){const f=el.dataset.cf;dd[f]=el.tagName==='SELECT'?(f==='cat'?el.value:Number(el.value)):(el.type==='number'?(el.value===''?'':Number(el.value)):el.value)}
+    if(el.dataset.cf){const f=el.dataset.cf;dd[f]=el.tagName==='SELECT'?(['cat','school','timeK','durK'].includes(f)?el.value:Number(el.value)):(el.type==='number'?(el.value===''?'':Number(el.value)):el.value);
+      if(dedit.cat==='spells'){spCompose(dd);const row=el.closest('.spcrow');if(row){const nm=row.querySelector('input[type=number]'),k=dd[f==='timeK'||/^time/.test(f)?'timeK':'durK'];if(nm)nm.hidden=!((/^time/.test(f)?SP_NEED_T:SP_NEED_D).includes(k));const nt=row.parentElement.querySelector('.note');if(nt)nt.textContent=/^time/.test(f)?dd.time:dd.dur}}}
     else if(el.dataset.sf){dd.subs[Number(el.dataset.si)][el.dataset.sf]=el.value}
     else if(el.dataset.ftf){const f=(dd.feats||[])[Number(el.dataset.fti)];if(f)f[el.dataset.ftf]=el.dataset.ftf==='lvl'?Number(el.value):el.value}
     else if(el.dataset.bgs){const a=dd.sk=dd.sk||[],k=el.dataset.bgs,ix=a.indexOf(k);if(el.checked&&ix<0)a.push(k);if(!el.checked&&ix>=0)a.splice(ix,1)}

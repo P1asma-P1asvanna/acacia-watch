@@ -89,3 +89,4 @@ details.feat summary{cursor:pointer;display:flex;gap:8px;flex-wrap:wrap;align-it
 .spacts select{width:auto;max-width:100%}
 .spadd{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
 .spadd select,.spadd input{flex:1 1 160px;min-width:0}
+.spcrow{display:flex;gap:8px;flex-wrap:wrap}.spcrow select{flex:0 1 190px}.spcrow input[type=number]{flex:0 0 90px}.spcrow input[type=text]{flex:1 1 180px;min-width:0}.spcrow [hidden]{display:none}

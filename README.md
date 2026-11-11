@@ -234,3 +234,9 @@ tools/build_single.py      รวมหน้าเว็บเป็นไฟ�
 - โดนดาเมจขณะมีสมาธิ: แจ้งเตือนให้ทอย CON save DC สูงกว่าของ 10 หรือดาเมจ/2; HP เป็น 0 เสียสมาธิอัตโนมัติ
 - พักยาว (ปุ่มบนชีต หรือ Long rest ในหน้า Initiative) คืน Slot ทั้งหมดและเลิกสมาธิ; พักสั้นใน Initiative คืน Pact slots (บนชีตมีปุ่ม "พักสั้นเสร็จ: คืน Pact slots")
 - ตารางจำนวน Slot ตามเลเวลฝังอยู่ที่ `frontend/js/11c-spells.js` (Half Caster ใช้ตาราง 2024 ที่เริ่มมี Slot ตั้งแต่เลเวล 1)
+
+### Spells — School / Casting time / Duration เป็นตัวเลือก
+- **School**: เลือกจากสำนักทั้ง 8 (ค่าเดิมที่พิมพ์เองยังคงอยู่ในตัวเลือก)
+- **Casting time**: Action, Bonus Action, Reaction, Minute(s), Hour(s), Special — มีช่องจำนวน (ขึ้นเมื่อเลือกนาที/ชั่วโมง) และช่องหมายเหตุเพิ่มเติม (เช่น เงื่อนไขของ Reaction)
+- **Duration**: Instantaneous, Round(s), Minute(s), Hour(s), Day(s), Until dispelled, Special — จำนวนและหมายเหตุเหมือนกัน; ถ้าติ๊ก Concentration จะต่อข้อความ "Concentration, up to ..." ให้อัตโนมัติ
+- ข้อความสำเร็จรูปแสดงใต้ช่องเลือกทันที และเวทที่บันทึกไว้ก่อนหน้า (พิมพ์เป็นข้อความ) จะถูกแปลงเป็นตัวเลือกให้เอง

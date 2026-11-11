@@ -17,8 +17,9 @@ function resetSynced(){synced.pc=new Map(pcs.map(r=>[r.id,JSON.stringify(r)]));s
 function applyBoot(j){
   if(j&&j.v!=null&&LIVE.v==null)LIVE.v=j.v;   /* remember which version this state is: the first poll then answers at once if anything changed since */
   REMOTE=true;SITE=Object.assign({},j.site||{});firstRun=!j.hasUsers;
-  if(j.me){users=j.users||[j.me];session=j.me.id;PREFS=j.prefs||{};put('dd_theme',PREFS);pcs=j.pcs||[];npcs=j.npcs||[];rooms=j.rooms||[];prooms=j.prooms||[];const needF=!!j.cat&&(!Array.isArray(j.cat.feats)||!Array.isArray(j.cat.spells)||j.cat.feats.some(f=>!Array.isArray(f.fx)));CAT=j.cat||clone(SEED);normCat();
-    if((!j.cat||needF)&&j.me.role==='admin')api('POST','api/kv/cat',{value:CAT}).catch(netErr)}
+  if(j.me){users=j.users||[j.me];session=j.me.id;PREFS=j.prefs||{};put('dd_theme',PREFS);pcs=j.pcs||[];npcs=j.npcs||[];rooms=j.rooms||[];prooms=j.prooms||[];const needF=!!j.cat&&(!Array.isArray(j.cat.feats)||!Array.isArray(j.cat.spells)||j.cat.feats.some(f=>!Array.isArray(f.fx)));const needS=!(j.cat&&j.cat.spellSeed);CAT=j.cat||clone(SEED);normCat();
+    if(needS){if(!CAT.spells.length)CAT.spells=clone(SEED.spells);CAT.spellSeed=1}   /* the example spells are added once, even if an older save left an empty list */
+    if((!j.cat||needF||needS)&&j.me.role==='admin')api('POST','api/kv/cat',{value:CAT}).catch(netErr)}
   else{users=[];session=null;pcs=[];npcs=[];rooms=[];prooms=[]}
   resetSynced();
 }
@@ -52,6 +53,7 @@ function crMig(r){if(r&&('save' in r||'acts' in r)){const sv=r.save,acts=(r.acts
   r.chk=sv?{k:'save',ab:sv.ab,dc:sv.dc,skill:'',dice:''}:null;if(sv&&sv.on!=='pass'){r.ok=[];r.no=acts}else{r.ok=acts;r.no=[]}delete r.save;delete r.acts}
   if(r){if(!r.every)r.every=1;if(!r.rest)r.rest='any';if(!Array.isArray(r.ok))r.ok=[];if(!Array.isArray(r.no))r.no=[]}return r}
 function normCat(){for(const k in SEED)if(!Array.isArray(CAT[k]))CAT[k]=clone(SEED[k]);
+  CAT.spells.forEach(spNorm);
   CAT.feats.forEach(f=>{const s=SEED.feats.find(x=>x.name===f.name);if(f.pts===undefined)f.pts=s?s.pts:1;if(f.cap===undefined)f.cap=s?s.cap:(f.cat==='epic'?30:20);if(!Array.isArray(f.fx))f.fx=s?clone(s.fx):[]});
 CAT.backgrounds.forEach(b=>{if(!Array.isArray(b.sk))b.sk=clone(BGSK[b.name]||[]);if(typeof b.equip!=='string')b.equip='';if(!Array.isArray(b.feats))b.feats=[]});
 CAT.classes.forEach(c=>{if(!Array.isArray(c.feats))c.feats=[];if(typeof c.asiLv!=='string'||!c.asiLv.trim())c.asiLv=ASI_DEF[c.name]||'4,8,12,16,19'});
