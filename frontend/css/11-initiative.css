@@ -60,3 +60,5 @@
 .evt-row .cb-fx{margin-top:4px}
 .k-expire{color:var(--muted)}
 .howfx{margin:6px 16px 10px;color:var(--muted);font-size:.9rem}.howfx summary{cursor:pointer}.howfx ul{margin:6px 0 0;padding-left:1.2rem;line-height:1.55}
+
+.restbtns{display:flex;gap:8px;flex-wrap:wrap}

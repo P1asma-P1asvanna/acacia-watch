@@ -25,6 +25,7 @@ function iniPanel(rm){
    <div class="ini-top"><span class="ini-round">${t('iniRound')} ${I.round}</span>
     <button class="btn" data-act="ini-prev" ${act.length?'':'disabled'}>← ${t('iniPrev')}</button>
     <button class="btn primary" data-act="ini-next" ${act.length?'':'disabled'}>${started?t('iniNext')+' →':t('iniStart')}</button>
+    <button class="btn" data-act="cb-rest" data-k="short" title="${cb('restSH')}" ${I.list.length?'':'disabled'}>${cb('rsS')}</button><button class="btn" data-act="cb-rest" data-k="long" title="${cb('restLH')}" ${I.list.length?'':'disabled'}>${cb('rsL')}</button>
     <button class="btn danger" data-act="ini-clear" ${I.list.length?'':'disabled'}>${dataArm==='iniclear'?t('iniSureClear'):t('iniClear')}</button></div>
    <div class="ini-add">
     <button class="btn" data-act="ini-addseat">${t('iniAddSeat')}</button>

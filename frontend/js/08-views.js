@@ -96,7 +96,8 @@ function hpBody(d){
   <p class="note" style="margin:0">${t('hpRule')}</p>
   <div class="hpsub"><div><span class="lbl">${t('hdTitle')}</span><div class="stepper"><button type="button" class="btn small" id="hd_m" data-hpa="hd-" aria-label="${t('hdUsed')} −">−</button><span class="mono">d${c.die||'?'} · ${t('hdUsed')} ${used} · ${t('hdLeft')} ${left} / ${c.lvl}</span><button type="button" class="btn small" id="hd_p" data-hpa="hd+" aria-label="${t('hdUsed')} +">+</button></div></div>
    <div><span class="lbl">${t('deathTitle')}</span><div class="stepper"><span class="note">${t('dsSucc')}</span><div class="dots">${dots('s','ok')}</div><span class="note">${t('dsFail')}</span><div class="dots">${dots('f','bad')}</div></div></div>
-   <button type="button" class="btn small" id="hp_long" data-hpa="long" title="${t('longRestHint')}">${t('longRest')}</button></div>
+   <div class="restbtns"><button type="button" class="btn small" id="hp_short" data-hpa="hdroll" title="${t('shortRestHint')}">${t('shortRest')}</button><button type="button" class="btn small" id="hp_long" data-hpa="long" title="${t('longRestHint')}">${t('longRest')}</button></div></div>
+  ${hdMsg?`<p class="note" id="hd_msg" style="margin:0">${esc(hdMsg)}</p>`:''}
   ${adm?`<div class="hpgrid"><div class="field"><label for="hp_mode">${t('hpMode')}</label><select id="hp_mode" data-hp="mode"><option value="auto" ${d.hpMode==='manual'?'':'selected'}>${t('hpModeAuto')}</option><option value="manual" ${d.hpMode==='manual'?'selected':''}>${t('hpModeManual')}</option></select></div>
    ${d.hpMode==='manual'?`<div class="field"><label for="hp_manual">${t('hpManualVal')}</label><input id="hp_manual" data-hp="manual" type="number" min="1" value="${esc(d.hpManual)}"></div>`:''}</div>`:`<p class="note" style="margin:0">${manual?t('hpLockedManual'):t('hpLocked')}</p>`}
   <details class="how"><summary>${t('hpHow')}</summary><ul>${c.lines.map(l=>`<li>${l}</li>`).join('')}<li><b>${fill(t('hpTotal'),{v:c.max})}</b></li>${manual?`<li>${fill(t('hpOver'),{v:c.max})}</li>`:''}${c.missing?`<li class="err">${t('hpNoDie')}</li>`:''}</ul></details>`;
@@ -108,12 +109,18 @@ function updateHpBar(){
   if(g('hp_max'))g('hp_max').textContent=max;if(g('hp_bc')){g('hp_bc').style.width=cur/tot*100+'%';g('hp_bc').classList.toggle('low',cur<=max/4)}
   if(g('hp_bt'))g('hp_bt').style.width=tmp/tot*100+'%';if(g('hp_txt'))g('hp_txt').textContent=cur+' / '+max;if(g('hp_ttxt'))g('hp_ttxt').textContent=tmp?'+'+tmp+' temp':'';
 }
+/* long rest: full HP, no temp HP, regain half the hit dice (at least 1), death saves cleared */
+function restLong(d){const lvl=hpCalc(d).lvl;d.hpCur=null;d.hpTemp=0;d.hdUsed=Math.max(0,Math.round(num(d.hdUsed))-Math.max(1,Math.floor(lvl/2)));d.death={s:0,f:0}}
+let hdMsg='';
 function hpAction(a,id){
   const d=edit.draft,max=effMax(d),cur=curOf(d,max),lvl=hpCalc(d).lvl,amtEl=document.getElementById('hp_amt'),amt=Math.max(0,Math.round(num(amtEl&&amtEl.value)));
   if(a==='dmg'){let r=amt,tmp=Math.max(0,Math.round(num(d.hpTemp)));const ab=Math.min(tmp,r);tmp-=ab;r-=ab;d.hpTemp=tmp;d.hpCur=Math.max(0,cur-r)}
   else if(a==='heal'){d.hpCur=Math.min(max,cur+amt);if(d.hpCur>0&&amt>0)d.death={s:0,f:0}}
   else if(a==='grant'){d.hpTemp=Math.max(Math.round(num(d.hpTemp)),amt)}
-  else if(a==='long'){d.hpCur=null;d.hpTemp=0;d.hdUsed=Math.max(0,Math.round(num(d.hdUsed))-Math.max(1,Math.floor(lvl/2)));d.death={s:0,f:0}}
+  else if(a==='long'){restLong(d);hdMsg=''}
+  else if(a==='hdroll'){const die=dieOf(d.cls),used=Math.max(0,Math.round(num(d.hdUsed)));
+    if(!die)hdMsg=t('hpNoDie');else if(used>=lvl)hdMsg=t('hdNone');
+    else{const r=1+Math.floor(Math.random()*die),cn=mod(abT(d,'con')),v=Math.max(0,r+cn);d.hdUsed=used+1;d.hpCur=Math.min(max,cur+v);if(d.hpCur>0&&v>0)d.death={s:0,f:0};hdMsg=fill(t('hdRolled'),{d:die,r,con:sgn(cn),v})}}
   else if(a==='hd-'){d.hdUsed=Math.max(0,Math.round(num(d.hdUsed))-1)}
   else if(a==='hd+'){d.hdUsed=Math.min(lvl,Math.round(num(d.hdUsed))+1)}
   else if(a.startsWith('ds:')){const[,k,i]=a.split(':'),n=Number(i)+1;d.death[k]=d.death[k]===n?n-1:n}

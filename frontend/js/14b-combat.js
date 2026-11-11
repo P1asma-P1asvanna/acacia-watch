@@ -5,6 +5,7 @@
    I.log = recent events (GM only)
    Players only get {cid,left,u,lv} per combatant (see backend/acacia/store.py player_rooms). */
 const CB={
+  rsS:['Short rest','Short rest'],rsL:['Long rest','Long rest'],restS:['พักสั้น (Short rest)','Short rest taken'],restL:['พักยาว (Long rest) — ฟื้น HP ทุกคน','Long rest taken — HP restored'],restSH:['ลบสถานะที่จบเมื่อพักสั้น และเรียกกฎ "เมื่อพัก"','Ends conditions that end on a short rest and queues "when it rests" rules'],restLH:['ฟื้น HP เต็ม ลบ Temp HP คืน Hit Dice ครึ่งหนึ่ง ลบสถานะที่จบเมื่อพัก และเรียกกฎ "เมื่อพัก"','Full HP, clears temp HP, regains half the hit dice, ends rest-ending conditions and queues "when it rests" rules'],
   pending:['รอตัดสิน','Pending'],pendingHint:['กฎของสถานะที่ถึงเวลาทำงาน กดทอยหรือเลือกผลได้เลย','Condition rules that came due. Roll or choose the result.'],
   log:['บันทึกเหตุการณ์','Event log'],noLog:['ยังไม่มีเหตุการณ์','Nothing yet'],
   dmg:['ดาเมจ','Damage'],heal:['ฮีล','Heal'],temp:['Temp HP','Temp HP'],amt:['จำนวน','Amount'],anyType:['ไม่ระบุประเภท','No type'],
@@ -98,6 +99,7 @@ function cbFire(I,e,when,unit,only){
   list.forEach(f=>{const c=cbCond(f.cid);if(!c)return;
     (c.rules||[]).forEach(r=>{
       if(r.when!==when)return;
+      if(when==='rest'&&r.rest&&r.rest!=='any'&&r.rest!==unit)return;
       if((when==='start'||when==='end')){
         if(r.unit!==unit)return;const k=(unit==='turn'?f.tc:f.rc)+1,ev=Math.max(1,r.every||1);if(k%ev!==0)return}
       if(!(r.ok||[]).length&&!(r.no||[]).length)return;
@@ -167,9 +169,17 @@ function cbQAction(a,id){
     else{const d=1+Math.floor(Math.random()*20),b=k.k==='flat'?0:cbBonus(e,k);total=d+b;txt=`d20 ${d}${b?` ${sgn(b)}`:''}`}
     passed=total>=k.dc;cbLog(I,`${iniName(e)}: ${c.name} — ${crChkText(k)}: ${txt} = ${total} → ${passed?cb('pass'):cb('fail')}`)}
   cbApply(I,e,f,passed?r.ok:r.no);return true}
+/* the whole group takes a rest: conditions that end on it are removed, "when it rests" rules are queued, long rest restores HP */
+function cbRest(I,kind){
+  cbLog(I,cb(kind==='long'?'restL':'restS'));
+  I.list.forEach(e=>{
+    cbEndBy(I,e,'short');if(kind==='long')cbEndBy(I,e,'long');
+    if(kind==='long'){const c=iniChar(e);if(c){restLong(c);commit(cbIsPc(e)?'pc':'npc')}else if(e.hpMax!=null){e.hp=e.hpMax;e.tmp=0}}
+    cbFire(I,e,'rest',kind)})}
 function cbAction(a,b){
   const rm=rooms.find(r=>r.id===roomOpen);if(!rm)return;const I=iniData(rm),id=b.dataset.id;I.q=I.q||[];
-  if(a.startsWith('q-')){cbQAction(a,id)}
+  if(a==='cb-rest'){cbRest(I,b.dataset.k==='long'?'long':'short')}
+  else if(a.startsWith('q-')){cbQAction(a,id)}
   else{
     const e=cbEntry(I,id);if(!e)return;
     const amtEl=document.querySelector(`[data-cbamt="${id}"]`),amt=Math.max(0,Math.round(num(amtEl&&amtEl.value)));
