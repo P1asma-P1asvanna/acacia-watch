@@ -73,7 +73,7 @@ def clean_cat_feats(v):
                     "asi": ",".join(abil_list(x.get("asi"))), "rep": 1 if x.get("rep") in (1, True, "1") else 0,
                     "pts": 2 if clampi(x.get("pts"), 1, 2, 1) == 2 else 1,
                     "cap": clampi(x.get("cap"), 20, 30, 30 if x.get("cat") == "epic" else 20),
-                    "fx": clean_fx(x.get("fx")), "desc": str(x.get("desc") or "")[:6000]})
+                    "fx": clean_fx(x.get("fx")), "seed": 1 if x.get("seed") in (1, True, "1") else 0, "desc": str(x.get("desc") or "")[:6000]})
     v["feats"] = out
     for c in v.get("classes") or []:
         if isinstance(c, dict):
