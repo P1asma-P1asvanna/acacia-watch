@@ -90,3 +90,18 @@ details.feat summary{cursor:pointer;display:flex;gap:8px;flex-wrap:wrap;align-it
 .spadd{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
 .spadd select,.spadd input{flex:1 1 160px;min-width:0}
 .spcrow{display:flex;gap:8px;flex-wrap:wrap}.spcrow select{flex:0 1 190px}.spcrow input[type=number]{flex:0 0 90px}.spcrow input[type=text]{flex:1 1 180px;min-width:0}.spcrow [hidden]{display:none}
+
+/* shared table dice */
+.tdice{display:flex;flex-direction:column;gap:8px}
+.tdice .tdctl{display:flex;flex-wrap:wrap;gap:6px;align-items:center}
+.tdice .tdctl input,.tdice .tdctl select{min-width:0;max-width:100%}
+.tdfeed{display:flex;flex-direction:column;gap:4px;max-height:260px;overflow:auto;-webkit-overflow-scrolling:touch}
+.tdrow{display:flex;flex-wrap:wrap;align-items:baseline;gap:6px;padding:6px 8px;border-radius:8px;background:rgba(127,127,127,.1)}
+.tdwho{font-weight:700}
+.tdres{opacity:.85;font-size:.9em;overflow-wrap:anywhere}
+.tdres s{opacity:.5}
+.tdtot{margin-left:auto;font-weight:800;font-size:1.15em}
+.tdt{opacity:.6;font-size:.75em}
+.tdwhyf{flex-basis:100%;opacity:.8;font-size:.85em}
+.tdrow.crit .tdtot{color:#3fb950}
+.tdrow.fumble .tdtot{color:#f85149}

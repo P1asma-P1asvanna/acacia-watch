@@ -73,6 +73,8 @@ document.addEventListener('click',e=>{
   else if(a==='ccol-reset'){dedit.draft.color='';render()}
   else if(a==='cond'){condOpen.has(id)?condOpen.delete(id):condOpen.add(id);render()}
   else if(a==='cond-all'){condOpen=v==='1'?new Set((CAT.conditions||[]).map(c=>c.id)):new Set();render()}
+  else if(a==='spell-edit'){view='data';dataTab='spells';dataPage=0;dedit=null;location.hash='data';render()}
+  else if(a==='tdroll'){tdRoll(b.dataset.rid)}
   else if(a==='feat-edit'){view='data';dataTab='feats';dataPage=0;dedit=null;location.hash='data';render()}
   else if(a==='cond-edit'){view='data';dataTab='conditions';dataPage=0;dedit=null;location.hash='data';render()}
   else if(a==='dtab'){dataTab=v;dataPage=0;dataArm=null;render()}
@@ -97,6 +99,8 @@ document.addEventListener('submit',e=>{if(e.target.id==='authForm'){e.preventDef
 document.addEventListener('input',e=>{
   const el=e.target;
   if(el.dataset.featq!==undefined){featFilter();return}
+  if(el.dataset.spq!==undefined){spellFilter();return}
+  if(el.dataset.td!==undefined){tdSet(el);return}
   if(el.dataset.bk){if(el.dataset.bk==='text')bkText=el.value;return}
   if(view==='site'&&siteDraft&&(el.dataset.sk||el.dataset.s)){
     if(el.dataset.sk){siteDraft[el.dataset.sk]=el.value;const h=$('#hx_'+el.dataset.sk);if(h)h.textContent=el.value}
@@ -157,7 +161,7 @@ document.addEventListener('change',e=>{
   if(f==='cls'||f==='bg'){refreshAsi();refreshSp()}
   if(f==='cls'||f==='sub'||f==='race'){refreshHp();refreshExtra()}
 });
-window.addEventListener('hashchange',()=>{const h=location.hash.slice(1);if(me()&&['players','npcs','data','games','site','adventure','conditions','feats'].includes(h)&&h!==view&&(isAdmin()||h==='players'||h==='adventure'||h==='site'||h==='conditions'||h==='feats')){view=h;edit=null;dedit=null;roomOpen=null;roomEdit=null;siteDraft=h==='site'?siteInit():null;render()}});
+window.addEventListener('hashchange',()=>{const h=location.hash.slice(1);if(me()&&['players','npcs','data','games','site','adventure','conditions','feats','spells'].includes(h)&&h!==view&&(isAdmin()||h==='players'||h==='adventure'||h==='site'||h==='conditions'||h==='feats'||h==='spells')){view=h;edit=null;dedit=null;roomOpen=null;roomEdit=null;siteDraft=h==='site'?siteInit():null;render()}});
 document.addEventListener('visibilitychange',()=>{if(!document.hidden)pull()});
 async function boot(){
   const served=!!document.querySelector('meta[name=dd-server]');

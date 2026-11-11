@@ -31,7 +31,7 @@ function renderStage(rm){
      <div class="seat-body"><select class="seat-pick" aria-label="${t('seat')} ${i+1}" data-seat="${i}"><option value="">${t('emptySeat')}</option>${opts}</select>
      ${ch?`<div class="seat-line2">${esc(ch.race)} · ${esc(ch.cls)} ${ch.level}${who?' · '+esc(who):''}</div><div class="seat-stats"><span>HP ${curHp(ch)}/${ch.hp}${num(ch.hpTemp)?'+'+num(ch.hpTemp):''}</span><span>AC ${ch.ac}</span></div>${seatFx(rm,ch.id)}`:''}</div></div>`}).join('');
   return`<div class="stagebar"><button class="btn small" data-act="rclose">← ${t('leave')}</button><h1>${esc(rm.name)}</h1><div class="gtabs" role="tablist" aria-label="${t('minigamesBar')}">${tabs}</div>${arrangeBtn('stage')}</div>
-  ${arrangeBar('stage')}<div class="stagebody" data-page="stage"><section class="stagemain" data-w="main">${wc('stage','main')}${advGame==='dice'?dicePanel():advGame==='init'?iniPanel(rm):''}</section>
+  ${arrangeBar('stage')}<div class="stagebody" data-page="stage"><section class="stagemain" data-w="main">${wc('stage','main')}${advGame==='dice'?tableDice(rm.id):advGame==='init'?iniPanel(rm):''}</section>
   <aside class="rail" data-w="rail" aria-label="${t('playersRail')}">${wc('stage','rail')}<div class="rail-head"><span>${t('playersRail')}</span><span class="pill">${used.size} / ${n}</span></div><div class="rail-list ${dens}" style="--n:${n}">${seats}</div></aside></div>`;
 }
 
@@ -49,7 +49,7 @@ function playerRoom(rm){
     return`<li class="ini-row ro ${now?'now':nxt?'next':dn?'done':''}" ${now?'aria-current="true"':''}><span class="ini-mark" aria-hidden="true">${now?'▶':nxt?'→':dn?'✓':''}</span>
      <div class="ini-name"><b>${esc(e.name)}</b><small>${e.kind==='pc'?t('iniPc'):t('iniGm')}${now?' · '+t('iniNow'):nxt?' · '+t('iniNextTag'):dn?' · '+t('iniDoneTag'):''}</small>${(e.fx||[]).length?`<div class="cb-fx">${e.fx.map(f=>cbChip(e,f,false)).join('')}</div>`:''}</div>
      <span class="ini-num" aria-label="${t('iniInit')}">${esc(e.init)}</span>${c?`<span class="ini-hp">HP ${curHp(c)}/${c.hp}</span>`:'<span></span>'}</li>`}).join('');
-  return`<section class="panel ini"><div class="ph"><h2>${esc(rm.name)}</h2></div>
+  return`${tableDice(rm.id)}<section class="panel ini"><div class="ph"><h2>${esc(rm.name)}</h2></div>
    ${mineNow?`<div class="turn-banner" role="status">${t('pAdvYourTurn')}</div>`:''}
    <div class="ini-top"><span class="ini-round">${t('iniRound')} ${rm.round}</span></div>${cbEvtHtml(rm.evt,rm.list,false)}${act.some(e=>(e.fx||[]).length)?cbHowHtml():''}
    <div class="ini-add"><span class="note" style="width:100%">${t('pAdvParty')}</span>${rm.party.map(p=>`<span class="pill">${esc(p.name)}${p.mine?' ★':''}</span>`).join('')}</div>

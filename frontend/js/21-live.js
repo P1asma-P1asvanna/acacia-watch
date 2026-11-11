@@ -4,7 +4,7 @@
    and nobody is typing, so the page never jumps under a finger. */
 const LIVE={v:null,run:false,ac:null,fails:0,dirty:false,timer:0};
 const liveSleep=ms=>new Promise(r=>setTimeout(r,ms));
-const liveSig=()=>JSON.stringify([users,pcs,npcs,rooms,prooms,SITE,PREFS,CAT]);
+const liveSig=()=>JSON.stringify([users,pcs,npcs,rooms,prooms,SITE,PREFS,CAT,FEEDS]);
 function liveBusy(){
   if(edit||dedit||roomEdit||inflight||layTimer||document.body.classList.contains('dragging-w'))return true;
   const a=document.activeElement;
@@ -20,7 +20,7 @@ async function livePull(pre){   /* pre = the state that came with the poll answe
   applyBoot(j);
   if(JSON.stringify([SITE,PREFS])!==siteBefore){applySite(curTheme());const bd=document.querySelector('.side .brand');if(bd)bd.innerHTML=brandHtml()}
   if(liveSig()===before)return;
-  if(!session||['players','npcs','adventure','data','conditions','feats'].includes(view))render();
+  if(!session||['players','npcs','adventure','data','conditions','feats','spells'].includes(view))render();
 }
 async function liveLoop(){
   if(LIVE.run)return;LIVE.run=true;

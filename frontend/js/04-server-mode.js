@@ -17,7 +17,7 @@ function resetSynced(){synced.pc=new Map(pcs.map(r=>[r.id,JSON.stringify(r)]));s
 function applyBoot(j){
   if(j&&j.v!=null&&LIVE.v==null)LIVE.v=j.v;   /* remember which version this state is: the first poll then answers at once if anything changed since */
   REMOTE=true;SITE=Object.assign({},j.site||{});firstRun=!j.hasUsers;
-  if(j.me){users=j.users||[j.me];session=j.me.id;PREFS=j.prefs||{};put('dd_theme',PREFS);pcs=j.pcs||[];npcs=j.npcs||[];rooms=j.rooms||[];prooms=j.prooms||[];const needF=!!j.cat&&(!Array.isArray(j.cat.feats)||!Array.isArray(j.cat.spells)||j.cat.feats.some(f=>!Array.isArray(f.fx)||!f.seed));const needS=!(j.cat&&j.cat.spellSeed);CAT=j.cat||clone(SEED);normCat();
+  if(j.me){users=j.users||[j.me];session=j.me.id;PREFS=j.prefs||{};put('dd_theme',PREFS);pcs=j.pcs||[];npcs=j.npcs||[];rooms=j.rooms||[];prooms=j.prooms||[];FEEDS=j.feeds||{};const needF=!!j.cat&&(!Array.isArray(j.cat.feats)||!Array.isArray(j.cat.spells)||j.cat.feats.some(f=>!Array.isArray(f.fx)||!f.seed));const needS=!(j.cat&&j.cat.spellSeed);CAT=j.cat||clone(SEED);normCat();
     if(needS){if(!CAT.spells.length)CAT.spells=clone(SEED.spells);CAT.spellSeed=1}   /* the example spells are added once, even if an older save left an empty list */
     if((!j.cat||needF||needS)&&j.me.role==='admin')api('POST','api/kv/cat',{value:CAT}).catch(netErr)}
   else{users=[];session=null;pcs=[];npcs=[];rooms=[];prooms=[]}
@@ -41,7 +41,7 @@ function syncKind(k){
 }
 async function pull(){
   if(!REMOTE||!session||edit||dedit||inflight)return;
-  if(view!=='players'&&view!=='npcs'&&view!=='conditions'&&view!=='feats')return;
+  if(view!=='players'&&view!=='npcs'&&view!=='conditions'&&view!=='feats'&&view!=='spells')return;
   try{applyBoot(await api('GET','api/boot'));if(!edit&&!dedit&&!inflight)render()}catch(e){if(e.status===401)netErr(e)}
 }
 
