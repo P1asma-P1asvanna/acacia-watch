@@ -8,7 +8,7 @@ from .rules import ac_calc, eff_ac, eff_max, hp_calc
 
 
 ID_RE = re.compile(r"^[A-Za-z0-9_-]{3,40}$")
-PREF_COLORS = ("bg", "surface", "ink", "accent", "side", "fxc", "tnow", "tnext", "tdone", "navb")
+PREF_COLORS = ("bg", "surface", "ink", "accent", "side", "fxc", "tnow", "tnext", "tdone", "navb", "fxb")
 IMG_KEYS = ("imgBg", "imgPanel", "imgDeco")
 WID_RE = re.compile(r"^[a-z0-9_]{1,24}$")
 

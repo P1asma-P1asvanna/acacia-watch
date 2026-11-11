@@ -1,5 +1,5 @@
 /* ---------- site settings (admin) ---------- */
-const COLORS=[['bg','cBg','--bg'],['surface','cSurface','--surface'],['ink','cInk','--ink'],['accent','cAccent','--accent'],['side','cSide','--side'],['fxc','cFx','--fx-color'],['tnow','cTurnNow','--turn-now'],['tnext','cTurnNext','--turn-next'],['tdone','cTurnDone','--turn-done'],['navb','cNavb','--nav-edge']];
+const COLORS=[['bg','cBg','--bg'],['surface','cSurface','--surface'],['ink','cInk','--ink'],['accent','cAccent','--accent'],['side','cSide','--side'],['fxc','cFx','--fx-color'],['tnow','cTurnNow','--turn-now'],['tnext','cTurnNext','--turn-next'],['tdone','cTurnDone','--turn-done'],['navb','cNavb','--nav-edge'],['fxb','cFxb','--fxb']];
 const hexOf=v=>/^#[0-9a-f]{6}$/i.test(v)?v.toLowerCase():'#000000';
 function mediaBlock(slot,label){
   const key=IMG_SLOTS[slot].key,d=siteDraft,has=!!d[key];

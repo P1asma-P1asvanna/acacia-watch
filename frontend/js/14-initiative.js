@@ -2,7 +2,7 @@
 let iniErr='';
 const iniData=rm=>{if(!rm.init)rm.init={round:1,cur:null,list:[]};return rm.init};
 const iniChar=e=>{if(!e.ref)return null;const[k,i]=e.ref.split(':');return(k==='pc'?pcs:npcs).find(c=>c.id===i)||null};
-const iniModOf=e=>{const c=iniChar(e);return c?mod(abT(c,'dex')):Math.round(num(e.mod))};
+const iniModOf=e=>{const c=iniChar(e);return c?mod(abT(c,'dex'))+fxAll(c).init:Math.round(num(e.mod))};
 const iniName=e=>{const c=iniChar(e);return c?(c.name||'—'):e.name};
 function iniSort(I){
   const ix=new Map(I.list.map((e,i)=>[e.id,i])),val=e=>e.init==null?-Infinity:e.init;

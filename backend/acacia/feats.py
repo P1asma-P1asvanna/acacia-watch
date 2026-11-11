@@ -35,6 +35,27 @@ def abil_list(v):
     return [a for a in ABS if a in found]
 
 
+FX_KINDS = ("init", "hp", "ac", "pass")
+
+
+def clean_fx(L):
+    """Effects a feat gives: init (flat and/or + Proficiency Bonus), hp (flat or per level), ac (optionally only in armor), pass (passive Perception)."""
+    out = []
+    for e in (L if isinstance(L, list) else [])[:10]:
+        if not isinstance(e, dict) or e.get("k") not in FX_KINDS:
+            continue
+        k = e["k"]
+        r = {"k": k, "v": clampi(e.get("v"), -50, 200, 0)}
+        if k == "init":
+            r["pb"] = 1 if e.get("pb") in (1, True, "1") else 0
+        elif k == "hp":
+            r["per"] = "flat" if e.get("per") == "flat" else "level"
+        elif k == "ac":
+            r["req"] = "armor" if e.get("req") == "armor" else ""
+        out.append(r)
+    return out
+
+
 def clean_cat_feats(v):
     """Clean the feat list, the class `asiLv` and the background `originFeat` inside a catalog."""
     L = v.get("feats")
@@ -50,7 +71,9 @@ def clean_cat_feats(v):
         out.append({"id": str(x.get("id") or name)[:40], "name": name, "cat": x.get("cat") if x.get("cat") in CATS else "general",
                     "minLv": clampi(x.get("minLv"), 0, 20, 0), "prereq": str(x.get("prereq") or "")[:200],
                     "asi": ",".join(abil_list(x.get("asi"))), "rep": 1 if x.get("rep") in (1, True, "1") else 0,
-                    "desc": str(x.get("desc") or "")[:6000]})
+                    "pts": 2 if clampi(x.get("pts"), 1, 2, 1) == 2 else 1,
+                    "cap": clampi(x.get("cap"), 20, 30, 30 if x.get("cat") == "epic" else 20),
+                    "fx": clean_fx(x.get("fx")), "desc": str(x.get("desc") or "")[:6000]})
     v["feats"] = out
     for c in v.get("classes") or []:
         if isinstance(c, dict):
@@ -73,46 +96,84 @@ def clean_picks(d, cat):
             f = str(p.get("f") or "")[:80]
             if feats is not None and f and f not in feats:
                 f = ""
-            asi[k] = {"t": "feat", "f": f, "ab": p.get("ab") if p.get("ab") in ABS else ""}
+            asi[k] = {"t": "feat", "f": f, "ab": p.get("ab") if p.get("ab") in ABS else "", "ab2": p.get("ab2") if p.get("ab2") in ABS else ""}
         else:
-            asi[k] = {"t": "asi", "a1": p.get("a1") if p.get("a1") in ABS else "", "a2": p.get("a2") if p.get("a2") in ABS else ""}
+            asi[k] = {"t": "asi", "m": "11" if p.get("m") == "11" else "2" if p.get("m") == "2" else "", "a1": p.get("a1") if p.get("a1") in ABS else "", "a2": p.get("a2") if p.get("a2") in ABS else ""}
     d["asi"] = asi
     xf = []
     for p in (d.get("xf") if isinstance(d.get("xf"), list) else [])[:12]:
         if isinstance(p, dict):
             f = str(p.get("f") or "")[:80]
             if f and (feats is None or f in feats):
-                xf.append({"f": f, "ab": p.get("ab") if p.get("ab") in ABS else ""})
+                xf.append({"f": f, "ab": p.get("ab") if p.get("ab") in ABS else "", "ab2": p.get("ab2") if p.get("ab2") in ABS else ""})
     d["xf"] = xf
+
+
+def _slots(d, cat):
+    lv = clampi(d.get("level"), 1, 20, 1)
+    cls = next((c for c in (cat or {}).get("classes", []) if c.get("name") == d.get("cls")), None)
+    return {str(x) for x in asi_levels(cls) if x <= lv}
+
+
+def active(d, cat):
+    """Every feat the character has, as (feat, pick) pairs: background origin feat, feats taken at ASI levels, extra feats."""
+    flist = {f.get("name"): f for f in (cat or {}).get("feats", []) if isinstance(f, dict)}
+    out = []
+    bg = next((b for b in (cat or {}).get("backgrounds", []) if b.get("name") == d.get("bg")), None)
+    if bg and flist.get(bg.get("originFeat")):
+        out.append((flist[bg["originFeat"]], {}))
+    slots = _slots(d, cat)
+    for k, p in (d.get("asi") or {}).items():
+        if k in slots and isinstance(p, dict) and p.get("t") == "feat" and flist.get(p.get("f")):
+            out.append((flist[p["f"]], p))
+    for p in d.get("xf") or []:
+        if isinstance(p, dict) and flist.get(p.get("f")):
+            out.append((flist[p["f"]], p))
+    return out
 
 
 def totals(d, cat):
     """Ability scores including Ability Score Improvements and feat bonuses."""
     base = {k: clampi((d.get("abil") or {}).get(k), 1, 30, 10) for k in ABS}
-    lv = clampi(d.get("level"), 1, 20, 1)
-    classes = (cat or {}).get("classes", [])
-    cls = next((c for c in classes if c.get("name") == d.get("cls")), None)
-    slots = {str(x) for x in asi_levels(cls) if x <= lv}
-    flist = {f.get("name"): f for f in (cat or {}).get("feats", []) if isinstance(f, dict)}
+    slots = _slots(d, cat)
     bonus = {k: 0 for k in ABS}
     cap = {k: 20 for k in ABS}
-
-    def feat_bonus(name, ab):
-        f = flist.get(name)
-        if f and ab in ABS and ab in abil_list(f.get("asi")):
-            bonus[ab] += 1
-            if f.get("cat") == "epic":
-                cap[ab] = 30
-
     for k, p in (d.get("asi") or {}).items():
-        if k not in slots or not isinstance(p, dict):
+        if k not in slots or not isinstance(p, dict) or p.get("t") == "feat":
             continue
-        if p.get("t") == "feat":
-            feat_bonus(p.get("f"), p.get("ab"))
+        if p.get("m") == "2":
+            if p.get("a1") in ABS:
+                bonus[p["a1"]] += 2
         else:
             for a in (p.get("a1"), p.get("a2")):
                 if a in ABS:
                     bonus[a] += 1
-    for p in d.get("xf") or []:
-        feat_bonus(p.get("f"), p.get("ab"))
+    for f, p in active(d, cat):
+        L = abil_list(f.get("asi"))
+        picks = [p.get("ab")] + ([p.get("ab2")] if clampi(f.get("pts"), 1, 2, 1) == 2 else [])
+        for a in picks:
+            if a in ABS and a in L:
+                bonus[a] += 1
+                c = clampi(f.get("cap"), 20, 30, 30 if f.get("cat") == "epic" else 20)
+                cap[a] = max(cap[a], c)
     return {k: base[k] if base[k] >= cap[k] else min(cap[k], base[k] + bonus[k]) for k in ABS}
+
+
+def fx_totals(d, cat, armor=False):
+    """Bonuses from feat effects: initiative, max HP, armor class, passive Perception."""
+    lv = clampi(d.get("level"), 1, 20, 1)
+    pb = 2 + (lv - 1) // 4
+    r = {"init": 0, "hp": 0, "ac": 0, "pass": 0}
+    for f, _ in active(d, cat):
+        for e in f.get("fx") or []:
+            k, v = e.get("k"), clampi(e.get("v"), -50, 200, 0)
+            if k == "init":
+                r["init"] += v + (pb if e.get("pb") else 0)
+            elif k == "hp":
+                r["hp"] += v * lv if e.get("per") != "flat" else v
+            elif k == "ac":
+                if e.get("req") != "armor" or armor:
+                    r["ac"] += v
+            elif k == "pass":
+                r["pass"] += v
+    return r

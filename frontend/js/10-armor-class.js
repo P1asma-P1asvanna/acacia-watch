@@ -19,6 +19,7 @@ function acCalc(d){
     if(num(a.str)>0&&num(abT(d,'str'))<num(a.str))warns.push(fill(t('acStr'),{name:esc(body.it.name),n:num(a.str),s:num(abT(d,'str'))}));
     if(/disadv/i.test(a.stealth||''))warns.push(fill(t('acStealth'),{name:esc(body.it.name)}));
   }else{total=10+dx;lines.push(fill(t('acNone'),{dx:sgn(dx),v:total}))}
+  const fa=fxAll(d,!!body);if(fa.ac){total+=fa.ac;lines.push(fill(t('acFeat'),{src:fxLine(fa,'ac'),v:sgn(fa.ac)}))}
   if(sh){const v=Math.round(num(sh.a.ac))+itemEnch(sh.it)+Math.round(num(sh.a.ench));total+=v;lines.push(fill(t('acShield'),{name:esc(sh.it.name),v:sgn(v)}))}
   return{total,lines,warns};
 }

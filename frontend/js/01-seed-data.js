@@ -16,10 +16,10 @@ SEED.feats=(()=>{const O=[['Alert','Add your Proficiency Bonus to Initiative; yo
  const F=['Archery','Blind Fighting','Defense','Dueling','Great Weapon Fighting','Interception','Protection','Thrown Weapon Fighting','Two-Weapon Fighting','Unarmed Fighting'];
  const E=['Combat Prowess','Dimensional Travel','Fate','Fortitude','Irresistible Offense','Recovery','Skill','Speed','Spell Recall','the Night Spirit','Truesight'];
  let n=0;const id=()=>'ft'+(++n),out=[];
- O.forEach(([a,d])=>out.push({id:id(),name:a,cat:'origin',minLv:0,prereq:'',asi:'',rep:/Magic Initiate/.test(a)?1:0,desc:d}));
- G.forEach(([a,s])=>out.push({id:id(),name:a,cat:'general',minLv:4,prereq:'Level 4+',asi:s,rep:a==='Ability Score Improvement'?1:0,desc:a==='Ability Score Improvement'?'Increase one ability score by 2, or two by 1 each (maximum 20).':''}));
- F.forEach(a=>out.push({id:id(),name:a,cat:'fighting',minLv:4,prereq:'Fighting Style feature',asi:'',rep:0,desc:''}));
- E.forEach(a=>out.push({id:id(),name:'Boon of '+a,cat:'epic',minLv:19,prereq:'Level 19+',asi:'str,dex,con,int,wis,cha',rep:0,desc:''}));
+ O.forEach(([a,d])=>out.push({id:id(),name:a,cat:'origin',minLv:0,prereq:'',asi:'',pts:1,cap:20,fx:a==='Alert'?[{k:'init',v:0,pb:1}]:a==='Tough'?[{k:'hp',v:2,per:'level'}]:[],rep:/Magic Initiate/.test(a)?1:0,desc:d}));
+ G.forEach(([a,s])=>out.push({id:id(),name:a,cat:'general',minLv:4,prereq:'Level 4+',asi:s,rep:a==='Ability Score Improvement'?1:0,pts:a==='Ability Score Improvement'?2:1,cap:20,fx:[],desc:a==='Ability Score Improvement'?'Increase one ability score by 2, or two by 1 each (maximum 20).':''}));
+ F.forEach(a=>out.push({id:id(),name:a,cat:'fighting',minLv:4,prereq:'Fighting Style feature',asi:'',pts:1,cap:20,fx:a==='Defense'?[{k:'ac',v:1,req:'armor'}]:[],rep:0,desc:a==='Defense'?'While you wear armor, you gain a bonus to Armor Class.':''}));
+ E.forEach(a=>out.push({id:id(),name:'Boon of '+a,cat:'epic',minLv:19,prereq:'Level 19+',asi:'str,dex,con,int,wis,cha',pts:1,cap:30,fx:[],rep:0,desc:''}));
  return out})();
 const clone=o=>JSON.parse(JSON.stringify(o));
 const ABS=['str','dex','con','int','wis','cha'];

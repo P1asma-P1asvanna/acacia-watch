@@ -31,7 +31,7 @@ function renderEditor(){
    <div class="field"><label for="e_align">${t('fAlign')}</label><select id="e_align" data-f="align">${optCur(names('alignments'),d.align)}</select></div>
   </div></section>`,
    abil=`<section class="panel"><div class="ph"><h2>${t('secAbil')}</h2></div><div class="abilities">
-   ${ABS.map(k=>`<div class="ab"><span class="k">${k.toUpperCase()}</span><div class="mod" id="m_${k}">${sgn(mod(abT(d,k)))}</div><span class="abt" id="t_${k}">${abT(d,k)!==Math.max(1,Math.min(30,Math.round(num(d.abil[k]))))?'= '+abT(d,k):''}</span><input id="e_${k}" aria-label="${k.toUpperCase()}" data-a="${k}" type="number" min="1" max="30" value="${d.abil[k]}"></div>`).join('')}
+   ${ABS.map(k=>`<div class="ab"><span class="k">${k.toUpperCase()}</span><div class="mod ${abT(d,k)!==Math.max(1,Math.min(30,Math.round(num(d.abil[k]))))?'fxv':''}" id="m_${k}">${sgn(mod(abT(d,k)))}</div><span class="abt" id="t_${k}">${abT(d,k)!==Math.max(1,Math.min(30,Math.round(num(d.abil[k]))))?'= '+abT(d,k):''}</span><input id="e_${k}" aria-label="${k.toUpperCase()}" data-a="${k}" type="number" min="1" max="30" value="${d.abil[k]}"></div>`).join('')}
   </div><div class="derived" id="derived">${derived(d)}</div></section>`,
    combat=`<section class="panel"><div class="ph"><h2>${t('secCombat')}</h2></div><div class="grid">
    <div class="field"><label for="e_speed">${t('fSpeed')}</label><input id="e_speed" data-f="speed" type="number" min="0" value="${d.speed}"></div>

@@ -20,6 +20,7 @@ def hp_calc(d, cat):
         b = jsround(num((src or {}).get("bhp")))
         if b:
             total += b * lvl
+    total += feats.fx_totals(d, cat)["hp"]
     return max(1, total)
 
 
@@ -70,6 +71,7 @@ def ac_calc(d, cat):
         total = armor + dp
     else:
         total = 10 + dx
+    total += feats.fx_totals(d, cat, armor=bool(body))["ac"]
     if shield:
         it, a = shield
         total += jsround(num(a.get("ac"))) + item_ench(it) + jsround(num(a.get("ench")))

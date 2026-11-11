@@ -56,5 +56,12 @@ details.feat summary{cursor:pointer;display:flex;gap:8px;flex-wrap:wrap;align-it
 .asin{margin:2px 0 6px}
 .asif{margin:4px 0 6px}
 .asix{margin-top:12px;border-top:1px solid var(--line)}
-.abt{display:block;text-align:center;font-size:.8em;color:var(--accent);min-height:1.1em}
+.abt{display:block;text-align:center;font-size:.8em;font-weight:600;color:var(--fxb,#6ee7a8);min-height:1.1em}
+.fxv{color:var(--fxb,#6ee7a8)!important}
+.fxlist{padding:0 18px 14px}
+.fxrow{display:flex;flex-wrap:wrap;gap:8px 12px;align-items:flex-end;padding:10px 0;border-top:1px solid var(--line)}
+.fxrow:first-child{border-top:0}
+.fxrow .field{margin:0;min-width:120px}
+.fxrow .chk{display:flex;gap:6px;align-items:center;padding-bottom:10px}
+.fxrow .fxsum{flex-basis:100%;margin:0;color:var(--fxb,#6ee7a8)}
 @media (max-width:640px){.asirow select{flex:1 1 40%}}

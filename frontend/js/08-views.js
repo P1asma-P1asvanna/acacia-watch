@@ -48,8 +48,8 @@ const bgOf=d=>CAT.backgrounds.find(x=>x.name===d.bg);
 const bgSkills=d=>{const b=bgOf(d);return b&&Array.isArray(b.sk)?b.sk:[]};
 const profLevel=(d,kind,k)=>{const st=(d.prof&&d.prof[kind]&&d.prof[kind][k])||0;return kind==='skill'&&bgSkills(d).includes(k)?Math.max(st,1):st};
 function derived(d){
-  const pb=prof(d.level),dx=mod(abT(d,'dex')),nx=nextXp(Number(d.level));
-  return`<div class="chip"><span>${t('pb')}</span><b>${sgn(pb)}</b></div><div class="chip"><span>${t('init')}</span><b>${sgn(dx)}</b></div><div class="chip"><span>${t('next')}</span><b>${nx===null?t('max'):nx}</b></div><div class="chip"><span>${t('passive')}</span><b>${10+mod(abT(d,'wis'))+pb*profLevel(d,'skill','perception')}</b></div>`;
+  const pb=prof(d.level),fx=fxAll(d),dx=mod(abT(d,'dex'))+fx.init,nx=nextXp(Number(d.level)),fb=k=>fx[k]?` class="fxv" title="${fxLine(fx,k)}"`:'';
+  return`<div class="chip"><span>${t('pb')}</span><b>${sgn(pb)}</b></div><div class="chip"><span>${t('init')}</span><b${fb('init')}>${sgn(dx)}</b></div><div class="chip"><span>${t('next')}</span><b>${nx===null?t('max'):nx}</b></div><div class="chip"><span>${t('passive')}</span><b${fb('pass')}>${10+mod(abT(d,'wis'))+pb*profLevel(d,'skill','perception')+fx.pass}</b></div>`;
 }
 const SAVE_NAMES={str:'Strength',dex:'Dexterity',con:'Constitution',int:'Intelligence',wis:'Wisdom',cha:'Charisma'};
 const SKILLS=[['acrobatics','Acrobatics','dex'],['animal','Animal Handling','wis'],['arcana','Arcana','int'],['athletics','Athletics','str'],['deception','Deception','cha'],['history','History','int'],['insight','Insight','wis'],['intimidation','Intimidation','cha'],['investigation','Investigation','int'],['medicine','Medicine','wis'],['nature','Nature','int'],['perception','Perception','wis'],['performance','Performance','cha'],['persuasion','Persuasion','cha'],['religion','Religion','int'],['sleight','Sleight of Hand','dex'],['stealth','Stealth','dex'],['survival','Survival','wis']];
@@ -71,6 +71,7 @@ function hpCalc(d){
   const race=CAT.races.find(x=>x.name===d.race),co=CAT.classes.find(x=>x.name===d.cls),so=co&&co.subs.find(x=>x.name===d.sub);
   [['hsRace',d.race,num(race&&race.bhp)],['hsClass',d.cls,num(co&&co.bhp)],['hsSub',d.sub,num(so&&so.bhp)]].forEach(([src,name,b])=>{
     if(!b)return;total+=b*lvl;lines.push(fill(t('hpBonus'),{src:t(src),name:esc(name),b:sgn(b),lvl,v:sgn(b*lvl)}))});
+  const fh=fxAll(d);if(fh.hp){total+=fh.hp;lines.push(fill(t('hpFeat'),{src:fxLine(fh,'hp'),v:sgn(fh.hp)}))}
   total=Math.max(1,total);
   return{max:total,lines,lvl,die:dieOf(d.cls),missing};
 }

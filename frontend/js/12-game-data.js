@@ -20,18 +20,18 @@ const SCHEMA={
  tools:{cols:['name'],f:[['name','t']]},
  vehicles:{cols:['name'],f:[['name','t']]},
  conditions:{cols:['name','sum'],f:[['name','t'],['sum','t'],['desc','a']]},
- feats:{cols:['name','cat','minLv','asi'],f:[['name','t'],['cat','t'],['minLv','n'],['prereq','t'],['asi','t'],['rep','b'],['desc','a']]}};
+ feats:{cols:['name','cat','minLv','asi'],f:[['name','t'],['cat','t'],['minLv','n'],['prereq','t'],['asi','t'],['pts','n'],['cap','n'],['rep','b'],['desc','a']]}};
 Object.assign(FL,{sum:['สรุปสั้น','Short summary'],desc:['รายละเอียดผลของสถานะ','Full effects']});
 Object.assign(FL,{sk:['Skill Proficiencies ที่ได้','Skill proficiencies granted'],equip:['อุปกรณ์เริ่มต้น (หนึ่งรายการต่อบรรทัด เช่น 2x Torch)','Starting equipment (one item per line, e.g. 2x Torch)']});
 FL.saves=['Saving throw และทักษะอาชีพ','Saving throws and class skills']; /* class saves; armor uses the same key with its own label below */
-Object.assign(FL,{cat:['หมวด','Category'],minLv:['เลเวลขั้นต่ำ','Minimum level'],prereq:['เงื่อนไข (Prerequisite)','Prerequisite'],rep:['เลือกซ้ำได้','Can be taken more than once'],asiLv:['เลเวลที่ได้ ASI/Feat (คั่นด้วย , )','Levels with ASI/Feat (comma separated)'],originFeat:['Origin Feat ที่ได้ (ชื่อ Feat)','Origin feat granted (feat name)']});
+Object.assign(FL,{pts:['แต้มพลังที่ได้ (1 = +1 ตัวเดียว, 2 = เลือก +1 สองช่อง)','Ability points (1 = one +1, 2 = two separate +1 picks)'],cap:['เพดานค่าพลัง (20 ปกติ, 30 Epic Boon)','Ability score cap (20 normal, 30 Epic Boon)'],cat:['หมวด','Category'],minLv:['เลเวลขั้นต่ำ','Minimum level'],prereq:['เงื่อนไข (Prerequisite)','Prerequisite'],rep:['เลือกซ้ำได้','Can be taken more than once'],asiLv:['เลเวลที่ได้ ASI/Feat (คั่นด้วย , )','Levels with ASI/Feat (comma separated)'],originFeat:['Origin Feat ที่ได้ (ชื่อ Feat)','Origin feat granted (feat name)']});
 const FEAT_FL={asi:['พลังที่ +1 ได้ (เช่น str,dex)','Abilities it can raise by 1 (e.g. str,dex)'],desc:['รายละเอียด','Description']};
 const flFor=(cat,k)=>cat==='armor'&&k==='saves'?(lang==='th'?'โบนัส Saves':'Saves bonus'):cat==='feats'&&FEAT_FL[k]?FEAT_FL[k][lang==='th'?0:1]:fl(k);
 const usageKey={races:'race',classes:'cls',alignments:'align',backgrounds:'bg'};
 const pickKey={languages:'lang',tools:'tool',vehicles:'veh'};
 const featUse=(r,n)=>Object.values(r.asi||{}).some(p=>p&&p.t==='feat'&&p.f===n)||(r.xf||[]).some(p=>p.f===n);
 const usage=(c,it)=>c==='feats'?[...pcs,...npcs].filter(r=>featUse(r,it.name)).length+CAT.backgrounds.filter(b=>b.originFeat===it.name).length:usageKey[c]?[...pcs,...npcs].filter(r=>r[usageKey[c]]===it.name).length:pickKey[c]?[...pcs,...npcs].filter(r=>(r.pick&&r.pick[pickKey[c]]||[]).includes(it.name)).length:0;
-function blankItem(c){const o={id:uid()};SCHEMA[c].f.forEach(([k,ty])=>o[k]=ty==='b'?0:(ty==='n'&&/^n[A-Z]/.test(k)?0:''));if(c==='classes'){o.subs=[];o.feats=[]}if(c==='backgrounds'){o.sk=[];o.feats=[]}if(c==='classes')o.asiLv='4,8,12,16,19';if(c==='backgrounds')o.originFeat='';if(c==='feats'){o.cat='general';o.minLv=4;o.asi='';o.rep=0}if(c==='conditions'){o.icon='';o.color='';o.dur={u:'',n:0};o.rules=[];o.stack='no';o.maxLv=0;o.ends=[]}return o}
+function blankItem(c){const o={id:uid()};SCHEMA[c].f.forEach(([k,ty])=>o[k]=ty==='b'?0:(ty==='n'&&/^n[A-Z]/.test(k)?0:''));if(c==='classes'){o.subs=[];o.feats=[]}if(c==='backgrounds'){o.sk=[];o.feats=[]}if(c==='classes')o.asiLv='4,8,12,16,19';if(c==='backgrounds')o.originFeat='';if(c==='feats'){o.cat='general';o.minLv=4;o.asi='';o.rep=0;o.pts=1;o.cap=20;o.fx=[]}if(c==='conditions'){o.icon='';o.color='';o.dur={u:'',n:0};o.rules=[];o.stack='no';o.maxLv=0;o.ends=[]}return o}
 const cell=v=>{const s=String(v??'').replace(/\s+/g,' ').trim();return s?esc(s.length>60?s.slice(0,57)+'…':s):'<span class="muted">—</span>'};
 let dataPage=0;
 function renderData(){
@@ -71,7 +71,7 @@ function renderDataEditor(){
     <div class="media"><div class="lbl">${t('cColor')}</div><div class="crow"><input type="color" id="c_color" data-cf="color" value="${hexOf(d.color||getComputedStyle(document.documentElement).getPropertyValue('--ink').trim())}" aria-label="${t('cColor')}"><code>${esc(d.color||t('sDefault'))}</code>${d.color?`<button class="btn small" data-act="ccol-reset">${t('sDefault')}</button>`:''}</div>
     <p class="rules">${t('cColorHint')}</p><div class="cprev">${t('cPrev')} <span class="cref"${ccs(d)}>${esc(d.name||'—')}</span></div></div></div></section>`:'';
   return`${head(esc(d.name)||t('addItem'),t(c),`<button class="btn" data-act="dback">← ${t('back')}</button>`)}
-   <section class="panel"><div class="grid wide">${fields}</div></section>${condSec}${c==='conditions'?condRulesEditor(d):''}${skSec}${subs}${featSec}
+   <section class="panel"><div class="grid wide">${fields}</div></section>${condSec}${c==='conditions'?condRulesEditor(d):''}${c==='feats'?featFxEditor(d):''}${skSec}${subs}${featSec}
    <div class="bar" style="padding:0"><div>${dedit.isNew?'':`<button class="btn danger" data-act="ddel-edit">${dataArm===d.id?(usage(c,d)?t('delInUse').replace('{n}',usage(c,d)):t('delSure')):t('del')}</button>`}</div>
    <div style="display:flex;gap:12px;align-items:center"><span class="err" role="alert">${esc(dataErr)}</span><button class="btn primary" data-act="dsave">${t('save')}</button></div></div>`;
 }
@@ -87,7 +87,7 @@ function cascade(c,old,d){
 function saveData(){
   const d=dedit.draft,c=dedit.cat,L=CAT[c];
   d.name=String(d.name||'').trim();
-  if(c==='feats'){d.minLv=Math.max(0,Math.min(20,Math.round(Number(d.minLv)||0)));d.rep=d.rep?1:0}
+  if(c==='feats'){d.minLv=Math.max(0,Math.min(20,Math.round(Number(d.minLv)||0)));d.rep=d.rep?1:0;d.pts=Number(d.pts)===2?2:1;d.cap=Math.max(20,Math.min(30,Math.round(Number(d.cap)||20)));d.fx=(d.fx||[]).filter(e=>FX_KINDS.includes(e.k))}
   if(c==='backgrounds')['nLang','nTool','nVeh'].forEach(k=>d[k]=Math.max(0,Math.min(10,Math.round(Number(d[k])||0))));
   if(!d.name){dataErr=t('errName');return render()}
   if(L.some(x=>x.id!==d.id&&x.name.toLowerCase()===d.name.toLowerCase())){dataErr=t('errDup');return render()}
