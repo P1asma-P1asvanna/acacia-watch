@@ -17,7 +17,7 @@ function resetSynced(){synced.pc=new Map(pcs.map(r=>[r.id,JSON.stringify(r)]));s
 function applyBoot(j){
   if(j&&j.v!=null&&LIVE.v==null)LIVE.v=j.v;   /* remember which version this state is: the first poll then answers at once if anything changed since */
   REMOTE=true;SITE=Object.assign({},j.site||{});firstRun=!j.hasUsers;
-  if(j.me){users=j.users||[j.me];session=j.me.id;PREFS=j.prefs||{};put('dd_theme',PREFS);pcs=j.pcs||[];npcs=j.npcs||[];rooms=j.rooms||[];prooms=j.prooms||[];const needF=!!j.cat&&(!Array.isArray(j.cat.feats)||j.cat.feats.some(f=>!Array.isArray(f.fx)));CAT=j.cat||clone(SEED);normCat();
+  if(j.me){users=j.users||[j.me];session=j.me.id;PREFS=j.prefs||{};put('dd_theme',PREFS);pcs=j.pcs||[];npcs=j.npcs||[];rooms=j.rooms||[];prooms=j.prooms||[];const needF=!!j.cat&&(!Array.isArray(j.cat.feats)||!Array.isArray(j.cat.spells)||j.cat.feats.some(f=>!Array.isArray(f.fx)));CAT=j.cat||clone(SEED);normCat();
     if((!j.cat||needF)&&j.me.role==='admin')api('POST','api/kv/cat',{value:CAT}).catch(netErr)}
   else{users=[];session=null;pcs=[];npcs=[];rooms=[];prooms=[]}
   resetSynced();
