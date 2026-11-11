@@ -7,6 +7,8 @@ document.addEventListener('click',e=>{
   if(wa&&edit){const d0=edit.draft;if(wa.dataset.wa==='add'){const v=document.getElementById('w_add').value;if(v){d0.weapons.push({id:uid(),ref:v,bonus:0});refreshWeapons()}}else{d0.weapons=d0.weapons.filter(x=>x.id!==wa.dataset.id);refreshWeapons()}return}
   const ha=e.target.closest('[data-hpa]');
   if(ha&&edit){hpAction(ha.dataset.hpa,ha.id);return}
+  const spa=e.target.closest('[data-spa]');
+  if(spa&&edit&&spa.type!=='checkbox'){spAction(spa.dataset.spa,spa);return}
   const aa=e.target.closest('[data-asia]');
   if(aa&&edit){asiClick(aa.dataset.asia,aa);return}
   const pt=e.target.closest('[data-pt]');
@@ -71,6 +73,7 @@ document.addEventListener('click',e=>{
   else if(a==='ccol-reset'){dedit.draft.color='';render()}
   else if(a==='cond'){condOpen.has(id)?condOpen.delete(id):condOpen.add(id);render()}
   else if(a==='cond-all'){condOpen=v==='1'?new Set((CAT.conditions||[]).map(c=>c.id)):new Set();render()}
+  else if(a==='feat-edit'){view='data';dataTab='feats';dataPage=0;dedit=null;location.hash='data';render()}
   else if(a==='cond-edit'){view='data';dataTab='conditions';dataPage=0;dedit=null;location.hash='data';render()}
   else if(a==='dtab'){dataTab=v;dataPage=0;dataArm=null;render()}
   else if(a==='dpage'){dataPage+=Number(v)||0;render()}
@@ -93,6 +96,7 @@ document.addEventListener('click',e=>{
 document.addEventListener('submit',e=>{if(e.target.id==='authForm'){e.preventDefault();submitAuth(e.target)}});
 document.addEventListener('input',e=>{
   const el=e.target;
+  if(el.dataset.featq!==undefined){featFilter();return}
   if(el.dataset.bk){if(el.dataset.bk==='text')bkText=el.value;return}
   if(view==='site'&&siteDraft&&(el.dataset.sk||el.dataset.s)){
     if(el.dataset.sk){siteDraft[el.dataset.sk]=el.value;const h=$('#hx_'+el.dataset.sk);if(h)h.textContent=el.value}
@@ -122,7 +126,7 @@ document.addEventListener('input',e=>{
   else if(el.dataset.f&&el.tagName!=='SELECT'){
     const f=el.dataset.f;d[f]=el.type==='number'?Number(el.value):el.value;
     if(f==='level'||f==='dex')$('#derived').innerHTML=derived(d);
-    if(f==='level'){schedRefresh({h:1,f:1});refreshAsi()}
+    if(f==='level'){schedRefresh({h:1,f:1});refreshAsi();refreshSp()}
   }
 });
 document.addEventListener('change',e=>{
@@ -143,15 +147,16 @@ document.addEventListener('change',e=>{
     if(u.id===session&&u.role!=='admin')view='players';render();return}
   if(edit&&el.dataset.wk){const r=edit.draft.weapons.find(x=>x.id===el.dataset.id);if(r){if(el.dataset.wk==='p')r.p=el.checked;else r.bonus=Math.round(num(el.value))}refreshWeapons();return}
   if(edit&&(el.dataset.asi||el.dataset.xf)){asiChange(el);return}
+  if(edit&&el.dataset.spa==='prep'){spAction('prep',el);return}
   if(edit&&el.dataset.pk){const a=edit.draft.pick[el.dataset.pk]=edit.draft.pick[el.dataset.pk]||[];a[Number(el.dataset.pi)]=el.value;return}
   if(!edit||!el.dataset.f)return;const d=edit.draft,f=el.dataset.f;
   if(f==='insp')d.insp=el.value==='1';else d[f]=el.value;
   if(f==='cls'){d.sub='';$('#e_sub').innerHTML=subOpts(d.cls,'')}
   if(f==='bg'){syncBgItems(d);render()}
-  if(f==='cls'||f==='bg')refreshAsi();
+  if(f==='cls'||f==='bg'){refreshAsi();refreshSp()}
   if(f==='cls'||f==='sub'||f==='race'){refreshHp();refreshExtra()}
 });
-window.addEventListener('hashchange',()=>{const h=location.hash.slice(1);if(me()&&['players','npcs','data','games','site','adventure','conditions'].includes(h)&&h!==view&&(isAdmin()||h==='players'||h==='adventure'||h==='site'||h==='conditions')){view=h;edit=null;dedit=null;roomOpen=null;roomEdit=null;siteDraft=h==='site'?siteInit():null;render()}});
+window.addEventListener('hashchange',()=>{const h=location.hash.slice(1);if(me()&&['players','npcs','data','games','site','adventure','conditions','feats'].includes(h)&&h!==view&&(isAdmin()||h==='players'||h==='adventure'||h==='site'||h==='conditions'||h==='feats')){view=h;edit=null;dedit=null;roomOpen=null;roomEdit=null;siteDraft=h==='site'?siteInit():null;render()}});
 document.addEventListener('visibilitychange',()=>{if(!document.hidden)pull()});
 async function boot(){
   const served=!!document.querySelector('meta[name=dd-server]');

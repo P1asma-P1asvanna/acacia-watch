@@ -13,7 +13,7 @@ let _rf=0,_need={};
 function schedRefresh(n){Object.assign(_need,n);if(_rf)return;_rf=requestAnimationFrame(()=>{_rf=0;const q=_need;_need={};if(!edit)return;const d=edit.draft;updateProfVals(d);refreshWeapons();if(q.h)refreshHp();if(q.f)refreshFeat();if(q.a)refreshAc()})}
 function renderEditor(){
   const d=edit.draft,pc=edit.kind==='pc',adm=isAdmin();
-  d.pick=d.pick||{lang:[],tool:[],veh:[]};d.asi=d.asi||{};d.xf=d.xf||[];
+  d.pick=d.pick||{lang:[],tool:[],veh:[]};d.asi=d.asi||{};d.xf=d.xf||[];d.sl=d.sl||{u:[],p:0};d.spells=d.spells||[];d.conc=d.conc||'';
   d.prof=d.prof||{save:{},skill:{}};
   d.items=d.items||[];d.weapons=d.weapons||[];d.profOther=d.profOther||'';d.speeds=d.speeds||'';
   normHp(d);normAc(d);
@@ -38,7 +38,7 @@ function renderEditor(){
    <div class="field"><label for="e_insp">${t('fInsp')}</label><select id="e_insp" data-f="insp"><option value="0" ${d.insp?'':'selected'}>—</option><option value="1" ${d.insp?'selected':''}>✓</option></select></div>
   </div><div class="grid wide" style="padding-top:0"><div class="field"><label for="e_notes">${t('fNotes')}</label><textarea id="e_notes" data-f="notes">${esc(d.notes)}</textarea></div></div></section>`;
   return`${head(esc(d.name)||t('add'),pc?t('players'):t('npcs'),`<div class="acts">${arrangeBtn('sheet')}<button class="btn" data-act="back">← ${t('back')}</button></div>`)}
-  ${arrangeBar('sheet')}${wgrid('sheet',[['basic',basic],['bgpick',bgPanel(d)],['abil',abil],['asi',asiPanel(d)],['prof',profPanel(d)],['hp',hpPanel(d)],['weapons',weaponsPanel(d)],['profs',profsPanel(d)],['items',itemsPanel(d)],['ac',acPanel(d)],['feat',featPanel(d)],['combat',combat]])}
+  ${arrangeBar('sheet')}${wgrid('sheet',[['basic',basic],['bgpick',bgPanel(d)],['abil',abil],['asi',asiPanel(d)],['prof',profPanel(d)],['hp',hpPanel(d)],['spells',spellPanel(d)],['weapons',weaponsPanel(d)],['profs',profsPanel(d)],['items',itemsPanel(d)],['ac',acPanel(d)],['feat',featPanel(d)],['combat',combat]])}
   <section class="panel"><div class="bar"><button class="btn danger" data-act="del-edit">${delArm===d.id?t('delSure'):t('del')}</button><button class="btn primary" data-act="save">${t('save')}</button></div></section>`;
 }
 

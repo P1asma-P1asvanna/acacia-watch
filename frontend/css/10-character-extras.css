@@ -65,3 +65,27 @@ details.feat summary{cursor:pointer;display:flex;gap:8px;flex-wrap:wrap;align-it
 .fxrow .chk{display:flex;gap:6px;align-items:center;padding-bottom:10px}
 .fxrow .fxsum{flex-basis:100%;margin:0;color:var(--fxb,#6ee7a8)}
 @media (max-width:640px){.asirow select{flex:1 1 40%}}
+.featwrap{padding:4px 18px 18px}
+.featbar{display:flex;gap:8px;flex-wrap:wrap;padding:12px 0}
+.featbar input{flex:1 1 200px;min-width:0}
+.featbar select{flex:0 1 180px}
+.featgrp{margin:14px 0 4px;font-family:var(--display)}
+.featpg{margin:6px 0}
+.featpg .fxmeta{margin:0 0 6px;color:var(--fxb,#6ee7a8)}
+
+/* ---- spells ---- */
+.spbody{padding:4px 18px 16px;display:grid;gap:12px}
+.spinfo{display:flex;gap:8px;flex-wrap:wrap}
+.slots{display:flex;flex-wrap:wrap;gap:10px 18px}
+.slot{display:grid;gap:4px}
+.slot .dots{display:flex;gap:6px;flex-wrap:wrap}
+.dot{width:22px;height:22px;border-radius:50%;border:2px solid var(--ink);background:transparent;padding:0;cursor:pointer}
+.dot.on{background:var(--ink);opacity:.35}
+.concbar{padding:8px 10px;border:1px solid var(--fxb,#6ee7a8);border-radius:8px;display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.splv{margin:10px 0 2px;font-size:.95em}
+.sprow{display:flex;gap:10px;align-items:flex-start;justify-content:space-between;flex-wrap:wrap;padding:6px 0;border-top:1px solid var(--line)}
+.spd{flex:1 1 220px;min-width:0}
+.spacts{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.spacts select{width:auto;max-width:100%}
+.spadd{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.spadd select,.spadd input{flex:1 1 160px;min-width:0}

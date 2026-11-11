@@ -173,7 +173,8 @@ function cbQAction(a,id){
 function cbRest(I,kind){
   cbLog(I,cb(kind==='long'?'restL':'restS'));
   I.list.forEach(e=>{
-    cbEndBy(I,e,'short');if(kind==='long')cbEndBy(I,e,'long');
+    cbEndBy(I,e,'short');if(kind==='short'){const c=iniChar(e);if(c){restShort(c);commit(cbIsPc(e)?'pc':'npc')}}
+    if(kind==='long')cbEndBy(I,e,'long');
     if(kind==='long'){const c=iniChar(e);if(c){restLong(c);commit(cbIsPc(e)?'pc':'npc')}else if(e.hpMax!=null){e.hp=e.hpMax;e.tmp=0}}
     cbFire(I,e,'rest',kind)})}
 function cbAction(a,b){

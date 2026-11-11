@@ -35,11 +35,11 @@ def abil_list(v):
     return [a for a in ABS if a in found]
 
 
-FX_KINDS = ("init", "hp", "ac", "pass")
+FX_KINDS = ("init", "hp", "ac", "pass", "speed")
 
 
 def clean_fx(L):
-    """Effects a feat gives: init (flat and/or + Proficiency Bonus), hp (flat or per level), ac (optionally only in armor), pass (passive Perception)."""
+    """Effects a feat gives: init (flat and/or + Proficiency Bonus), hp (flat or per level), ac (optionally only in armor), pass (passive Perception), speed (feet)."""
     out = []
     for e in (L if isinstance(L, list) else [])[:10]:
         if not isinstance(e, dict) or e.get("k") not in FX_KINDS:

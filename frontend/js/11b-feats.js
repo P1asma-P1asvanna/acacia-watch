@@ -24,9 +24,9 @@ function abAll(d){
 const abT=(d,k)=>abAll(d)[k];
 /* feat effects: bonus to initiative, max HP, AC, passive Perception (same maths as backend/acacia/feats.py fx_totals) */
 function fxAll(d,armor){
-  const lv=Math.max(1,Math.min(20,Math.round(num(d.level))||1)),pb=prof(lv),r={init:0,hp:0,ac:0,pass:0,src:{init:[],hp:[],ac:[],pass:[]}};
+  const lv=Math.max(1,Math.min(20,Math.round(num(d.level))||1)),pb=prof(lv),r={init:0,hp:0,ac:0,pass:0,speed:0,src:{init:[],hp:[],ac:[],pass:[],speed:[]}};
   featsActive(d).forEach(([f])=>(f.fx||[]).forEach(e=>{const v=Math.max(-50,Math.min(200,Math.round(num(e.v)))),k=e.k;let n=0;
-    if(k==='init')n=v+(e.pb?pb:0);else if(k==='hp')n=e.per==='flat'?v:v*lv;else if(k==='ac'){if(e.req!=='armor'||armor)n=v}else if(k==='pass')n=v;else return;
+    if(k==='init')n=v+(e.pb?pb:0);else if(k==='hp')n=e.per==='flat'?v:v*lv;else if(k==='ac'){if(e.req!=='armor'||armor)n=v}else if(k==='pass'||k==='speed')n=v;else return;
     r[k]+=n;if(n)r.src[k].push([f.name,n])}));
   return r}
 const wearsBody=d=>(d.items||[]).some(i=>i.eq&&(a=>a&&!isShield(a))(armorOf(i)));
@@ -68,12 +68,13 @@ Object.assign(TX.th,{secAsi:'ASI และ Feats',asiOrigin:'Origin Feat',asiKin
 Object.assign(TX.en,{secAsi:'ASI and Feats',asiOrigin:'Origin Feat',asiKind:'Choose one',asiKind2:'ASI: +2 to one ability',asiKind11:'ASI: +1 to two abilities',asiKindFeat:'Feat',asiFeat:'Feat',asiWhich:'Ability to raise by 1',asiHint2:'+2 to the chosen ability (maximum 20).',asiHint11:'+1 to each chosen ability (maximum 20).',asiNone:'No Ability Score Improvement or Feat yet.',asiNext:'Next one at level {n}.',asiExtra:'Extra feats',asiExtraHint:'Fighting Style, a repeated feat, or a feat your GM granted.',asiNoDesc:'No description yet (the GM can add one in Game data).',feats:'Feats',fc_origin:'Origin',fc_general:'General',fc_fighting:'Fighting Style',fc_epic:'Epic Boon'});
 
 /* ---------- feat effects editor (Game data → Feats) ---------- */
-const FX_KINDS=['init','hp','ac','pass'];
-const featFxNew=k=>k==='init'?{k,v:0,pb:1}:k==='hp'?{k,v:2,per:'level'}:k==='ac'?{k,v:1,req:''}:{k,v:5};
+const FX_KINDS=['init','hp','ac','pass','speed'];
+const featFxNew=k=>k==='init'?{k,v:0,pb:1}:k==='hp'?{k,v:2,per:'level'}:k==='ac'?{k,v:1,req:''}:k==='speed'?{k,v:10}:{k,v:5};
 function featFxText(e){const v=Math.round(num(e.v));
   if(e.k==='init')return fill(t('fxS_init'),{v:(e.pb?'Proficiency Bonus':'')+(e.pb&&v?' ':'')+(v||!e.pb?sgn(v):'')});
   if(e.k==='hp')return fill(t(e.per==='flat'?'fxS_hpF':'fxS_hpL'),{v:sgn(v)});
   if(e.k==='ac')return fill(t(e.req==='armor'?'fxS_acA':'fxS_ac'),{v:sgn(v)});
+  if(e.k==='speed')return fill(t('fxS_speed'),{v:sgn(v)});
   return fill(t('fxS_pass'),{v:sgn(v)})}
 function featFxRow(e,i){
   const at=`data-fi="${i}"`,sel=(f,o,cur)=>`<select data-fe="${f}" ${at}>${o.map(([v,l])=>`<option value="${v}" ${v===cur?'selected':''}>${l}</option>`).join('')}</select>`;
@@ -92,8 +93,28 @@ function featFxEdit(el){
   e[f]=f==='v'?Math.max(-50,Math.min(200,Math.round(Number(val))||0)):val;
   const row=el.closest('.fxrow'),sm=row&&row.querySelector('.fxsum');if(sm)sm.textContent=featFxText(e);return true}
 function featFxClick(a,b){const d=dedit.draft;d.fx=d.fx||[];if(a==='fe-add')d.fx.push(featFxNew('init'));else if(a==='fe-del')d.fx.splice(Number(b.dataset.b),1);render()}
-Object.assign(TX.th,{fxTitle:'เอฟเฟกต์ของ Feat',fxHint:'ตั้งผลที่ Feat นี้ให้กับชีตโดยอัตโนมัติ เพิ่มได้หลายอัน (โบนัสพลัง +1/+2 ตั้งที่ช่อง "พลังที่ +1 ได้" ด้านบน)',fxNone:'ยังไม่มีเอฟเฟกต์ (ใส่เป็นข้อความในรายละเอียดอย่างเดียวก็ได้)',fxKind:'ผล',fxVal:'ค่า',fxPb:'บวก Proficiency Bonus ด้วย',fxPer:'นับแบบ',fxLevel:'ต่อเลเวล',fxFlat:'ครั้งเดียว',fxWhen:'เมื่อไร',fxAlways:'ตลอดเวลา',fxArmor:'เฉพาะตอนสวมเกราะ',fxK_init:'โบนัส Initiative',fxK_hp:'HP สูงสุด',fxK_ac:'AC',fxK_pass:'Passive Perception',fxS_init:'Initiative {v}',fxS_hpL:'HP สูงสุด {v} ต่อเลเวล',fxS_hpF:'HP สูงสุด {v}',fxS_ac:'AC {v}',fxS_acA:'AC {v} เมื่อสวมเกราะ',fxS_pass:'Passive Perception {v}',hpFeat:'{src}: {v}',acFeat:'{src} {v}',cFxb:'สีโบนัสจาก Feats/ASI',fxAdd:'+ เพิ่มเอฟเฟกต์',asiAdd:'+ เพิ่ม Feat'});
-Object.assign(TX.en,{fxTitle:'Feat effects',fxHint:'What this feat does to the sheet automatically. Add as many as you like (ability +1/+2 is set in "Abilities it can raise" above).',fxNone:'No effects yet (a description alone is fine too).',fxKind:'Effect',fxVal:'Value',fxPb:'Also add Proficiency Bonus',fxPer:'Counted',fxLevel:'per level',fxFlat:'once',fxWhen:'When',fxAlways:'always',fxArmor:'only while wearing armor',fxK_init:'Initiative bonus',fxK_hp:'Max HP',fxK_ac:'AC',fxK_pass:'Passive Perception',fxS_init:'Initiative {v}',fxS_hpL:'Max HP {v} per level',fxS_hpF:'Max HP {v}',fxS_ac:'AC {v}',fxS_acA:'AC {v} while wearing armor',fxS_pass:'Passive Perception {v}',hpFeat:'{src}: {v}',acFeat:'{src} {v}',cFxb:'Feats / ASI bonus color',fxAdd:'+ Add effect',asiAdd:'+ Add feat'});
+Object.assign(TX.th,{fxTitle:'เอฟเฟกต์ของ Feat',fxHint:'ตั้งผลที่ Feat นี้ให้กับชีตโดยอัตโนมัติ เพิ่มได้หลายอัน (โบนัสพลัง +1/+2 ตั้งที่ช่อง "พลังที่ +1 ได้" ด้านบน)',fxNone:'ยังไม่มีเอฟเฟกต์ (ใส่เป็นข้อความในรายละเอียดอย่างเดียวก็ได้)',fxKind:'ผล',fxVal:'ค่า',fxPb:'บวก Proficiency Bonus ด้วย',fxPer:'นับแบบ',fxLevel:'ต่อเลเวล',fxFlat:'ครั้งเดียว',fxWhen:'เมื่อไร',fxAlways:'ตลอดเวลา',fxArmor:'เฉพาะตอนสวมเกราะ',fxK_init:'โบนัส Initiative',fxK_hp:'HP สูงสุด',fxK_ac:'AC',fxK_pass:'Passive Perception',fxS_init:'Initiative {v}',fxS_hpL:'HP สูงสุด {v} ต่อเลเวล',fxS_hpF:'HP สูงสุด {v}',fxS_ac:'AC {v}',fxS_acA:'AC {v} เมื่อสวมเกราะ',fxS_pass:'Passive Perception {v}',fxS_speed:'ความเร็ว {v} ft',fxK_speed:'ความเร็ว',hpFeat:'{src}: {v}',acFeat:'{src} {v}',cFxb:'สีโบนัสจาก Feats/ASI',fxAdd:'+ เพิ่มเอฟเฟกต์',asiAdd:'+ เพิ่ม Feat'});
+Object.assign(TX.en,{fxTitle:'Feat effects',fxHint:'What this feat does to the sheet automatically. Add as many as you like (ability +1/+2 is set in "Abilities it can raise" above).',fxNone:'No effects yet (a description alone is fine too).',fxKind:'Effect',fxVal:'Value',fxPb:'Also add Proficiency Bonus',fxPer:'Counted',fxLevel:'per level',fxFlat:'once',fxWhen:'When',fxAlways:'always',fxArmor:'only while wearing armor',fxK_init:'Initiative bonus',fxK_hp:'Max HP',fxK_ac:'AC',fxK_pass:'Passive Perception',fxS_init:'Initiative {v}',fxS_hpL:'Max HP {v} per level',fxS_hpF:'Max HP {v}',fxS_ac:'AC {v}',fxS_acA:'AC {v} while wearing armor',fxS_pass:'Passive Perception {v}',fxS_speed:'Speed {v} ft',fxK_speed:'Speed',hpFeat:'{src}: {v}',acFeat:'{src} {v}',cFxb:'Feats / ASI bonus color',fxAdd:'+ Add effect',asiAdd:'+ Add feat'});
 
 Object.assign(TX.th,{shortRest:'พักสั้น: ทอย Hit Die',shortRestHint:'ใช้ Hit Die 1 ลูก ทอยแล้วฟื้น HP (บวก CON)',hdRolled:'ทอย d{d} ได้ {r} {con} CON → ฟื้น {v} HP',hdNone:'ไม่เหลือ Hit Dice ให้ใช้'});
 Object.assign(TX.en,{shortRest:'Short rest: roll a hit die',shortRestHint:'Spend one hit die: roll it and regain HP (plus CON)',hdRolled:'Rolled d{d}: {r} {con} CON → regained {v} HP',hdNone:'No hit dice left to spend'});
+
+/* ---------- Feats page: everyone can read, the GM edits in Game data ---------- */
+function featCard(f){
+  const fx=(f.fx||[]).map(featFxText),ab=abList(f.asi);
+  const meta=[f.prereq?esc(f.prereq):'',ab.length?`${featPts(f)===2?'+1 +1':'+1'}: ${ab.map(a=>a.toUpperCase()).join(' / ')}`:'',...fx.map(esc)].filter(Boolean);
+  return`<details class="feat featpg" data-fn="${esc(f.name.toLowerCase())}" data-fc="${f.cat}"><summary><b>${esc(f.name)}</b> <span class="pill">${esc(t('fc_'+f.cat))}</span>${f.minLv?` <span class="pill">Lv ${f.minLv}+</span>`:''}</summary>
+   <div class="featd">${meta.length?`<p class="note fxmeta">${meta.join(' · ')}</p>`:''}${f.desc?esc(f.desc).replace(/\n/g,'<br>'):`<span class="muted">${t('asiNoDesc')}</span>`}</div></details>`}
+function renderFeatsPage(){
+  const L=CAT.feats||[],adm=isAdmin();
+  const acts=adm?`<div class="acts"><button class="btn" data-act="feat-edit">${t('condEdit')}</button></div>`:'';
+  const tools=`<div class="featbar"><input type="search" data-featq id="featq" placeholder="${t('featSearch')}" aria-label="${t('featSearch')}"><select data-featq id="featc" aria-label="${t('cat')}"><option value="">${t('featAllCats')}</option>${FEAT_CATS.map(c=>`<option value="${c}">${t('fc_'+c)}</option>`).join('')}</select></div>`;
+  const body=L.length?FEAT_CATS.map(c=>{const g=L.filter(f=>f.cat===c);return g.length?`<h3 class="featgrp" data-fg="${c}">${t('fc_'+c)}</h3><div class="featlist" data-fl="${c}">${g.map(featCard).join('')}</div>`:''}).join(''):`<div class="empty"><div>${t('condNone')}</div></div>`;
+  return head(t('feats'),t('featsSub'),acts)+`<section class="panel"><div class="featwrap">${tools}${body}<p class="note" id="featnone" hidden>${t('featNone')}</p></div></section>`}
+function featFilter(){
+  const q=(document.getElementById('featq')||{value:''}).value.trim().toLowerCase(),c=(document.getElementById('featc')||{value:''}).value;let any=false;
+  document.querySelectorAll('.featpg').forEach(d=>{const show=(!q||d.dataset.fn.includes(q))&&(!c||d.dataset.fc===c);d.hidden=!show;if(show)any=true});
+  document.querySelectorAll('.featlist').forEach(l=>{const has=[...l.children].some(d=>!d.hidden),h=document.querySelector(`.featgrp[data-fg="${l.dataset.fl}"]`);l.hidden=!has;if(h)h.hidden=!has});
+  const n=document.getElementById('featnone');if(n)n.hidden=any}
+Object.assign(TX.th,{featsSub:'รายการ Feat ทั้งหมด (อ่านอย่างเดียว) GM แก้ไขได้ในข้อมูลเกม',featSearch:'ค้นหา Feat…',featAllCats:'ทุกหมวด',featNone:'ไม่พบ Feat ที่ตรงกับคำค้น',cat:'หมวด'});
+Object.assign(TX.en,{featsSub:'Every feat (read-only). The GM edits them in Game data.',featSearch:'Search feats…',featAllCats:'All categories',featNone:'No feat matches.',cat:'Category'});

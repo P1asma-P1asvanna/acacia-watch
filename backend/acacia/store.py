@@ -36,7 +36,7 @@ def clean_site(c, v):
 def clean_cat(c, v):
     """Condition icons must be pictures stored for the site; colours must be #rrggbb. Everything else is left as the admin sent it."""
     import re
-    from . import conditions, feats, images
+    from . import conditions, feats, images, spells
     own = images.owned_ids(c, "site")
     L = v.get("conditions")
     if isinstance(L, list):
@@ -53,6 +53,7 @@ def clean_cat(c, v):
             if isinstance(x, dict):
                 conditions.clean_condition(x, ids)
     feats.clean_cat_feats(v)
+    spells.clean_cat_spells(v)
     return v
 
 
@@ -71,6 +72,15 @@ def public_fx(fx):
         out.append({"id": str(f.get("id"))[:40], "cid": f["cid"][:40], "u": u,
                     "left": clampi(left, 0, 999, 0) if left is not None and u else None, "lv": clampi(f.get("lv"), 1, 20, 1),
                     "hl": f.get("hl") if f.get("hl") in ("turn", "round", "x") else ""})
+    return out
+
+
+def feed_pub(feed):
+    """Dice feed entries as the clients see them (no account ids)."""
+    out = []
+    for x in (feed if isinstance(feed, list) else [])[:40]:
+        if isinstance(x, dict):
+            out.append({k: x.get(k) for k in ("id", "t", "n", "sides", "mod", "mode", "sets", "keep", "total", "label", "why", "who")})
     return out
 
 
@@ -118,7 +128,7 @@ def player_rooms(c, me):
                for x in (ini.get("evt") if isinstance(ini.get("evt"), list) else [])[:60]
                if isinstance(x, dict) and x.get("k") in ("turn_start", "turn_end", "round_start", "round_end", "expire") and str(x.get("eid")) in seen]
         out.append({"id": str(rm.get("id")), "name": str(rm.get("name") or "")[:80], "round": clampi(ini.get("round"), 1, 9999, 1), "evt": evt,
-                    "cur": str(ini.get("cur") or ""), "list": entries,
+                    "cur": str(ini.get("cur") or ""), "list": entries, "feed": feed_pub(kv_get(c, "feed:" + str(rm.get("id")))),
                     "party": [{"name": pc_name.get(a, "—"), "mine": a in mine} for a in assign]})
     return out
 
@@ -137,6 +147,7 @@ def boot_state(c, me):
         out["pcs"] = [json.loads(r["data"]) for r in c.execute("SELECT data FROM docs WHERE kind='pc'")]
         out["npcs"] = [json.loads(r["data"]) for r in c.execute("SELECT data FROM docs WHERE kind='npc'")]
         out["rooms"] = kv_get(c, "rooms") or []
+        out["feeds"] = {str(r.get("id")): feed_pub(kv_get(c, "feed:" + str(r.get("id")))) for r in out["rooms"] if isinstance(r, dict)}
     else:
         out["users"] = [user_pub(me)]
         out["pcs"] = [json.loads(r["data"]) for r in c.execute("SELECT data FROM docs WHERE kind='pc' AND owner=?", (me["id"],))]

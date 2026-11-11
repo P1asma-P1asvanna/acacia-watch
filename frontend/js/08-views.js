@@ -1,14 +1,14 @@
 /* ---------- views ---------- */
 function renderApp(){
   const u=me(), adm=isAdmin();
-  const items=adm?[['players','players'],['npcs','npcs'],['data','data'],['adventure','adventure'],['conditions','conditions'],['games','games'],['site','site']]:[['players','players'],['adventure','adventure'],['conditions','conditions'],['site','site']];
-  if(!adm&&!['players','adventure','conditions','site'].includes(view))view='players';
+  const items=adm?[['players','players'],['npcs','npcs'],['data','data'],['adventure','adventure'],['conditions','conditions'],['feats','conditions'],['games','games'],['site','site']]:[['players','players'],['adventure','adventure'],['conditions','conditions'],['feats','conditions'],['site','site']];
+  if(!adm&&!['players','adventure','conditions','feats','site'].includes(view))view='players';
   const stage=inStage();
   return`<div class="app${stage?' stagemode':''}"><aside class="side">
    <div class="brand">${brandHtml()}</div>
    <nav class="nav" aria-label="Main">${items.map(([k,ic])=>`<button data-act="nav" data-v="${k}" ${view===k?'aria-current="page"':''}>${ICON[ic]}<span>${t(k)}</span></button>`).join('')}</nav>
    <div class="side-foot"><div class="me"><b>${esc(u.disp)}</b><span>${adm?t('admin'):t('player')}</span></div>${langSwitch()}<button class="btn small" data-act="logout">${t('logout')}</button></div>
-  </aside><main class="main${stage?' stage':''}" id="main">${view==='players'?renderPlayers():view==='npcs'?renderNpcs():view==='data'?renderData():view==='site'?renderSite():view==='conditions'?renderConditions():view==='adventure'?(adm?renderAdventure():renderPlayerAdv()):renderGames()}</main>${condPopHtml()}</div>`;
+  </aside><main class="main${stage?' stage':''}" id="main">${view==='players'?renderPlayers():view==='npcs'?renderNpcs():view==='data'?renderData():view==='site'?renderSite():view==='conditions'?renderConditions():view==='feats'?renderFeatsPage():view==='adventure'?(adm?renderAdventure():renderPlayerAdv()):renderGames()}</main>${condPopHtml()}</div>`;
 }
 function head(title,sub,btn){return`<div class="head"><div><h1>${title}</h1><p>${sub}</p></div>${btn||''}</div>`}
 function table(kind){
@@ -49,7 +49,7 @@ const bgSkills=d=>{const b=bgOf(d);return b&&Array.isArray(b.sk)?b.sk:[]};
 const profLevel=(d,kind,k)=>{const st=(d.prof&&d.prof[kind]&&d.prof[kind][k])||0;return kind==='skill'&&bgSkills(d).includes(k)?Math.max(st,1):st};
 function derived(d){
   const pb=prof(d.level),fx=fxAll(d),dx=mod(abT(d,'dex'))+fx.init,nx=nextXp(Number(d.level)),fb=k=>fx[k]?` class="fxv" title="${fxLine(fx,k)}"`:'';
-  return`<div class="chip"><span>${t('pb')}</span><b>${sgn(pb)}</b></div><div class="chip"><span>${t('init')}</span><b${fb('init')}>${sgn(dx)}</b></div><div class="chip"><span>${t('next')}</span><b>${nx===null?t('max'):nx}</b></div><div class="chip"><span>${t('passive')}</span><b${fb('pass')}>${10+mod(abT(d,'wis'))+pb*profLevel(d,'skill','perception')+fx.pass}</b></div>`;
+  return`<div class="chip"><span>${t('pb')}</span><b>${sgn(pb)}</b></div><div class="chip"><span>${t('init')}</span><b${fb('init')}>${sgn(dx)}</b></div><div class="chip"><span>${t('fSpeed')}</span><b${fb('speed')}>${Math.round(num(d.speed))+fx.speed}</b></div><div class="chip"><span>${t('next')}</span><b>${nx===null?t('max'):nx}</b></div><div class="chip"><span>${t('passive')}</span><b${fb('pass')}>${10+mod(abT(d,'wis'))+pb*profLevel(d,'skill','perception')+fx.pass}</b></div>`;
 }
 const SAVE_NAMES={str:'Strength',dex:'Dexterity',con:'Constitution',int:'Intelligence',wis:'Wisdom',cha:'Charisma'};
 const SKILLS=[['acrobatics','Acrobatics','dex'],['animal','Animal Handling','wis'],['arcana','Arcana','int'],['athletics','Athletics','str'],['deception','Deception','cha'],['history','History','int'],['insight','Insight','wis'],['intimidation','Intimidation','cha'],['investigation','Investigation','int'],['medicine','Medicine','wis'],['nature','Nature','int'],['perception','Perception','wis'],['performance','Performance','cha'],['persuasion','Persuasion','cha'],['religion','Religion','int'],['sleight','Sleight of Hand','dex'],['stealth','Stealth','dex'],['survival','Survival','wis']];
@@ -110,14 +110,15 @@ function updateHpBar(){
   if(g('hp_bt'))g('hp_bt').style.width=tmp/tot*100+'%';if(g('hp_txt'))g('hp_txt').textContent=cur+' / '+max;if(g('hp_ttxt'))g('hp_ttxt').textContent=tmp?'+'+tmp+' temp':'';
 }
 /* long rest: full HP, no temp HP, regain half the hit dice (at least 1), death saves cleared */
-function restLong(d){const lvl=hpCalc(d).lvl;d.hpCur=null;d.hpTemp=0;d.hdUsed=Math.max(0,Math.round(num(d.hdUsed))-Math.max(1,Math.floor(lvl/2)));d.death={s:0,f:0}}
+function restShort(d){d.sl=d.sl||{u:[],p:0};d.sl.p=0}
+function restLong(d){const lvl=hpCalc(d).lvl;d.sl={u:[],p:0};d.conc='';d.hpCur=null;d.hpTemp=0;d.hdUsed=Math.max(0,Math.round(num(d.hdUsed))-Math.max(1,Math.floor(lvl/2)));d.death={s:0,f:0}}
 let hdMsg='';
 function hpAction(a,id){
   const d=edit.draft,max=effMax(d),cur=curOf(d,max),lvl=hpCalc(d).lvl,amtEl=document.getElementById('hp_amt'),amt=Math.max(0,Math.round(num(amtEl&&amtEl.value)));
-  if(a==='dmg'){let r=amt,tmp=Math.max(0,Math.round(num(d.hpTemp)));const ab=Math.min(tmp,r);tmp-=ab;r-=ab;d.hpTemp=tmp;d.hpCur=Math.max(0,cur-r)}
+  if(a==='dmg'){let r=amt,tmp=Math.max(0,Math.round(num(d.hpTemp)));const ab=Math.min(tmp,r);tmp-=ab;r-=ab;d.hpTemp=tmp;d.hpCur=Math.max(0,cur-r);hdMsg=spConcNote(d,r);refreshSp()}
   else if(a==='heal'){d.hpCur=Math.min(max,cur+amt);if(d.hpCur>0&&amt>0)d.death={s:0,f:0}}
   else if(a==='grant'){d.hpTemp=Math.max(Math.round(num(d.hpTemp)),amt)}
-  else if(a==='long'){restLong(d);hdMsg=''}
+  else if(a==='long'){restLong(d);hdMsg='';spMsg='';refreshSp()}
   else if(a==='hdroll'){const die=dieOf(d.cls),used=Math.max(0,Math.round(num(d.hdUsed)));
     if(!die)hdMsg=t('hpNoDie');else if(used>=lvl)hdMsg=t('hdNone');
     else{const r=1+Math.floor(Math.random()*die),cn=mod(abT(d,'con')),v=Math.max(0,r+cn);d.hdUsed=used+1;d.hpCur=Math.min(max,cur+v);if(d.hpCur>0&&v>0)d.death={s:0,f:0};hdMsg=fill(t('hdRolled'),{d:die,r,con:sgn(cn),v})}}
