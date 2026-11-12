@@ -1,10 +1,11 @@
 /* ---------- shared table dice: everyone in a room sees every roll. The server rolls (backend/acacia/dice.py), so a result cannot be faked. ---------- */
-let FEEDS={},tdCount=1,tdMod=0,tdMode='normal',tdWhy='',tdWhySel='',tdBusy=false,tdErr='',tdSides=20,tdAdvOpen=false,tdX={dmin:'',rr:'',kh:'',lo:'',hi:'',dc:''};
+let FEEDS={},tdCount=1,tdMod=0,tdMode='normal',tdWhy='',tdWhySel='',tdAbil='',tdBusy=false,tdErr='',tdSides=20,tdAdvOpen=false,tdX={dmin:'',rr:'',kh:'',lo:'',hi:'',dc:''};
 const TD_SIDES=[4,6,8,10,12,20,100];
 /* quick reasons: [key, Thai, English]; "other" lets the player type */
 const TD_WHY=[['atk','โจมตี','Attack'],['dmg','ดาเมจ','Damage'],['init','Initiative','Initiative'],['save','Saving Throw','Saving throw'],['chk','Ability Check','Ability check'],['death','Death Save','Death save'],['heal','ฮีล','Healing'],
  ['Acrobatics','Acrobatics','Acrobatics'],['Animal Handling','Animal Handling','Animal Handling'],['Arcana','Arcana','Arcana'],['Athletics','Athletics','Athletics'],['Deception','Deception','Deception'],['History','History','History'],['Insight','Insight','Insight'],['Intimidation','Intimidation','Intimidation'],['Investigation','Investigation','Investigation'],['Medicine','Medicine','Medicine'],['Nature','Nature','Nature'],['Perception','Perception','Perception'],['Performance','Performance','Performance'],['Persuasion','Persuasion','Persuasion'],['Religion','Religion','Religion'],['Sleight of Hand','Sleight of Hand','Sleight of Hand'],['Stealth','Stealth','Stealth'],['Survival','Survival','Survival']];
-const tdWhyText=()=>{if(tdWhySel==='other')return tdWhy.trim();const r=TD_WHY.find(x=>x[0]===tdWhySel);return r?r[lang==='th'?1:2]:''};
+const TD_AB=['STR','DEX','CON','INT','WIS','CHA'],tdNeedAbil=k=>k==='save'||k==='chk';
+const tdWhyText=()=>{if(tdWhySel==='other')return tdWhy.trim();const r=TD_WHY.find(x=>x[0]===tdWhySel);if(!r)return'';const n=r[lang==='th'?1:2];return tdNeedAbil(tdWhySel)&&tdAbil?tdAbil+' '+n:n};
 const tdFeed=rid=>isAdmin()?(FEEDS[rid]||[]):((prooms.find(r=>r.id===rid)||{}).feed||[]);
 const tdPut=(rid,en)=>{if(isAdmin()){FEEDS[rid]=[en,...(FEEDS[rid]||[]).filter(x=>x.id!==en.id)].slice(0,40)}else{const r=prooms.find(x=>x.id===rid);if(r)r.feed=[en,...(r.feed||[]).filter(x=>x.id!==en.id)].slice(0,40)}};
 function tdDice(vals,fix,drop){return vals.map((v,i)=>{const f=(fix||[])[i],dr=(drop||[]).includes(i);return`<span class="dv${f?' fixd':''}${dr?' dropd':''}">${f?`<s>${f}</s>`:''}${v}</span>`}).join('')}
@@ -28,6 +29,7 @@ function tableDice(rid){
     <div class="field"><label for="td_mod">${t('mod')}</label><input id="td_mod" data-td="mod" type="number" min="-100" max="100" value="${tdMod}"></div>
     <div class="field" style="width:150px"><label for="td_mode">${t('mode')}</label><select id="td_mode" data-td="mode"><option value="normal" ${tdMode==='normal'?'selected':''}>${t('normal')}</option><option value="adv" ${tdMode==='adv'?'selected':''}>${t('adv')}</option><option value="dis" ${tdMode==='dis'?'selected':''}>${t('dis')}</option></select></div>
     <div class="field tdwhyf"><label for="td_whysel">${t('tdWhy')}</label><select id="td_whysel" data-td="whysel"><option value="">—</option><optgroup label="${t('tdGrpRoll')}">${TD_WHY.slice(0,7).map(r=>`<option value="${esc(r[0])}" ${tdWhySel===r[0]?'selected':''}>${esc(r[lang==='th'?1:2])}</option>`).join('')}</optgroup><optgroup label="${t('tdGrpSkill')}">${TD_WHY.slice(7).map(r=>`<option value="${esc(r[0])}" ${tdWhySel===r[0]?'selected':''}>${esc(r[lang==='th'?1:2])}</option>`).join('')}</optgroup><option value="other" ${tdWhySel==='other'?'selected':''}>${t('tdOther')}</option></select>
+     <select id="td_abil" data-td="abil" aria-label="${t('tdAbil')}" ${tdNeedAbil(tdWhySel)?'':'hidden'}><option value="">${t('tdAbilAny')}</option>${TD_AB.map(a=>`<option value="${a}" ${tdAbil===a?'selected':''}>${a}</option>`).join('')}</select>
      <input id="td_why" data-td="why" type="text" maxlength="40" aria-label="${t('tdOther')}" placeholder="${t('tdWhyPh')}" value="${esc(tdWhy)}" ${tdWhySel==='other'?'':'hidden'}></div>
     <details class="tdadv" ${tdAdvOpen||Object.values(tdX).some(v=>v!=='')?'open':''}><summary>${t('tdAdv')}</summary><p class="note">${t('tdAdvHint')}</p><div class="tdadvg">${num('dmin','—',0,1000)}${num('rr','—',0,999)}${num('kh','—',0,20)}${num('lo','—',-200,2000)}${num('hi','—',-200,2000)}${num('dc','—',-50,2000)}</div></details>
     <button class="btn primary" data-act="tdroll" data-rid="${rid}" style="min-height:44px" ${tdBusy?'disabled':''}>${t('roll')}</button>
@@ -39,7 +41,8 @@ function tdSide(v){tdSides=tdInt(v,2,1000,20);const inp=document.getElementById(
 function tdSet(el){const k=el.dataset.td;
   if(k==='count')tdCount=tdInt(el.value,1,20,1);else if(k==='mod')tdMod=tdInt(el.value,-100,100,0);else if(k==='mode')tdMode=el.value;else if(k==='why')tdWhy=el.value;
   else if(k==='sides'){if(el.value!=='')tdSide(el.value)}
-  else if(k==='whysel'){tdWhySel=el.value;const w=document.getElementById('td_why');if(w){w.hidden=tdWhySel!=='other';if(!w.hidden)w.focus()}}
+  else if(k==='abil')tdAbil=el.value;
+  else if(k==='whysel'){tdWhySel=el.value;const ab=document.getElementById('td_abil');if(ab)ab.hidden=!tdNeedAbil(tdWhySel);const w=document.getElementById('td_why');if(w){w.hidden=tdWhySel!=='other';if(!w.hidden)w.focus()}}
   else if(k.startsWith('x_'))tdX[k.slice(2)]=el.value}
 async function tdRoll(rid){
   if(tdBusy)return;tdBusy=true;tdErr='';render();
@@ -47,12 +50,12 @@ async function tdRoll(rid){
   catch(e){tdErr=e&&e.code==='not_seated'?t('tdNotSeated'):t('tdFail')}
   tdBusy=false;render()}
 Object.assign(TX.th,{tdTitle:'ทอยเต๋าร่วมกัน',tdHint:'ทุกคนในห้องเห็นผลทอย เซิร์ฟเวอร์เป็นคนทอยให้ จึงแก้ผลไม่ได้',tdWhy:'ทอยเพื่ออะไร',tdWhyPh:'พิมพ์เหตุผลเอง',tdOther:'อื่นๆ (พิมพ์เอง)',tdGrpRoll:'การทอยทั่วไป',tdGrpSkill:'ทักษะ',tdEmpty:'ยังไม่มีใครทอย',tdNotSeated:'ตัวละครของคุณยังไม่ได้นั่งในห้องนี้',tdFail:'ทอยไม่สำเร็จ ลองอีกครั้ง',
- tdSides:'จำนวนหน้าลูกเต๋า (2–1000)',tdAdv:'ตัวเลือกเพิ่มเติม (ขั้นต่ำ/สูงสุด และอื่นๆ)',tdAdvHint:'เว้นว่างไว้ถ้าไม่ใช้ ตัวเลขทุกอย่างเซิร์ฟเวอร์เป็นคนคิดให้',
- tdx_dmin:'ขั้นต่ำต่อลูก (ต่ำกว่านี้ปรับเป็นค่านี้)',tdx_rr:'ทอยใหม่ 1 ครั้งถ้าได้ ≤',tdx_kh:'เก็บเฉพาะลูกที่สูงสุด N ลูก',tdx_lo:'ผลรวมขั้นต่ำ (ต่ำกว่านี้ปรับเป็นค่านี้)',tdx_hi:'ผลรวมสูงสุด',tdx_dc:'DC เป้าหมาย (บอกผ่าน/ไม่ผ่าน)',
+ tdAbil:'ค่าพลัง',tdAbilAny:'— ค่าพลัง (เลือกได้) —',tdSides:'จำนวนหน้าลูกเต๋า (2–1000)',tdAdv:'ตัวเลือกเพิ่มเติม (ขั้นต่ำ/สูงสุด และอื่นๆ)',tdAdvHint:'เว้นว่างไว้ถ้าไม่ใช้ · ขั้นต่ำต่อลูก/ผลรวมขั้นต่ำ: ต่ำกว่านี้ปรับขึ้นเป็นค่านี้ · ทอยใหม่: ทอยซ้ำ 1 ครั้งถ้าได้ไม่เกินค่านี้ · DC: บอกผ่าน/ไม่ผ่าน · เซิร์ฟเวอร์คิดให้ทั้งหมด',
+ tdx_dmin:'ขั้นต่ำต่อลูก',tdx_rr:'ทอยใหม่ถ้าได้ ≤',tdx_kh:'เก็บลูกสูงสุด N ลูก',tdx_lo:'ผลรวมขั้นต่ำ',tdx_hi:'ผลรวมสูงสุด',tdx_dc:'DC เป้าหมาย',
  tdRaised:'ปรับขึ้นเป็นขั้นต่ำ',tdCapped:'ปรับลงเป็นเพดาน',tdPass:'ผ่าน',tdFailDc:'ไม่ผ่าน'});
 Object.assign(TX.en,{tdTitle:'Table dice',tdHint:'Everyone in the room sees every roll. The server rolls, so results cannot be changed.',tdWhy:'What for',tdWhyPh:'Type a reason',tdOther:'Other (type it)',tdGrpRoll:'Common rolls',tdGrpSkill:'Skills',tdEmpty:'Nobody has rolled yet.',tdNotSeated:'Your character is not seated in this room.',tdFail:'The roll failed. Try again.',
- tdSides:'Die sides (2–1000)',tdAdv:'More options (minimum / maximum and more)',tdAdvHint:'Leave empty to skip. The server does all the maths.',
- tdx_dmin:'Minimum per die (lower counts as this)',tdx_rr:'Reroll once if the die shows ≤',tdx_kh:'Keep only the highest N dice',tdx_lo:'Minimum total (lower is raised to this)',tdx_hi:'Maximum total',tdx_dc:'Target DC (shows pass / fail)',
+ tdAbil:'Ability',tdAbilAny:'— Ability (optional) —',tdSides:'Die sides (2–1000)',tdAdv:'More options (minimum / maximum and more)',tdAdvHint:'Leave empty to skip · Min per die / Min total: lower results are raised to it · Reroll: roll once more if the die shows this or less · DC: shows pass / fail · the server does all the maths.',
+ tdx_dmin:'Min per die',tdx_rr:'Reroll if ≤',tdx_kh:'Keep highest N',tdx_lo:'Min total',tdx_hi:'Max total',tdx_dc:'Target DC',
  tdRaised:'raised to minimum',tdCapped:'capped',tdPass:'pass',tdFailDc:'fail'});
 
 /* ---------- Spells page: everyone can read, the GM edits in Game data ---------- */
