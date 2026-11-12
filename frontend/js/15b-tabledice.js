@@ -61,19 +61,19 @@ Object.assign(TX.en,{tdTitle:'Table dice',tdHint:'Everyone in the room sees ever
 /* ---------- Spells page: everyone can read, the GM edits in Game data ---------- */
 function spellCard(s){
   const meta=[s.school,s.time,s.range,s.comp,s.dur].filter(Boolean).map(esc).join(' · ');
-  return`<details class="feat featpg spellpg" data-sn="${esc(s.name.toLowerCase())}" data-sl="${s.lvl}" data-ss="${esc(s.school||'')}"><summary><b>${esc(s.name)}</b> <span class="pill">${s.lvl?t('spLv')+' '+s.lvl:t('spCantrip')}</span>${s.conc?' <span class="pill">C</span>':''}${s.rit?' <span class="pill">R</span>':''}</summary>
+  return`<details class="feat featpg spellpg" data-sn="${esc(s.name.toLowerCase())}" data-sl="${s.lvl}" data-ss="${esc(s.school||'')}" data-src="${esc(s.src||'')}"><summary><b>${esc(s.name)}</b> <span class="pill">${s.lvl?t('spLv')+' '+s.lvl:t('spCantrip')}</span>${s.conc?' <span class="pill">C</span>':''}${s.rit?' <span class="pill">R</span>':''}${s.src?` <span class="pill">${esc(s.src)}</span>`:''}</summary>
    <div class="featd">${meta?`<p class="note fxmeta">${meta}</p>`:''}${s.classes?`<p class="note">${esc(s.classes)}</p>`:''}${s.desc?esc(s.desc).replace(/\n/g,'<br>'):`<span class="muted">${t('asiNoDesc')}</span>`}</div></details>`}
 function renderSpellsPage(){
   const L=[...(CAT.spells||[])].sort((a,b)=>a.lvl-b.lvl||a.name.localeCompare(b.name)),adm=isAdmin();
   const acts=adm?`<div class="acts"><button class="btn" data-act="spell-edit">${t('condEdit')}</button></div>`:'';
-  const tools=`<div class="featbar"><input type="search" data-spq id="spq" placeholder="${t('spSearch')}" aria-label="${t('spSearch')}"><select data-spq id="spl" aria-label="${t('spLv')}"><option value="">${t('spAllLv')}</option>${[0,1,2,3,4,5,6,7,8,9].map(n=>`<option value="${n}">${n?t('spLv')+' '+n:t('spCantrip')}</option>`).join('')}</select><select data-spq id="sps" aria-label="School"><option value="">${t('spAllSchools')}</option>${SP_SCHOOLS.map(s=>`<option value="${s}">${s}</option>`).join('')}</select></div>`;
+  const tools=`<div class="featbar"><input type="search" data-spq id="spq" placeholder="${t('spSearch')}" aria-label="${t('spSearch')}"><select data-spq id="spl" aria-label="${t('spLv')}"><option value="">${t('spAllLv')}</option>${[0,1,2,3,4,5,6,7,8,9].map(n=>`<option value="${n}">${n?t('spLv')+' '+n:t('spCantrip')}</option>`).join('')}</select><select data-spq id="sps" aria-label="School"><option value="">${t('spAllSchools')}</option>${SP_SCHOOLS.map(s=>`<option value="${s}">${s}</option>`).join('')}</select><select data-spq id="spsrc" aria-label="${t('spSrc')}"><option value="">${t('spAllSrc')}</option>${SP_SRC.map(x=>`<option value="${esc(x)}">${esc(x)}</option>`).join('')}</select></div>`;
   const body=L.length?`<div class="featlist" id="splist">${L.map(spellCard).join('')}</div>`:`<div class="empty"><div>${t('condNone')}</div></div>`;
   return head(t('spells'),t('spellsSub'),acts)+`<section class="panel"><div class="featwrap">${tools}${body}<p class="note" id="spnone" hidden>${t('spNoMatch')}</p></div></section>`}
 function spellFilter(){
-  const q=(document.getElementById('spq')||{value:''}).value.trim().toLowerCase(),l=(document.getElementById('spl')||{value:''}).value,s=(document.getElementById('sps')||{value:''}).value;let any=false;
-  document.querySelectorAll('.spellpg').forEach(d=>{const show=(!q||d.dataset.sn.includes(q))&&(l===''||d.dataset.sl===l)&&(!s||d.dataset.ss===s);d.hidden=!show;if(show)any=true});
+  const q=(document.getElementById('spq')||{value:''}).value.trim().toLowerCase(),l=(document.getElementById('spl')||{value:''}).value,s=(document.getElementById('sps')||{value:''}).value,sr=(document.getElementById('spsrc')||{value:''}).value;let any=false;
+  document.querySelectorAll('.spellpg').forEach(d=>{const show=(!q||d.dataset.sn.includes(q))&&(l===''||d.dataset.sl===l)&&(!s||d.dataset.ss===s)&&(!sr||d.dataset.src===sr);d.hidden=!show;if(show)any=true});
   const n=document.getElementById('spnone');if(n)n.hidden=any}
-Object.assign(TX.th,{spellsSub:'รายการเวททั้งหมด (อ่านอย่างเดียว) GM แก้ไขได้ในข้อมูลเกม',spSearch:'ค้นหาเวท…',spAllLv:'ทุกเลเวล',spAllSchools:'ทุกสำนัก',spNoMatch:'ไม่พบเวทที่ตรงกับคำค้น'});
-Object.assign(TX.en,{spellsSub:'Every spell (read-only). The GM edits them in Game data.',spSearch:'Search spells…',spAllLv:'All levels',spAllSchools:'All schools',spNoMatch:'No spell matches.'});
+Object.assign(TX.th,{spellsSub:'รายการเวททั้งหมด (อ่านอย่างเดียว) GM แก้ไขได้ในข้อมูลเกม',spSearch:'ค้นหาเวท…',spAllLv:'ทุกเลเวล',spAllSchools:'ทุกสำนัก',spSrc:'แหล่งที่มา',spAllSrc:'ทุกแหล่ง',spNoMatch:'ไม่พบเวทที่ตรงกับคำค้น'});
+Object.assign(TX.en,{spellsSub:'Every spell (read-only). The GM edits them in Game data.',spSearch:'Search spells…',spAllLv:'All levels',spAllSchools:'All schools',spSrc:'Source',spAllSrc:'All sources',spNoMatch:'No spell matches.'});
 
 document.addEventListener('toggle',e=>{if(e.target.classList&&e.target.classList.contains('tdadv'))tdAdvOpen=e.target.open},true);

@@ -21,6 +21,8 @@ def _n(v):
     n = clampi(v, 0, 999, 0)
     return n if n else ""
 
+SOURCES = ("XGE", "TCE", "SCC", "PHB'24", "ILLR")
+
 
 def clean_cat_spells(v):
     out, seen = [], set()
@@ -32,7 +34,7 @@ def clean_cat_spells(v):
             continue
         seen.add(name.lower())
         out.append({"id": str(x.get("id") or name)[:40], "name": name, "lvl": clampi(x.get("lvl"), 0, 9, 0),
-                    "school": str(x.get("school") or "")[:40], "time": str(x.get("time") or "")[:80],
+                    "school": str(x.get("school") or "")[:40], "src": x.get("src") if x.get("src") in SOURCES else "", "time": str(x.get("time") or "")[:80],
                     "range": str(x.get("range") or "")[:80], "comp": str(x.get("comp") or "")[:120],
                     "dur": str(x.get("dur") or "")[:80], "conc": 1 if x.get("conc") in (1, True, "1") else 0,
                     "rit": 1 if x.get("rit") in (1, True, "1") else 0, "classes": str(x.get("classes") or "")[:160],
