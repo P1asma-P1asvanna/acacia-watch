@@ -140,8 +140,6 @@ details.feat summary{cursor:pointer;display:flex;gap:8px;flex-wrap:wrap;align-it
 .tdadv summary:active,.gear summary:active{transform:scale(.99)}
 .tdadv summary:focus-visible,.gear summary:focus-visible{outline:2px solid currentColor;outline-offset:2px}
 .tdadv[open]>summary,.gear[open]>summary{margin-bottom:8px}
-.gear summary{font-size:1.05rem;min-height:48px;border-width:2px}
-.gear summary b{font-size:1.25rem}
 .tdadvg{align-items:end}
 .tdadvg .field{align-self:end;margin:0}
 .tdadvg .field label{display:block}
@@ -150,3 +148,14 @@ details.feat summary{cursor:pointer;display:flex;gap:8px;flex-wrap:wrap;align-it
 .roll-ctl .tdadvg .field{width:auto;min-width:0}
 .tdadvg{grid-template-columns:repeat(auto-fit,minmax(110px,1fr))}
 .tdadvg label{min-height:2.4em;display:flex;align-items:flex-end}
+
+/* gear points: same card look as "Spellcasting ability" */
+.gear summary{justify-content:flex-start;flex-wrap:wrap;padding:0;border:0;background:none;font-weight:400;min-height:0;gap:8px}
+.gear summary::after{display:none}
+.gear summary .chip{cursor:pointer;background:rgba(127,127,127,.08)}
+.gear summary:hover .chip{background:rgba(127,127,127,.18)}
+.gear summary .gchev{margin-left:auto;align-self:center;width:9px;height:9px;border-right:2px solid currentColor;border-bottom:2px solid currentColor;transform:rotate(45deg);transition:transform .15s}
+.gear[open]>summary .gchev{transform:rotate(-135deg)}
+.gear summary b.full{color:#f85149}
+.gslots li{flex-direction:column;gap:2px;justify-content:flex-start}
+.gslots li b{text-align:left;font-weight:600}
