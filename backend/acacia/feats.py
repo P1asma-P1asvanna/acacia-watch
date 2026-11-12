@@ -164,16 +164,18 @@ def fx_totals(d, cat, armor=False):
     lv = clampi(d.get("level"), 1, 20, 1)
     pb = 2 + (lv - 1) // 4
     r = {"init": 0, "hp": 0, "ac": 0, "pass": 0}
-    for f, _ in active(d, cat):
-        for e in f.get("fx") or []:
-            k, v = e.get("k"), clampi(e.get("v"), -50, 200, 0)
-            if k == "init":
-                r["init"] += v + (pb if e.get("pb") else 0)
-            elif k == "hp":
-                r["hp"] += v * lv if e.get("per") != "flat" else v
-            elif k == "ac":
-                if e.get("req") != "armor" or armor:
-                    r["ac"] += v
-            elif k == "pass":
-                r["pass"] += v
+    from . import gear
+    effects = [e for f, _ in active(d, cat) for e in (f.get("fx") or [])]
+    effects += [e for _, a in gear.worn(d, cat) for e in (a.get("fx") or [])]
+    for e in effects:
+        k, v = e.get("k"), clampi(e.get("v"), -50, 200, 0)
+        if k == "init":
+            r["init"] += v + (pb if e.get("pb") else 0)
+        elif k == "hp":
+            r["hp"] += v * lv if e.get("per") != "flat" else v
+        elif k == "ac":
+            if e.get("req") != "armor" or armor:
+                r["ac"] += v
+        elif k == "pass":
+            r["pass"] += v
     return r

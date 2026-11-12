@@ -1,7 +1,8 @@
 """Game rules the server recomputes itself: hit points and armor class (players cannot fake them)."""
 import re
 
-from . import feats
+from . import feats, gear
+from .gear import armor_base, armor_of, item_ench  # noqa: F401
 from .numbers import clampi, jsround, mod, num, sgn_find
 
 
@@ -30,38 +31,10 @@ def eff_max(d, cat):
     return hp_calc(d, cat)
 
 
-def armor_base(n):
-    return re.sub(r"\s*\+\d+\s*$", "", str(n or "").strip()).lower()
-
-
-def armor_of(it, cat):
-    b = armor_base(it.get("name"))
-    if not b:
-        return None
-    for a in (cat or {}).get("armor", []):
-        if str(a.get("name", "")).lower() == b:
-            return a
-    return None
-
-
-def item_ench(it):
-    m = re.search(r"\+(\d+)\s*$", str(it.get("name") or ""))
-    return int(m.group(1)) if m else 0
-
-
 def ac_calc(d, cat):
     dx = mod(feats.totals(d, cat)["dex"])
-    body = shield = None
-    for it in d.get("items") or []:
-        if not isinstance(it, dict) or not it.get("eq"):
-            continue
-        a = armor_of(it, cat)
-        if not a:
-            continue
-        if re.search("shield", str(a.get("acat") or ""), re.I):
-            shield = shield or (it, a)
-        else:
-            body = body or (it, a)
+    pieces = gear.worn(d, cat)
+    body = next(((it, a) for it, a in pieces if gear.is_base(a)), None)
     if body:
         it, a = body
         armor = 10 + jsround(num(a.get("ac"))) + item_ench(it) + jsround(num(a.get("ench")))
@@ -72,9 +45,9 @@ def ac_calc(d, cat):
     else:
         total = 10 + dx
     total += feats.fx_totals(d, cat, armor=bool(body))["ac"]
-    if shield:
-        it, a = shield
-        total += jsround(num(a.get("ac"))) + item_ench(it) + jsround(num(a.get("ench")))
+    for it, a in pieces:
+        if not gear.is_base(a):
+            total += jsround(num(a.get("ac"))) + item_ench(it) + jsround(num(a.get("ench")))
     return total
 
 

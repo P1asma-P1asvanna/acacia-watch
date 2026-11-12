@@ -105,3 +105,26 @@ details.feat summary{cursor:pointer;display:flex;gap:8px;flex-wrap:wrap;align-it
 .tdwhyf{flex-basis:100%;opacity:.8;font-size:.85em}
 .tdrow.crit .tdtot{color:#3fb950}
 .tdrow.fumble .tdtot{color:#f85149}
+.tdwhyf{flex:1 1 100%;display:flex;flex-direction:column;gap:6px}
+.tdwhyf select,.tdwhyf input{width:100%}
+.tdadv{flex:1 1 100%}
+.tdadv summary{cursor:pointer;min-height:36px;display:flex;align-items:center}
+.tdadvg{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:8px}
+.dvs{display:inline-flex;flex-wrap:wrap;gap:3px;vertical-align:middle}
+.dv{padding:0 5px;border-radius:5px;background:rgba(127,127,127,.18)}
+.dv.fixd{outline:1px solid #e3b341}
+.dv.fixd s{opacity:.55;margin-right:3px}
+.dv.dropd{text-decoration:line-through;opacity:.45}
+.tdres{display:flex;flex-wrap:wrap;align-items:baseline;gap:6px}
+.tdadj{flex-basis:100%}
+.tdadj.ok{color:#3fb950}.tdadj.no{color:#f85149}
+
+/* worn gear */
+.islots{grid-column:1/-1;display:flex;flex-wrap:wrap;gap:4px;margin-top:-2px}
+.islots .pill{font-size:.75rem}
+.gear{padding:0 16px 8px}
+.gear summary{cursor:pointer;min-height:36px;display:flex;align-items:center}
+.gslots{list-style:none;margin:0;padding:0;display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:4px}
+.gslots li{display:flex;justify-content:space-between;gap:8px;padding:4px 8px;border-radius:8px;background:rgba(127,127,127,.1);font-size:.85rem;min-width:0}
+.gslots li span{opacity:.7}.gslots li b{overflow-wrap:anywhere;text-align:right}
+.gslots li.on{outline:1px solid rgba(127,127,127,.5)}

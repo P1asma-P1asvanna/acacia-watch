@@ -1,34 +1,59 @@
 /* ---------- shared table dice: everyone in a room sees every roll. The server rolls (backend/acacia/dice.py), so a result cannot be faked. ---------- */
-let FEEDS={},tdCount=1,tdMod=0,tdMode='normal',tdWhy='',tdBusy=false,tdErr='';
+let FEEDS={},tdCount=1,tdMod=0,tdMode='normal',tdWhy='',tdWhySel='',tdBusy=false,tdErr='',tdSides=20,tdAdvOpen=false,tdX={dmin:'',rr:'',kh:'',lo:'',hi:'',dc:''};
+const TD_SIDES=[4,6,8,10,12,20,100];
+/* quick reasons: [key, Thai, English]; "other" lets the player type */
+const TD_WHY=[['atk','โจมตี','Attack'],['dmg','ดาเมจ','Damage'],['init','Initiative','Initiative'],['save','Saving Throw','Saving throw'],['chk','Ability Check','Ability check'],['death','Death Save','Death save'],['heal','ฮีล','Healing'],
+ ['Acrobatics','Acrobatics','Acrobatics'],['Animal Handling','Animal Handling','Animal Handling'],['Arcana','Arcana','Arcana'],['Athletics','Athletics','Athletics'],['Deception','Deception','Deception'],['History','History','History'],['Insight','Insight','Insight'],['Intimidation','Intimidation','Intimidation'],['Investigation','Investigation','Investigation'],['Medicine','Medicine','Medicine'],['Nature','Nature','Nature'],['Perception','Perception','Perception'],['Performance','Performance','Performance'],['Persuasion','Persuasion','Persuasion'],['Religion','Religion','Religion'],['Sleight of Hand','Sleight of Hand','Sleight of Hand'],['Stealth','Stealth','Stealth'],['Survival','Survival','Survival']];
+const tdWhyText=()=>{if(tdWhySel==='other')return tdWhy.trim();const r=TD_WHY.find(x=>x[0]===tdWhySel);return r?r[lang==='th'?1:2]:''};
 const tdFeed=rid=>isAdmin()?(FEEDS[rid]||[]):((prooms.find(r=>r.id===rid)||{}).feed||[]);
 const tdPut=(rid,en)=>{if(isAdmin()){FEEDS[rid]=[en,...(FEEDS[rid]||[]).filter(x=>x.id!==en.id)].slice(0,40)}else{const r=prooms.find(x=>x.id===rid);if(r)r.feed=[en,...(r.feed||[]).filter(x=>x.id!==en.id)].slice(0,40)}};
+function tdDice(vals,fix,drop){return vals.map((v,i)=>{const f=(fix||[])[i],dr=(drop||[]).includes(i);return`<span class="dv${f?' fixd':''}${dr?' dropd':''}">${f?`<s>${f}</s>`:''}${v}</span>`}).join('')}
 function tdEntry(e){
   const sets=e.sets||[],multi=sets.length>1,kept=e.keep||0,mod=e.mod?` ${sgn(e.mod)}`:'';
-  const det=multi?sets.map((s,i)=>{const sum=s.reduce((a,b)=>a+b,0),txt=e.n>1?`${sum} [${s.join(', ')}]`:String(sum);return i===kept?`<b>${txt}</b>`:`<s class="old">${txt}</s>`}).join(' · '):(e.n>1?`[${(sets[0]||[]).join(', ')}]`:'');
-  const crit=e.sides===20&&e.n===1&&!multi?((sets[0]||[])[0]===20?' crit':(sets[0]||[])[0]===1?' fumble':''):(e.sides===20&&e.n===1&&multi?(((sets[kept]||[])[0]===20)?' crit':((sets[kept]||[])[0]===1)?' fumble':''):'');
+  const sum=(s,i)=>s.reduce((a,b,j)=>a+(((e.drop||[])[i]||[]).includes(j)?0:b),0);
+  const det=sets.map((s,i)=>{const txt=(e.n>1||(e.fix||[])[i]&&(e.fix[i]||[]).some(Boolean)?`${sum(s,i)} `:'')+`<span class="dvs">${tdDice(s,(e.fix||[])[i],(e.drop||[])[i])}</span>`;return multi?(i===kept?`<b>${txt}</b>`:`<s class="old">${txt}</s>`):txt}).join(' · ');
+  const kv=((sets[kept]||[])[0]);
+  const crit=e.sides===20&&e.n===1?(kv===20?' crit':kv===1?' fumble':''):'';
+  const adj=e.raw!==undefined&&e.raw!==e.total?`<small class="tdadj"><s>${e.raw}</s> → ${e.total} (${e.total>e.raw?t('tdRaised'):t('tdCapped')})</small>`:'';
+  const dc=e.dc!==undefined?`<small class="tdadj ${e.ok?'ok':'no'}">DC ${e.dc}: ${e.ok?t('tdPass'):t('tdFailDc')}</small>`:'';
   const d=new Date((e.t||0)*1000),hm=String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0');
-  return`<li class="tdrow${crit}"><div class="tdwho"><b>${esc(e.who||'—')}</b><small>${esc(e.label)}${e.why?' · '+esc(e.why):''}</small></div><div class="tdres"><span class="tdtot">${e.total}</span><small>${det}${mod&&det?'':''}${det?mod:''}</small></div><span class="tdt">${hm}</span></li>`}
+  return`<li class="tdrow${crit}"><div class="tdwho"><b>${esc(e.who||'—')}</b><small>${esc(e.label)}${e.why?' · '+esc(e.why):''}</small></div><div class="tdres"><span class="tdtot">${e.total}</span><small>${det}${mod}</small>${adj}${dc}</div><span class="tdt">${hm}</span></li>`}
 function tableDice(rid){
-  const sides=[4,6,8,10,12,20,100],F=tdFeed(rid);
+  const F=tdFeed(rid),num=(k,ph,min,max)=>`<div class="field"><label for="td_${k}">${t('tdx_'+k)}</label><input id="td_${k}" data-td="x_${k}" type="number" inputmode="numeric" min="${min}" max="${max}" placeholder="${ph}" value="${esc(tdX[k])}"></div>`;
   return`<section class="panel dicepanel tdice"><div class="ph"><div><h2>${t('tdTitle')}</h2><div class="note">${t('tdHint')}</div></div></div>
-   <div class="dice" role="group" aria-label="${t('diceTitle')}">${sides.map(s=>`<button data-act="side" data-v="${s}" aria-pressed="${diceSides===s}">d${s}</button>`).join('')}</div>
+   <div class="dice" role="group" aria-label="${t('diceTitle')}">${TD_SIDES.map(s=>`<button data-act="tdside" data-v="${s}" aria-pressed="${tdSides===s}">d${s}</button>`).join('')}</div>
    <div class="roll-ctl">
+    <div class="field"><label for="td_sides">${t('tdSides')}</label><input id="td_sides" data-td="sides" type="number" inputmode="numeric" min="2" max="1000" value="${tdSides}"></div>
     <div class="field"><label for="td_count">${t('count')}</label><input id="td_count" data-td="count" type="number" min="1" max="20" value="${tdCount}"></div>
-    <div class="field"><label for="td_mod">${t('mod')}</label><input id="td_mod" data-td="mod" type="number" min="-30" max="30" value="${tdMod}"></div>
+    <div class="field"><label for="td_mod">${t('mod')}</label><input id="td_mod" data-td="mod" type="number" min="-100" max="100" value="${tdMod}"></div>
     <div class="field" style="width:150px"><label for="td_mode">${t('mode')}</label><select id="td_mode" data-td="mode"><option value="normal" ${tdMode==='normal'?'selected':''}>${t('normal')}</option><option value="adv" ${tdMode==='adv'?'selected':''}>${t('adv')}</option><option value="dis" ${tdMode==='dis'?'selected':''}>${t('dis')}</option></select></div>
-    <div class="field tdwhyf"><label for="td_why">${t('tdWhy')}</label><input id="td_why" data-td="why" type="text" maxlength="40" value="${esc(tdWhy)}" placeholder="${t('tdWhyPh')}"></div>
+    <div class="field tdwhyf"><label for="td_whysel">${t('tdWhy')}</label><select id="td_whysel" data-td="whysel"><option value="">—</option><optgroup label="${t('tdGrpRoll')}">${TD_WHY.slice(0,7).map(r=>`<option value="${esc(r[0])}" ${tdWhySel===r[0]?'selected':''}>${esc(r[lang==='th'?1:2])}</option>`).join('')}</optgroup><optgroup label="${t('tdGrpSkill')}">${TD_WHY.slice(7).map(r=>`<option value="${esc(r[0])}" ${tdWhySel===r[0]?'selected':''}>${esc(r[lang==='th'?1:2])}</option>`).join('')}</optgroup><option value="other" ${tdWhySel==='other'?'selected':''}>${t('tdOther')}</option></select>
+     <input id="td_why" data-td="why" type="text" maxlength="40" aria-label="${t('tdOther')}" placeholder="${t('tdWhyPh')}" value="${esc(tdWhy)}" ${tdWhySel==='other'?'':'hidden'}></div>
+    <details class="tdadv" ${tdAdvOpen||Object.values(tdX).some(v=>v!=='')?'open':''}><summary>${t('tdAdv')}</summary><p class="note">${t('tdAdvHint')}</p><div class="tdadvg">${num('dmin','—',0,1000)}${num('rr','—',0,999)}${num('kh','—',0,20)}${num('lo','—',-200,2000)}${num('hi','—',-200,2000)}${num('dc','—',-50,2000)}</div></details>
     <button class="btn primary" data-act="tdroll" data-rid="${rid}" style="min-height:44px" ${tdBusy?'disabled':''}>${t('roll')}</button>
    </div>
    ${tdErr?`<p class="note" role="alert" style="padding:0 16px;color:var(--danger,#e66)">${esc(tdErr)}</p>`:''}
    ${F.length?`<ul class="tdfeed" aria-live="polite">${F.map(tdEntry).join('')}</ul>`:`<p class="note" style="padding:0 16px 16px">${t('tdEmpty')}</p>`}</section>`}
-function tdSet(el){const k=el.dataset.td;if(k==='count')tdCount=Math.min(20,Math.max(1,Math.round(Number(el.value))||1));else if(k==='mod')tdMod=Math.min(30,Math.max(-30,Math.round(Number(el.value))||0));else if(k==='mode')tdMode=el.value;else if(k==='why')tdWhy=el.value}
+const tdInt=(v,lo,hi,d)=>{const n=Math.round(Number(v));return Number.isFinite(n)?Math.min(hi,Math.max(lo,n)):d};
+function tdSide(v){tdSides=tdInt(v,2,1000,20);const inp=document.getElementById('td_sides');if(inp&&inp!==document.activeElement)inp.value=tdSides;document.querySelectorAll('.tdice .dice button').forEach(b=>b.setAttribute('aria-pressed',String(Number(b.dataset.v)===tdSides)))}
+function tdSet(el){const k=el.dataset.td;
+  if(k==='count')tdCount=tdInt(el.value,1,20,1);else if(k==='mod')tdMod=tdInt(el.value,-100,100,0);else if(k==='mode')tdMode=el.value;else if(k==='why')tdWhy=el.value;
+  else if(k==='sides'){if(el.value!=='')tdSide(el.value)}
+  else if(k==='whysel'){tdWhySel=el.value;const w=document.getElementById('td_why');if(w){w.hidden=tdWhySel!=='other';if(!w.hidden)w.focus()}}
+  else if(k.startsWith('x_'))tdX[k.slice(2)]=el.value}
 async function tdRoll(rid){
   if(tdBusy)return;tdBusy=true;tdErr='';render();
-  try{const r=await api('POST','api/roll',{room:rid,n:tdCount,sides:diceSides,mod:tdMod,mode:tdMode,why:tdWhy});if(r&&r.entry)tdPut(rid,r.entry)}
+  try{const r=await api('POST','api/roll',{room:rid,n:tdCount,sides:tdSides,mod:tdMod,mode:tdMode,why:tdWhyText(),...tdX});if(r&&r.entry)tdPut(rid,r.entry)}
   catch(e){tdErr=e&&e.code==='not_seated'?t('tdNotSeated'):t('tdFail')}
   tdBusy=false;render()}
-Object.assign(TX.th,{tdTitle:'ทอยเต๋าร่วมกัน',tdHint:'ทุกคนในห้องเห็นผลทอย เซิร์ฟเวอร์เป็นคนทอยให้ จึงแก้ผลไม่ได้',tdWhy:'ทอยเพื่ออะไร',tdWhyPh:'เช่น โจมตี, Perception',tdEmpty:'ยังไม่มีใครทอย',tdNotSeated:'ตัวละครของคุณยังไม่ได้นั่งในห้องนี้',tdFail:'ทอยไม่สำเร็จ ลองอีกครั้ง'});
-Object.assign(TX.en,{tdTitle:'Table dice',tdHint:'Everyone in the room sees every roll. The server rolls, so results cannot be changed.',tdWhy:'What for',tdWhyPh:'e.g. attack, Perception',tdEmpty:'Nobody has rolled yet.',tdNotSeated:'Your character is not seated in this room.',tdFail:'The roll failed. Try again.'});
+Object.assign(TX.th,{tdTitle:'ทอยเต๋าร่วมกัน',tdHint:'ทุกคนในห้องเห็นผลทอย เซิร์ฟเวอร์เป็นคนทอยให้ จึงแก้ผลไม่ได้',tdWhy:'ทอยเพื่ออะไร',tdWhyPh:'พิมพ์เหตุผลเอง',tdOther:'อื่นๆ (พิมพ์เอง)',tdGrpRoll:'การทอยทั่วไป',tdGrpSkill:'ทักษะ',tdEmpty:'ยังไม่มีใครทอย',tdNotSeated:'ตัวละครของคุณยังไม่ได้นั่งในห้องนี้',tdFail:'ทอยไม่สำเร็จ ลองอีกครั้ง',
+ tdSides:'จำนวนหน้าลูกเต๋า (2–1000)',tdAdv:'ตัวเลือกเพิ่มเติม (ขั้นต่ำ/สูงสุด และอื่นๆ)',tdAdvHint:'เว้นว่างไว้ถ้าไม่ใช้ ตัวเลขทุกอย่างเซิร์ฟเวอร์เป็นคนคิดให้',
+ tdx_dmin:'ขั้นต่ำต่อลูก (ต่ำกว่านี้ปรับเป็นค่านี้)',tdx_rr:'ทอยใหม่ 1 ครั้งถ้าได้ ≤',tdx_kh:'เก็บเฉพาะลูกที่สูงสุด N ลูก',tdx_lo:'ผลรวมขั้นต่ำ (ต่ำกว่านี้ปรับเป็นค่านี้)',tdx_hi:'ผลรวมสูงสุด',tdx_dc:'DC เป้าหมาย (บอกผ่าน/ไม่ผ่าน)',
+ tdRaised:'ปรับขึ้นเป็นขั้นต่ำ',tdCapped:'ปรับลงเป็นเพดาน',tdPass:'ผ่าน',tdFailDc:'ไม่ผ่าน'});
+Object.assign(TX.en,{tdTitle:'Table dice',tdHint:'Everyone in the room sees every roll. The server rolls, so results cannot be changed.',tdWhy:'What for',tdWhyPh:'Type a reason',tdOther:'Other (type it)',tdGrpRoll:'Common rolls',tdGrpSkill:'Skills',tdEmpty:'Nobody has rolled yet.',tdNotSeated:'Your character is not seated in this room.',tdFail:'The roll failed. Try again.',
+ tdSides:'Die sides (2–1000)',tdAdv:'More options (minimum / maximum and more)',tdAdvHint:'Leave empty to skip. The server does all the maths.',
+ tdx_dmin:'Minimum per die (lower counts as this)',tdx_rr:'Reroll once if the die shows ≤',tdx_kh:'Keep only the highest N dice',tdx_lo:'Minimum total (lower is raised to this)',tdx_hi:'Maximum total',tdx_dc:'Target DC (shows pass / fail)',
+ tdRaised:'raised to minimum',tdCapped:'capped',tdPass:'pass',tdFailDc:'fail'});
 
 /* ---------- Spells page: everyone can read, the GM edits in Game data ---------- */
 function spellCard(s){
@@ -47,3 +72,5 @@ function spellFilter(){
   const n=document.getElementById('spnone');if(n)n.hidden=any}
 Object.assign(TX.th,{spellsSub:'รายการเวททั้งหมด (อ่านอย่างเดียว) GM แก้ไขได้ในข้อมูลเกม',spSearch:'ค้นหาเวท…',spAllLv:'ทุกเลเวล',spAllSchools:'ทุกสำนัก',spNoMatch:'ไม่พบเวทที่ตรงกับคำค้น'});
 Object.assign(TX.en,{spellsSub:'Every spell (read-only). The GM edits them in Game data.',spSearch:'Search spells…',spAllLv:'All levels',spAllSchools:'All schools',spNoMatch:'No spell matches.'});
+
+document.addEventListener('toggle',e=>{if(e.target.classList&&e.target.classList.contains('tdadv'))tdAdvOpen=e.target.open},true);

@@ -75,6 +75,7 @@ document.addEventListener('click',e=>{
   else if(a==='cond-all'){condOpen=v==='1'?new Set((CAT.conditions||[]).map(c=>c.id)):new Set();render()}
   else if(a==='spell-edit'){view='data';dataTab='spells';dataPage=0;dedit=null;location.hash='data';render()}
   else if(a==='tdroll'){tdRoll(b.dataset.rid)}
+  else if(a==='tdside'){tdSide(v)}
   else if(a==='feat-edit'){view='data';dataTab='feats';dataPage=0;dedit=null;location.hash='data';render()}
   else if(a==='cond-edit'){view='data';dataTab='conditions';dataPage=0;dedit=null;location.hash='data';render()}
   else if(a==='dtab'){dataTab=v;dataPage=0;dataArm=null;render()}
@@ -86,7 +87,7 @@ document.addEventListener('click',e=>{
   else if(a==='ddel'||a==='ddel-edit'){
     const rid=a==='ddel'?id:dedit.draft.id,c=a==='ddel'?dataTab:dedit.cat;
     if(dataArm!==rid){dataArm=rid;render();return}
-    CAT[c]=CAT[c].filter(x=>x.id!==rid);put('dd_cat',CAT);dataArm=null;dedit=null;render()}
+    CAT[c]=CAT[c].filter(x=>x.id!==rid);if(c==='slots')CAT.armor.forEach(a=>{a.slots=(a.slots||[]).filter(x=>x!==rid)});put('dd_cat',CAT);dataArm=null;dedit=null;render()}
   else if(a==='dreset'){if(dataArm!=='reset'){dataArm='reset';render();return}CAT[dataTab]=clone(SEED[dataTab]);put('dd_cat',CAT);dataArm=null;render()}
   else if(a==='ftadd'){dedit.draft.feats=dedit.draft.feats||[];dedit.draft.feats.push({id:uid(),name:'',lvl:1,desc:''});render()}
   else if(a==='ftdel'){dedit.draft.feats.splice(Number(b.dataset.i),1);render()}
@@ -115,6 +116,7 @@ document.addEventListener('input',e=>{
       if(dedit.cat==='spells'){spCompose(dd);const row=el.closest('.spcrow');if(row){const nm=row.querySelector('input[type=number]'),k=dd[f==='timeK'||/^time/.test(f)?'timeK':'durK'];if(nm)nm.hidden=!((/^time/.test(f)?SP_NEED_T:SP_NEED_D).includes(k));const nt=row.parentElement.querySelector('.note');if(nt)nt.textContent=/^time/.test(f)?dd.time:dd.dur}}}
     else if(el.dataset.sf){dd.subs[Number(el.dataset.si)][el.dataset.sf]=el.value}
     else if(el.dataset.ftf){const f=(dd.feats||[])[Number(el.dataset.fti)];if(f)f[el.dataset.ftf]=el.dataset.ftf==='lvl'?Number(el.value):el.value}
+    else if(el.dataset.gsl){const a=dd.slots=dd.slots||[],k=el.dataset.gsl,ix=a.indexOf(k);if(el.checked&&ix<0)a.push(k);if(!el.checked&&ix>=0)a.splice(ix,1)}
     else if(el.dataset.bgs){const a=dd.sk=dd.sk||[],k=el.dataset.bgs,ix=a.indexOf(k);if(el.checked&&ix<0)a.push(k);if(!el.checked&&ix>=0)a.splice(ix,1)}
     return;
   }

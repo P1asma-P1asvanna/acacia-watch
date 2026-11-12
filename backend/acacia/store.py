@@ -36,7 +36,7 @@ def clean_site(c, v):
 def clean_cat(c, v):
     """Condition icons must be pictures stored for the site; colours must be #rrggbb. Everything else is left as the admin sent it."""
     import re
-    from . import conditions, feats, images, spells
+    from . import conditions, feats, gear, images, spells
     own = images.owned_ids(c, "site")
     L = v.get("conditions")
     if isinstance(L, list):
@@ -54,6 +54,7 @@ def clean_cat(c, v):
                 conditions.clean_condition(x, ids)
     feats.clean_cat_feats(v)
     spells.clean_cat_spells(v)
+    gear.clean_cat_gear(v)
     return v
 
 
@@ -80,7 +81,7 @@ def feed_pub(feed):
     out = []
     for x in (feed if isinstance(feed, list) else [])[:40]:
         if isinstance(x, dict):
-            out.append({k: x.get(k) for k in ("id", "t", "n", "sides", "mod", "mode", "sets", "keep", "total", "label", "why", "who")})
+            out.append({k: x.get(k) for k in ("id", "t", "n", "sides", "mod", "mode", "sets", "fix", "drop", "keep", "raw", "total", "lo", "hi", "dc", "ok", "label", "why", "who")})
     return out
 
 

@@ -25,11 +25,14 @@ const abT=(d,k)=>abAll(d)[k];
 /* feat effects: bonus to initiative, max HP, AC, passive Perception (same maths as backend/acacia/feats.py fx_totals) */
 function fxAll(d,armor){
   const lv=Math.max(1,Math.min(20,Math.round(num(d.level))||1)),pb=prof(lv),r={init:0,hp:0,ac:0,pass:0,speed:0,src:{init:[],hp:[],ac:[],pass:[],speed:[]}};
-  featsActive(d).forEach(([f])=>(f.fx||[]).forEach(e=>{const v=Math.max(-50,Math.min(200,Math.round(num(e.v)))),k=e.k;let n=0;
+  const add=(name,fx)=>(fx||[]).forEach(e=>{const v=Math.max(-50,Math.min(200,Math.round(num(e.v)))),k=e.k;let n=0;
     if(k==='init')n=v+(e.pb?pb:0);else if(k==='hp')n=e.per==='flat'?v:v*lv;else if(k==='ac'){if(e.req!=='armor'||armor)n=v}else if(k==='pass'||k==='speed')n=v;else return;
-    r[k]+=n;if(n)r.src[k].push([f.name,n])}));
+    r[k]+=n;if(n)r.src[k].push([name,n])});
+  featsActive(d).forEach(([f])=>add(f.name,f.fx));
+  const W=wornGear(d);W.list.forEach(x=>add(x.it.name,x.a.fx));
+  const weak=W.list.find(x=>num(x.a.str)>0&&num(abT(d,'str'))<num(x.a.str));if(weak){r.speed-=10;r.src.speed.push([weak.it.name+' (STR '+num(weak.a.str)+')',-10])}
   return r}
-const wearsBody=d=>(d.items||[]).some(i=>i.eq&&(a=>a&&!isShield(a))(armorOf(i)));
+const wearsBody=d=>wornGear(d).list.some(x=>isBase(x.a));
 const fxLine=(r,k)=>r.src[k].map(([n,v])=>`${esc(n)} ${sgn(v)}`).join(', ');
 function refreshAbil(d){const tot=abAll(d);ABS.forEach(k=>{const m=document.getElementById('m_'+k),tt=document.getElementById('t_'+k);if(m){m.textContent=sgn(mod(tot[k]));m.classList.toggle('fxv',tot[k]!==Math.max(1,Math.min(30,Math.round(num(d.abil[k])))))}if(tt)tt.textContent=tot[k]!==Math.max(1,Math.min(30,Math.round(num(d.abil[k]))))?'= '+tot[k]:''});const dv=document.getElementById('derived');if(dv)dv.innerHTML=derived(d)}
 
@@ -85,7 +88,7 @@ function featFxRow(e,i){
   else if(e.k==='ac')p=val+`<label class="field"><span>${t('fxWhen')}</span>${sel('req',[['',t('fxAlways')],['armor',t('fxArmor')]],e.req==='armor'?'armor':'')}</label>`;
   else p=val;
   return`<div class="fxrow"><label class="field"><span>${t('fxKind')}</span>${sel('k',FX_KINDS.map(k=>[k,t('fxK_'+k)]),e.k)}</label>${p}<button type="button" class="btn small danger" data-act="fe-del" data-b="${i}" ${at}>${t('subRemove')}</button><div class="note fxsum">${esc(featFxText(e))}</div></div>`}
-const featFxEditor=d=>`<section class="panel"><div class="ph"><div><h2>${t('fxTitle')}</h2><div class="note">${t('fxHint')}</div></div><button type="button" class="btn small" data-act="fe-add">${t('fxAdd')}</button></div><div class="fxlist">${(d.fx||[]).map(featFxRow).join('')||`<p class="note" style="padding:0 18px 14px;margin:0">${t('fxNone')}</p>`}</div></section>`;
+const featFxEditor=d=>`<section class="panel"><div class="ph"><div><h2>${t(dedit&&dedit.cat==='armor'?'fxTitleG':'fxTitle')}</h2><div class="note">${t(dedit&&dedit.cat==='armor'?'fxHintG':'fxHint')}</div></div><button type="button" class="btn small" data-act="fe-add">${t('fxAdd')}</button></div><div class="fxlist">${(d.fx||[]).map(featFxRow).join('')||`<p class="note" style="padding:0 18px 14px;margin:0">${t('fxNone')}</p>`}</div></section>`;
 function featFxEdit(el){
   const d=dedit&&dedit.draft;if(!d||dedit.cat!=='feats'||el.dataset.fe===undefined)return false;
   const e=(d.fx||[])[Number(el.dataset.fi)];if(!e)return true;const f=el.dataset.fe,val=el.type==='checkbox'?(el.checked?1:0):el.value;
