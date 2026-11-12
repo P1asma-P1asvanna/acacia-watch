@@ -37,10 +37,31 @@ SEED.spells=[
  {id:'sp2',name:'Bless',lvl:1,school:'Enchantment',time:'1 action',range:'30 ft',comp:'V, S, M (a sprinkle of holy water)',dur:'Concentration, up to 1 minute',conc:1,rit:0,classes:'Cleric, Paladin',desc:'Choose up to three creatures in range. Whenever a chosen creature makes an attack roll or a saving throw before the spell ends, it adds 1d4 to the roll.\nCast with a slot of level 2 or higher, you can choose one additional creature for each slot level above 1.'}];
 /* ---- Feats (D&D 2024): names, categories and the abilities each feat may raise by 1. Descriptions are short summaries; the GM can edit everything. ---- */
 SEED.spells.forEach(spNorm);
-/* body slots for worn gear (the GM can add, rename or delete them in Game data) */
-SEED.slots=[['head','Head (หมวก)'],['face','Face (ใบหน้า)'],['neck','Neck (คอ)'],['torso','Torso (ลำตัว)'],['back','Back / cloak (หลัง)'],['armL','Left arm (แขนซ้าย)'],['armR','Right arm (แขนขวา)'],['hands','Hands (ถุงมือ)'],['waist','Waist (เอว)'],['pants','Trousers (กางเกง)'],['legL','Left leg (ขาซ้าย)'],['legR','Right leg (ขาขวา)'],['feet','Feet (เท้า)'],['ring1','Ring 1 (แหวน)'],['ring2','Ring 2 (แหวน)'],['ring3','Ring 3 (แหวน)'],['ring4','Ring 4 (แหวน)']].map(([id,name])=>({id,name}));
-const gearDefSlots=a=>/shield/i.test(a.acat||'')?['armL']:/light|medium|heavy/i.test(a.acat||'')?['torso']:[];
-SEED.armor.forEach(a=>{a.slots=gearDefSlots(a);a.att=0;a.fx=[]});
+/* worn gear: body categories (max pieces each; sp = a special ability costs +1) with item types and their point range.
+   A character may wear at most GEAR_MAX points in total. The GM can add, edit or delete all of it in Game data. */
+const GEAR_MAX=12,GEAR_V=2;
+SEED.slots=[
+ ['armor','Armor (เกราะ)',2,1,[['Clothes',0,0],['Armor shirt',1,1],['Shield',1,1],['Light',2,2],['Medium',3,3],['Heavy',4,4]]],
+ ['hat','Hat (หมวก)',1,1,[['Helmet',1,3],['Hat',1,2],['Etc.',1,4]]],
+ ['face','Face (ใบหน้า)',2,1,[['Mask',1,2],['Glasses',1,1],['Bandana',1,1],['Etc.',1,2]]],
+ ['neck','Neck (คอ)',1,0,[['Collar',1,1],['Necklace',1,2],['Amulet',1,2],['Etc.',1,2]]],
+ ['shoulder','Shoulder (หัวไหล่)',2,1,[['Pauldron',1,1],['Etc.',1,2]]],
+ ['rings','Rings (แหวน)',4,0,[['Ring',1,2],['Etc.',1,2]]],
+ ['front','Front (ส่วนอก)',2,0,[['Brooch',1,2],['Medal/Badge',1,1],['Etc.',1,2]]],
+ ['back','Back (ส่วนหลัง)',1,1,[['Cape',1,2],['Wings',1,2],['Backpack',1,2],['Etc.',1,2]]],
+ ['waist','Waist (เอว)',1,1,[['Belt',1,1],['Etc.',1,2]]],
+ ['hands','Hands (มือ)',1,1,[['Gloves',1,2],['Gauntlets',1,2],['Etc.',1,2]]],
+ ['feet','Feet (เท้า)',1,1,[['Boots',1,2],['Shoes',1,1],['Etc.',1,2]]]
+].map(([id,name,max,sp,types])=>({id,name,max,sp,types:types.map(([n,min,mx])=>({name:n,min,max:mx}))}));
+/* default category / kind / cost for an armor entry (also used to move older saves over) */
+function gearDef(a){const ac=String(a.acat||''),old=(a.slots||[])[0]||'';
+  if(/shield/i.test(ac))return{slot:'armor',kind:'Shield',pts:1};
+  if(/heavy/i.test(ac))return{slot:'armor',kind:'Heavy',pts:4};
+  if(/medium/i.test(ac))return{slot:'armor',kind:'Medium',pts:3};
+  if(/light/i.test(ac))return{slot:'armor',kind:'Light',pts:2};
+  const m={torso:'armor',armL:'armor',armR:'armor',head:'hat',face:'face',neck:'neck',back:'back',waist:'waist',hands:'hands',feet:'feet'};
+  const sl=m[old]||(/^ring/.test(old)?'rings':'');return{slot:sl,kind:sl?'Etc.':'',pts:sl?1:0}}
+SEED.armor.forEach(a=>{Object.assign(a,gearDef(a));delete a.slots;a.att=0;a.fx=[]});
 
 const ASI_DEF={Fighter:'4,6,8,12,14,16,19',Rogue:'4,8,10,12,16,19'};
 const ORIGIN_DEF={Acolyte:'Magic Initiate (Cleric)',Charlatan:'Skilled',Criminal:'Alert',Entertainer:'Musician',Hermit:'Healer',Noble:'Skilled',Sage:'Magic Initiate (Wizard)',Sailor:'Tavern Brawler',Soldier:'Savage Attacker'};

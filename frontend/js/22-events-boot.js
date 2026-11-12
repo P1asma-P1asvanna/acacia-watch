@@ -87,8 +87,10 @@ document.addEventListener('click',e=>{
   else if(a==='ddel'||a==='ddel-edit'){
     const rid=a==='ddel'?id:dedit.draft.id,c=a==='ddel'?dataTab:dedit.cat;
     if(dataArm!==rid){dataArm=rid;render();return}
-    CAT[c]=CAT[c].filter(x=>x.id!==rid);if(c==='slots')CAT.armor.forEach(a=>{a.slots=(a.slots||[]).filter(x=>x!==rid)});put('dd_cat',CAT);dataArm=null;dedit=null;render()}
+    CAT[c]=CAT[c].filter(x=>x.id!==rid);if(c==='slots')CAT.armor.forEach(a=>{if(a.slot===rid){a.slot='';a.kind=''}});put('dd_cat',CAT);dataArm=null;dedit=null;render()}
   else if(a==='dreset'){if(dataArm!=='reset'){dataArm='reset';render();return}CAT[dataTab]=clone(SEED[dataTab]);put('dd_cat',CAT);dataArm=null;render()}
+  else if(a==='ty-add'){dedit.draft.types=dedit.draft.types||[];dedit.draft.types.push({name:'',min:1,max:1});render()}
+  else if(a==='ty-del'){dedit.draft.types.splice(Number(b.dataset.i),1);render()}
   else if(a==='ftadd'){dedit.draft.feats=dedit.draft.feats||[];dedit.draft.feats.push({id:uid(),name:'',lvl:1,desc:''});render()}
   else if(a==='ftdel'){dedit.draft.feats.splice(Number(b.dataset.i),1);render()}
   else if(a==='subadd'){dedit.draft.subs.push({id:uid(),name:'',alt:'',bhp:'',prof:''});render()}
@@ -108,15 +110,17 @@ document.addEventListener('input',e=>{
     else{const f=el.dataset.s;siteDraft[f]=['radius','fxms','fxamt','dim','pdim','decoSize','decoOp'].includes(f)?Number(el.value):el.value;const sp=f==='radius'?$('#rv'):$('#v_'+f);if(sp)sp.textContent=el.value}
     applySite(siteDraft);const bd=document.querySelector('.side .brand');if(bd)bd.innerHTML=brandHtml();return;
   }
+  if(el.dataset.eqmax){const n=Math.round(Number(el.value));if(n>=1&&n<=99){CAT.eqMax=n;put('dd_cat',CAT)}return}
   if(roomEdit&&el.dataset.r){roomEdit.draft[el.dataset.r]=el.value;return}
   if(dedit){
     const dd=dedit.draft;
     if(condRuleEdit(el)||featFxEdit(el))return;
-    if(el.dataset.cf){const f=el.dataset.cf;dd[f]=el.tagName==='SELECT'?(['cat','school','timeK','durK'].includes(f)?el.value:Number(el.value)):(el.type==='number'?(el.value===''?'':Number(el.value)):el.value);
+    if(el.dataset.cf){const f=el.dataset.cf;dd[f]=el.tagName==='SELECT'?(['cat','school','timeK','durK','slot','kind'].includes(f)?el.value:Number(el.value)):(el.type==='number'?(el.value===''?'':Number(el.value)):el.value);
+      if(dedit.cat==='armor'&&(f==='slot'||f==='kind')){if(f==='slot')dd.kind='';else{const sl=CAT.slots.find(x=>x.id===dd.slot),ty=sl&&(sl.types||[]).find(x=>x.name===dd.kind);if(ty)dd.pts=Math.max(ty.min,Math.min(ty.max,Math.round(Number(dd.pts))||ty.min))}render();return}
       if(dedit.cat==='spells'){spCompose(dd);const row=el.closest('.spcrow');if(row){const nm=row.querySelector('input[type=number]'),k=dd[f==='timeK'||/^time/.test(f)?'timeK':'durK'];if(nm)nm.hidden=!((/^time/.test(f)?SP_NEED_T:SP_NEED_D).includes(k));const nt=row.parentElement.querySelector('.note');if(nt)nt.textContent=/^time/.test(f)?dd.time:dd.dur}}}
     else if(el.dataset.sf){dd.subs[Number(el.dataset.si)][el.dataset.sf]=el.value}
     else if(el.dataset.ftf){const f=(dd.feats||[])[Number(el.dataset.fti)];if(f)f[el.dataset.ftf]=el.dataset.ftf==='lvl'?Number(el.value):el.value}
-    else if(el.dataset.gsl){const a=dd.slots=dd.slots||[],k=el.dataset.gsl,ix=a.indexOf(k);if(el.checked&&ix<0)a.push(k);if(!el.checked&&ix>=0)a.splice(ix,1)}
+    else if(el.dataset.tyf){const y=(dd.types||[])[Number(el.dataset.tyi)];if(y)y[el.dataset.tyf]=el.dataset.tyf==='name'?el.value:Number(el.value)}
     else if(el.dataset.bgs){const a=dd.sk=dd.sk||[],k=el.dataset.bgs,ix=a.indexOf(k);if(el.checked&&ix<0)a.push(k);if(!el.checked&&ix>=0)a.splice(ix,1)}
     return;
   }

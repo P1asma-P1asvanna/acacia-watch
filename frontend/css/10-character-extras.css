@@ -128,3 +128,5 @@ details.feat summary{cursor:pointer;display:flex;gap:8px;flex-wrap:wrap;align-it
 .gslots li{display:flex;justify-content:space-between;gap:8px;padding:4px 8px;border-radius:8px;background:rgba(127,127,127,.1);font-size:.85rem;min-width:0}
 .gslots li span{opacity:.7}.gslots li b{overflow-wrap:anywhere;text-align:right}
 .gslots li.on{outline:1px solid rgba(127,127,127,.5)}
+.tyrow{display:grid;grid-template-columns:minmax(0,1fr) 90px 90px auto;gap:8px;align-items:end;padding:4px 16px}@media(max-width:560px){.tyrow{grid-template-columns:1fr 1fr}.tyrow .field:first-child{grid-column:1/-1}}
+.gear summary b.full{color:#f85149}

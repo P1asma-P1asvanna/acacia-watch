@@ -17,7 +17,7 @@ function resetSynced(){synced.pc=new Map(pcs.map(r=>[r.id,JSON.stringify(r)]));s
 function applyBoot(j){
   if(j&&j.v!=null&&LIVE.v==null)LIVE.v=j.v;   /* remember which version this state is: the first poll then answers at once if anything changed since */
   REMOTE=true;SITE=Object.assign({},j.site||{});firstRun=!j.hasUsers;
-  if(j.me){users=j.users||[j.me];session=j.me.id;PREFS=j.prefs||{};put('dd_theme',PREFS);pcs=j.pcs||[];npcs=j.npcs||[];rooms=j.rooms||[];prooms=j.prooms||[];FEEDS=j.feeds||{};const needF=!!j.cat&&(!Array.isArray(j.cat.feats)||!Array.isArray(j.cat.spells)||j.cat.feats.some(f=>!Array.isArray(f.fx)||!f.seed));const needS=!(j.cat&&j.cat.spellSeed)||(!!j.cat&&(!Array.isArray(j.cat.slots)||(j.cat.armor||[]).some(a=>!Array.isArray(a.slots))));CAT=j.cat||clone(SEED);normCat();
+  if(j.me){users=j.users||[j.me];session=j.me.id;PREFS=j.prefs||{};put('dd_theme',PREFS);pcs=j.pcs||[];npcs=j.npcs||[];rooms=j.rooms||[];prooms=j.prooms||[];FEEDS=j.feeds||{};const needF=!!j.cat&&(!Array.isArray(j.cat.feats)||!Array.isArray(j.cat.spells)||j.cat.feats.some(f=>!Array.isArray(f.fx)||!f.seed));const needS=!(j.cat&&j.cat.spellSeed)||(!!j.cat&&j.cat.gearV!==GEAR_V);CAT=j.cat||clone(SEED);normCat();
     if(needS){if(!CAT.spells.length)CAT.spells=clone(SEED.spells);CAT.spellSeed=1}   /* the example spells are added once, even if an older save left an empty list */
     if((!j.cat||needF||needS)&&j.me.role==='admin')api('POST','api/kv/cat',{value:CAT}).catch(netErr)}
   else{users=[];session=null;pcs=[];npcs=[];rooms=[];prooms=[]}
@@ -54,7 +54,9 @@ function crMig(r){if(r&&('save' in r||'acts' in r)){const sv=r.save,acts=(r.acts
   if(r){if(!r.every)r.every=1;if(!r.rest)r.rest='any';if(!Array.isArray(r.ok))r.ok=[];if(!Array.isArray(r.no))r.no=[]}return r}
 function normCat(){for(const k in SEED)if(!Array.isArray(CAT[k]))CAT[k]=clone(SEED[k]);
   CAT.spells.forEach(spNorm);
-  CAT.armor.forEach(a=>{if(!Array.isArray(a.slots))a.slots=gearDefSlots(a);if(!Array.isArray(a.fx))a.fx=[];a.att=a.att?1:0});
+  if(CAT.gearV!==GEAR_V){CAT.armor.forEach(a=>{const d=gearDef(a);if(!a.slot&&!(a.slots||[]).length){a.slot=d.slot;a.kind=d.kind;a.pts=d.pts}else if(!a.slot){a.slot=d.slot;a.kind=d.kind;a.pts=a.pts||d.pts}delete a.slots});CAT.slots=clone(SEED.slots);CAT.eqMax=GEAR_MAX;CAT.gearV=GEAR_V}
+  CAT.armor.forEach(a=>{if(!Array.isArray(a.fx))a.fx=[];a.att=a.att?1:0;if(typeof a.slot!=='string')a.slot='';if(typeof a.kind!=='string')a.kind='';a.pts=Math.max(0,Math.min(20,Math.round(Number(a.pts))||0))});
+  if(!(CAT.eqMax>=1))CAT.eqMax=GEAR_MAX;
   CAT.feats.forEach(f=>{const s=SEED.feats.find(x=>x.name===f.name);if(f.pts===undefined)f.pts=s?s.pts:1;if(f.cap===undefined)f.cap=s?s.cap:(f.cat==='epic'?30:20);if(!Array.isArray(f.fx))f.fx=s?clone(s.fx):[];if(!f.seed){if(s&&!f.fx.length&&s.fx.length)f.fx=clone(s.fx);f.seed=1}});   /* effects added to a standard feat later (e.g. Speedy) reach saved catalogs once */
 CAT.backgrounds.forEach(b=>{if(!Array.isArray(b.sk))b.sk=clone(BGSK[b.name]||[]);if(typeof b.equip!=='string')b.equip='';if(!Array.isArray(b.feats))b.feats=[]});
 CAT.classes.forEach(c=>{if(!Array.isArray(c.feats))c.feats=[];if(typeof c.asiLv!=='string'||!c.asiLv.trim())c.asiLv=ASI_DEF[c.name]||'4,8,12,16,19'});
