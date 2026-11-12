@@ -81,7 +81,7 @@ def feed_pub(feed):
     out = []
     for x in (feed if isinstance(feed, list) else [])[:40]:
         if isinstance(x, dict):
-            out.append({k: x.get(k) for k in ("id", "t", "n", "sides", "mod", "mode", "sets", "fix", "drop", "keep", "raw", "total", "lo", "hi", "dc", "ok", "label", "why", "who")})
+            out.append({k: x[k] for k in ("id", "t", "n", "sides", "mod", "mode", "sets", "fix", "drop", "keep", "raw", "total", "lo", "hi", "dc", "ok", "label", "why", "who") if k in x})
     return out
 
 

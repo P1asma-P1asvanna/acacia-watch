@@ -14,8 +14,8 @@ function tdEntry(e){
   const det=sets.map((s,i)=>{const txt=(e.n>1||(e.fix||[])[i]&&(e.fix[i]||[]).some(Boolean)?`${sum(s,i)} `:'')+`<span class="dvs">${tdDice(s,(e.fix||[])[i],(e.drop||[])[i])}</span>`;return multi?(i===kept?`<b>${txt}</b>`:`<s class="old">${txt}</s>`):txt}).join(' · ');
   const kv=((sets[kept]||[])[0]);
   const crit=e.sides===20&&e.n===1?(kv===20?' crit':kv===1?' fumble':''):'';
-  const adj=e.raw!==undefined&&e.raw!==e.total?`<small class="tdadj"><s>${e.raw}</s> → ${e.total} (${e.total>e.raw?t('tdRaised'):t('tdCapped')})</small>`:'';
-  const dc=e.dc!==undefined?`<small class="tdadj ${e.ok?'ok':'no'}">DC ${e.dc}: ${e.ok?t('tdPass'):t('tdFailDc')}</small>`:'';
+  const adj=e.raw!=null&&e.raw!==e.total?`<small class="tdadj"><s>${e.raw}</s> → ${e.total} (${e.total>e.raw?t('tdRaised'):t('tdCapped')})</small>`:'';
+  const dc=e.dc!=null?`<small class="tdadj ${e.ok?'ok':'no'}">DC ${e.dc}: ${e.ok?t('tdPass'):t('tdFailDc')}</small>`:'';
   const d=new Date((e.t||0)*1000),hm=String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0');
   return`<li class="tdrow${crit}"><div class="tdwho"><b>${esc(e.who||'—')}</b><small>${esc(e.label)}${e.why?' · '+esc(e.why):''}</small></div><div class="tdres"><span class="tdtot">${e.total}</span><small>${det}${mod}</small>${adj}${dc}</div><span class="tdt">${hm}</span></li>`}
 function tableDice(rid){
