@@ -2,6 +2,8 @@
 document.addEventListener('click',e=>{
   const sb=e.target.closest('#authForm [type=submit]');if(sb){e.preventDefault();submitAuth(sb.form);return}
   const ia=e.target.closest('[data-ita]');
+  const ma=e.target.closest('[data-mca]');
+  if(ma&&edit){const d0=edit.draft;d0.mc=Array.isArray(d0.mc)?d0.mc:[];if(ma.dataset.mca==='add'){if(d0.mc.length<MC_MAX&&(Math.round(num(d0.level))||1)>1){const used=clsRows(d0).map(r=>r.cls);d0.mc.push({id:uid().slice(0,6).replace(/[^A-Za-z0-9]/g,'x'),cls:names('classes').filter(n=>!used.includes(n))[0]||names('classes')[0],sub:'',level:1})}}else d0.mc=d0.mc.filter(x=>x.id!==ma.dataset.id);mcChanged();return}
   if(ia&&edit){const d0=edit.draft;if(ia.dataset.ita==='add'){const it={id:uid(),name:'',qty:1,src:''};d0.items.push(it);refreshItems('it_n_'+it.id)}else{d0.items=d0.items.filter(x=>x.id!==ia.dataset.id);refreshItems()}return}
   const wa=e.target.closest('[data-wa]');
   if(wa&&edit){const d0=edit.draft;if(wa.dataset.wa==='add'){const v=document.getElementById('w_add').value;if(v){d0.weapons.push({id:uid(),ref:v,bonus:0});refreshWeapons()}}else{d0.weapons=d0.weapons.filter(x=>x.id!==wa.dataset.id);refreshWeapons()}return}
@@ -137,7 +139,7 @@ document.addEventListener('input',e=>{
   else if(el.dataset.f&&el.tagName!=='SELECT'){
     const f=el.dataset.f;d[f]=el.type==='number'?Number(el.value):el.value;
     if(f==='level'||f==='dex')$('#derived').innerHTML=derived(d);
-    if(f==='level'){schedRefresh({h:1,f:1});refreshAsi();refreshSp()}
+    if(f==='level'){schedRefresh({h:1,f:1});refreshAsi();refreshSp();requestAnimationFrame(()=>{if(edit)refreshMc()})}
   }
 });
 document.addEventListener('change',e=>{
@@ -160,12 +162,14 @@ document.addEventListener('change',e=>{
   if(edit&&(el.dataset.asi||el.dataset.xf)){asiChange(el);return}
   if(edit&&el.dataset.spa==='prep'){spAction('prep',el);return}
   if(edit&&el.dataset.pk){const a=edit.draft.pick[el.dataset.pk]=edit.draft.pick[el.dataset.pk]||[];a[Number(el.dataset.pi)]=el.value;return}
+  if(edit&&el.dataset.mc){const r=(edit.draft.mc||[]).find(x=>x.id===el.dataset.id),k=el.dataset.mc;if(r){if(k==='level')r.level=Math.max(1,Math.min(19,Math.round(num(el.value))||1));else{r[k]=el.value;if(k==='cls')r.sub=''}mcChanged(true)}return}
   if(!edit||!el.dataset.f)return;const d=edit.draft,f=el.dataset.f;
   if(f==='insp')d.insp=el.value==='1';else d[f]=el.value;
   if(f==='cls'){d.sub='';$('#e_sub').innerHTML=subOpts(d.cls,'')}
   if(f==='bg'){syncBgItems(d);render()}
   if(f==='cls'||f==='bg'){refreshAsi();refreshSp()}
   if(f==='cls'||f==='sub'||f==='race'){refreshHp();refreshExtra()}
+  if(f==='cls')requestAnimationFrame(()=>{if(edit)refreshMc()});
 });
 window.addEventListener('hashchange',()=>{const h=location.hash.slice(1);if(me()&&['players','npcs','data','games','site','adventure','conditions','feats','spells'].includes(h)&&h!==view&&(isAdmin()||h==='players'||h==='adventure'||h==='site'||h==='conditions'||h==='feats'||h==='spells')){view=h;edit=null;dedit=null;roomOpen=null;roomEdit=null;siteDraft=h==='site'?siteInit():null;render()}});
 document.addEventListener('visibilitychange',()=>{if(!document.hidden)pull()});

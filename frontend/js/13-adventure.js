@@ -29,7 +29,7 @@ function renderStage(rm){
     const who=ch&&ownerName(ch.owner);
     return`<div class="seat ${ch?'filled':''}"><div class="av" aria-hidden="true">${ch?esc((ch.name||'?').trim().slice(0,1).toUpperCase()):i+1}</div>
      <div class="seat-body"><select class="seat-pick" aria-label="${t('seat')} ${i+1}" data-seat="${i}"><option value="">${t('emptySeat')}</option>${opts}</select>
-     ${ch?`<div class="seat-line2">${esc(ch.race)} · ${esc(ch.cls)} ${ch.level}${who?' · '+esc(who):''}</div><div class="seat-stats"><span>HP ${curHp(ch)}/${ch.hp}${num(ch.hpTemp)?'+'+num(ch.hpTemp):''}</span><span>AC ${ch.ac}</span></div>${seatFx(rm,ch.id)}`:''}</div></div>`}).join('');
+     ${ch?`<div class="seat-line2">${esc(ch.race)} · ${clsLabel(ch)}${who?' · '+esc(who):''}</div><div class="seat-stats"><span>HP ${curHp(ch)}/${ch.hp}${num(ch.hpTemp)?'+'+num(ch.hpTemp):''}</span><span>AC ${ch.ac}</span></div>${seatFx(rm,ch.id)}`:''}</div></div>`}).join('');
   return`<div class="stagebar"><button class="btn small" data-act="rclose">← ${t('leave')}</button><h1>${esc(rm.name)}</h1><div class="gtabs" role="tablist" aria-label="${t('minigamesBar')}">${tabs}</div>${arrangeBtn('stage')}</div>
   ${arrangeBar('stage')}<div class="stagebody" data-page="stage"><section class="stagemain" data-w="main">${wc('stage','main')}${advGame==='dice'?tableDice(rm.id):advGame==='init'?iniPanel(rm):''}</section>
   <aside class="rail" data-w="rail" aria-label="${t('playersRail')}">${wc('stage','rail')}<div class="rail-head"><span>${t('playersRail')}</span><span class="pill">${used.size} / ${n}</span></div><div class="rail-list ${dens}" style="--n:${n}">${seats}</div></aside></div>`;

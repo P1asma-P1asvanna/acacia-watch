@@ -1,8 +1,8 @@
 /* features */
 function featList(d){
-  const out=[],b=bgOf(d),c=CAT.classes.find(x=>x.name===d.cls),lv=Math.round(num(d.level))||1;
+  const out=[],b=bgOf(d);
   if(b)(b.feats||[]).forEach(f=>out.push({...f,kind:'bg',from:b.name}));
-  if(c)(c.feats||[]).filter(f=>(f.lvl||1)<=lv).forEach(f=>out.push({...f,kind:'cls',from:c.name}));
+  clsRows(d).forEach(r=>{const c=CAT.classes.find(x=>x.name===r.cls);if(c)(c.feats||[]).filter(f=>(f.lvl||1)<=r.level).forEach(f=>out.push({...f,kind:'cls',from:c.name}))});
   return out;
 }
 const featBody=d=>{const L=featList(d);return L.length?L.map(f=>`<details class="feat"><summary><b>${esc(f.name||'—')}</b> <span class="pill">${t(f.kind==='bg'?'fBg':'fClass')} · ${esc(f.from)}${f.kind==='cls'?' · Lv '+(f.lvl||1):''}</span></summary><div class="featd">${esc(f.desc||'').replace(/\n/g,'<br>')}</div></details>`).join(''):`<p class="note" style="margin:0">${t('featNoneP')}</p>`};
@@ -11,6 +11,16 @@ function refreshFeat(){const b=document.getElementById('featbody');if(!b||!edit)
 function refreshExtra(){refreshWeapons();refreshFeat();refreshProfs()}
 let _rf=0,_need={};
 function schedRefresh(n){Object.assign(_need,n);if(_rf)return;_rf=requestAnimationFrame(()=>{_rf=0;const q=_need;_need={};if(!edit)return;const d=edit.draft;updateProfVals(d);refreshWeapons();if(q.h)refreshHp();if(q.f)refreshFeat();if(q.a)refreshAc()})}
+const MC_MAX=5;
+const mcBody=d=>{const R=clsRows(d),pr=R[0],list=Array.isArray(d.mc)?d.mc:[];
+  return`<div class="mcbox"><p class="note mcnote">${fill(t('mcPrimary'),{cls:esc(d.cls||'—'),n:pr.level,total:Math.round(num(d.level))||1})}</p>
+  ${list.map(r=>`<div class="mcrow"><select data-mc="cls" data-id="${esc(r.id)}" aria-label="${t('fClass')}">${optCur(names('classes'),r.cls)}</select><select data-mc="sub" data-id="${esc(r.id)}" aria-label="${t('fSub')}">${subOpts(r.cls,r.sub)}</select><input type="number" data-mc="level" data-id="${esc(r.id)}" min="1" max="19" value="${esc(r.level)}" aria-label="${t('fLevel')}"><button type="button" class="btn small danger" data-mca="del" data-id="${esc(r.id)}" aria-label="${t('mcDel')}">✕</button></div>`).join('')}
+  <button type="button" class="btn small" data-mca="add" ${list.length>=MC_MAX||(Math.round(num(d.level))||1)<2?'disabled':''}>+ ${t('mcAdd')}</button></div>`};
+function refreshMc(){const b=document.getElementById('mcwrap');if(!b||!edit)return;b.innerHTML=mcBody(edit.draft)}
+/* anything that depends on the class list: HP, ASI slots, spell slots, features, proficiencies */
+function mcChanged(later){const d=edit.draft;if(later)requestAnimationFrame(()=>{if(edit)refreshMc()});else refreshMc();$('#derived').innerHTML=derived(d);refreshHp();refreshAsi();refreshSp();refreshExtra()}
+Object.assign(TX.th,{mcTotal:'เลเวลรวม',mcPrimary:'อาชีพหลัก {cls} = เลเวล {n} (เลเวลรวม {total} หักจากอาชีพเสริม)',mcAdd:'เพิ่มอาชีพ (Multiclass)',mcDel:'ลบอาชีพนี้'});
+Object.assign(TX.en,{mcTotal:'Total level',mcPrimary:'Primary class {cls} = level {n} (total level {total} minus the extra classes)',mcAdd:'Add a class (multiclass)',mcDel:'Remove this class'});
 function renderEditor(){
   const d=edit.draft,pc=edit.kind==='pc',adm=isAdmin();
   d.pick=d.pick||{lang:[],tool:[],veh:[]};d.asi=d.asi||{};d.xf=d.xf||[];d.sl=d.sl||{u:[],p:0};d.spells=d.spells||[];d.conc=d.conc||'';
@@ -25,11 +35,11 @@ function renderEditor(){
    <div class="field"><label for="e_race">${t('fRace')}</label><select id="e_race" data-f="race">${optCur(names('races'),d.race)}</select></div>
    <div class="field"><label for="e_cls">${t('fClass')}</label><select id="e_cls" data-f="cls">${optCur(names('classes'),d.cls)}</select></div>
    <div class="field"><label for="e_sub">${t('fSub')}</label><select id="e_sub" data-f="sub">${subOpts(d.cls,d.sub)}</select></div>
-   <div class="field"><label for="e_level">${t('fLevel')}</label><input id="e_level" data-f="level" type="number" min="1" max="20" value="${d.level}"></div>
+   <div class="field"><label for="e_level">${t('mcTotal')}</label><input id="e_level" data-f="level" type="number" min="1" max="20" value="${d.level}"></div>
    <div class="field"><label for="e_xp">${t('fXp')}</label><input id="e_xp" data-f="xp" type="number" min="0" value="${d.xp}"></div>
    <div class="field"><label for="e_bg">${t('fBg')}</label><select id="e_bg" data-f="bg"><option value="">${t('none')}</option>${optCur(names('backgrounds'),d.bg)}</select></div>
    <div class="field"><label for="e_align">${t('fAlign')}</label><select id="e_align" data-f="align">${optCur(names('alignments'),d.align)}</select></div>
-  </div></section>`,
+  </div><div id="mcwrap">${mcBody(d)}</div></section>`,
    abil=`<section class="panel"><div class="ph"><h2>${t('secAbil')}</h2></div><div class="abilities">
    ${ABS.map(k=>`<div class="ab"><span class="k">${k.toUpperCase()}</span><div class="mod ${abT(d,k)!==Math.max(1,Math.min(30,Math.round(num(d.abil[k]))))?'fxv':''}" id="m_${k}">${sgn(mod(abT(d,k)))}</div><span class="abt" id="t_${k}">${abT(d,k)!==Math.max(1,Math.min(30,Math.round(num(d.abil[k]))))?'= '+abT(d,k):''}</span><input id="e_${k}" aria-label="${k.toUpperCase()}" data-a="${k}" type="number" min="1" max="30" value="${d.abil[k]}"></div>`).join('')}
   </div><div class="derived" id="derived">${derived(d)}</div></section>`,

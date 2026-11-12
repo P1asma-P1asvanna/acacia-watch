@@ -12,6 +12,7 @@ from .numbers import clampi
 ABS = ("str", "dex", "con", "int", "wis", "cha")
 CATS = ("origin", "general", "fighting", "epic")
 DEFAULT_ASI = (4, 8, 12, 16, 19)
+SLOT_KEY = re.compile(r"^\d{1,2}(@[A-Za-z0-9]{1,8})?$")   # "4" = primary class level 4, "4@a1b2" = level 4 of the extra class with id a1b2
 
 
 def asi_levels(cls):
@@ -89,8 +90,10 @@ def clean_picks(d, cat):
     feats = {f.get("name") for f in cat["feats"] if isinstance(f, dict)} if cat and isinstance(cat.get("feats"), list) else None
     asi = {}
     src = d.get("asi") if isinstance(d.get("asi"), dict) else {}
-    for k, p in list(src.items())[:20]:
-        if not (isinstance(k, str) and k.isdigit() and 1 <= int(k) <= 20 and isinstance(p, dict)):
+    for k, p in list(src.items())[:40]:
+        if not (isinstance(k, str) and SLOT_KEY.match(k) and 1 <= int(k.split("@")[0]) <= 20 and isinstance(p, dict)):
+            continue
+        if "@" in k and k.split("@")[1] not in {r.get("id") for r in d.get("mc") or []}:
             continue
         if p.get("t") == "feat":
             f = str(p.get("f") or "")[:80]
@@ -110,9 +113,13 @@ def clean_picks(d, cat):
 
 
 def _slots(d, cat):
-    lv = clampi(d.get("level"), 1, 20, 1)
-    cls = next((c for c in (cat or {}).get("classes", []) if c.get("name") == d.get("cls")), None)
-    return {str(x) for x in asi_levels(cls) if x <= lv}
+    """Keys of the unlocked ASI/Feat slots: "4" for the primary class, "4@id" for an extra class."""
+    from . import multiclass
+    out = set()
+    for r in multiclass.rows(d):
+        cls = next((c for c in (cat or {}).get("classes", []) if c.get("name") == r["cls"]), None)
+        out |= {str(x) + ("@" + r["id"] if r["id"] else "") for x in asi_levels(cls) if x <= r["level"]}
+    return out
 
 
 def active(d, cat):

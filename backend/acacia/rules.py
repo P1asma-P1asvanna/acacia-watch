@@ -1,7 +1,7 @@
 """Game rules the server recomputes itself: hit points and armor class (players cannot fake them)."""
 import re
 
-from . import feats, gear
+from . import feats, gear, multiclass
 from .gear import armor_base, armor_of, item_ench  # noqa: F401
 from .numbers import clampi, jsround, mod, num, sgn_find
 
@@ -10,17 +10,26 @@ def hp_calc(d, cat):
     lvl = max(1, min(20, jsround(num(d.get("level"))) or 1))
     con = mod(feats.totals(d, cat)["con"])
     classes = (cat or {}).get("classes", [])
-    co = sgn_find(classes, d.get("cls"))
-    m = re.search(r"(\d+)", str((co or {}).get("hd", "")))
-    die = int(m.group(1)) if m else 0
-    avg = die // 2 + 1
-    total = max(1, die + con) + max(1, avg + con) * (lvl - 1)
     race = sgn_find((cat or {}).get("races", []), d.get("race"))
-    so = sgn_find((co or {}).get("subs", []), d.get("sub")) if co else None
-    for src in (race, co, so):
-        b = jsround(num((src or {}).get("bhp")))
-        if b:
-            total += b * lvl
+    total = 0
+    for i, r in enumerate(multiclass.rows(d)):
+        co = sgn_find(classes, r["cls"])
+        m = re.search(r"(\d+)", str((co or {}).get("hd", "")))
+        die = int(m.group(1)) if m else 0
+        avg = die // 2 + 1
+        n = r["level"]
+        if i == 0:   # the very first level takes the full die
+            total += max(1, die + con)
+            n -= 1
+        total += max(1, avg + con) * n
+        so = sgn_find((co or {}).get("subs", []), r["sub"]) if co else None
+        for src in (co, so):
+            b = jsround(num((src or {}).get("bhp")))
+            if b:
+                total += b * r["level"]
+    b = jsround(num((race or {}).get("bhp")))
+    if b:
+        total += b * lvl
     total += feats.fx_totals(d, cat)["hp"]
     return max(1, total)
 

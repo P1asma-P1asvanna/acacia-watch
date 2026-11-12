@@ -2,7 +2,7 @@
 import re
 
 from .images import URL_RE
-from . import feats, spells
+from . import feats, multiclass, spells
 from .numbers import clampi, num
 from .rules import ac_calc, eff_ac, eff_max, hp_calc
 
@@ -72,6 +72,7 @@ def clean_record(rec, kind, existing, actor_is_admin, actor_id, user_ids, cat):
     ab = d.get("abil") if isinstance(d.get("abil"), dict) else {}
     d["abil"] = {k: clampi(ab.get(k), 1, 30, 10) for k in ("str", "dex", "con", "int", "wis", "cha")}
     d["level"] = clampi(d.get("level"), 1, 20, 1)
+    multiclass.clean_mc(d)
     feats.clean_picks(d, cat)
     spells.clean_casting(d)
     d["xp"] = clampi(d.get("xp"), 0, 10_000_000, 0)

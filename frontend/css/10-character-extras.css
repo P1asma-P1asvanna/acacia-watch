@@ -159,3 +159,12 @@ details.feat summary{cursor:pointer;display:flex;gap:8px;flex-wrap:wrap;align-it
 .gear summary b.full{color:#f85149}
 .gslots li{flex-direction:column;gap:2px;justify-content:flex-start}
 .gslots li b{text-align:left;font-weight:600}
+
+/* multiclass */
+.mcbox{padding:8px 16px 12px;display:flex;flex-direction:column;gap:8px}
+.mcnote{margin:0}
+.mcrow{display:grid;grid-template-columns:minmax(0,2fr) minmax(0,2fr) 76px 44px;gap:8px;align-items:center}
+.mcrow select,.mcrow input{width:100%;box-sizing:border-box;height:44px;min-width:0}
+.mcrow .btn{height:44px}
+.mcbox>.btn{align-self:flex-start;min-height:44px}
+@media(max-width:560px){.mcrow{grid-template-columns:minmax(0,1fr) 76px 44px}.mcrow select[data-mc=sub]{grid-column:1/3;grid-row:2}}

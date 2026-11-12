@@ -20,7 +20,7 @@ function table(kind){
   return`<div class="scroll"><table><thead><tr><th>${t('colChar')}</th><th>${kind==='pc'?t('colPlayer'):t('colType')}</th><th>${t('colRace')}</th><th>${t('colClass')}</th><th class="num">${t('colHp')}</th><th class="num">${t('colAc')}</th><th></th></tr></thead><tbody>
   ${rows.map(r=>`<tr><td><b>${esc(r.name)||'—'}</b><span class="sub">${esc(r.bg)}</span></td>
    <td>${kind==='pc'?(esc(ownerName(r.owner))||'<span class="muted">'+t('unassigned')+'</span>'):`<span class="pill">${esc(typeLbl[r.type]||'')}</span>`}</td>
-   <td>${esc(r.race)}</td><td>${esc(r.cls)} ${r.level}<span class="sub">${esc(r.sub)}</span></td>
+   <td>${esc(r.race)}</td><td>${clsLabel(r)}<span class="sub">${esc(r.sub)}</span></td>
    <td class="num">${curHp(r)} / ${r.hp}${num(r.hpTemp)?' <span class="tt">+'+num(r.hpTemp)+'</span>':''}</td><td class="num">${r.ac}</td>
    <td><div class="acts"><button class="btn small" data-act="edit" data-k="${kind}" data-id="${r.id}">${t('edit')}</button><button class="btn small danger" data-act="del" data-k="${kind}" data-id="${r.id}">${delArm===r.id?t('delSure'):t('del')}</button></div></td></tr>`).join('')}
   </tbody></table></div>`;
@@ -56,24 +56,33 @@ const SKILLS=[['acrobatics','Acrobatics','dex'],['animal','Animal Handling','wis
 const num=v=>{const n=Number(v);return Number.isFinite(n)?n:0};
 const fill=(str,o)=>str.replace(/\{(\w+)\}/g,(_,k)=>o[k]);
 const dieOf=cls=>{const c=CAT.classes.find(x=>x.name===cls),m=c&&String(c.hd).match(/(\d+)/);return m?Number(m[1]):0};
+/* multiclass: d.cls/d.sub = primary class, d.level = TOTAL level, d.mc = [{id,cls,sub,level}] extra classes.
+   The primary class's level is what is left of the total (never below 1). Same maths as backend/acacia/multiclass.py. */
+function clsRows(d){
+  let rest=Math.max(1,Math.min(20,Math.round(num(d.level))||1));const ex=[];
+  (Array.isArray(d.mc)?d.mc:[]).forEach(r=>{if(!r||!r.cls)return;const use=Math.min(Math.max(1,Math.min(19,Math.round(num(r.level))||1)),rest-1);if(use>=1){ex.push({id:r.id||'',cls:r.cls,sub:r.sub||'',level:use,primary:false});rest-=use}});
+  return[{id:'',cls:d.cls,sub:d.sub||'',level:rest,primary:true},...ex]}
+const clsLabel=d=>{const R=clsRows(d);return R.length>1?R.map(r=>esc(r.cls)+' '+r.level).join(' / '):esc(d.cls)+' '+d.level};
 /* HP: level 1 takes the full hit die, later levels take the fixed average, each plus CON and never less than 1.
-   entries is a list so multiclass can add more rows later; the first row's level 1 gets the full die. */
+   With several classes the very first level (primary class) takes the full die; every other level takes its class's average. */
 function hpCalc(d){
   const lvl=Math.max(1,Math.min(20,Math.round(num(d.level))||1)),con=mod(abT(d,'con')),lines=[];
-  const entries=[{cls:d.cls,sub:d.sub,level:lvl}];
+  const entries=clsRows(d);
   let total=0,first=true,missing=false;
   entries.forEach(e=>{
     const die=dieOf(e.cls),avg=Math.floor(die/2)+1;if(!die)missing=true;let from=1;
     if(first){const g=Math.max(1,die+con);total+=g;lines.push(fill(t('hpL1'),{d:die,con:sgn(con),v:g}));from=2;first=false}
     const n=e.level-from+1;
-    if(n>0){const g=Math.max(1,avg+con);total+=g*n;lines.push(fill(t('hpLn'),{range:from===e.level?from:from+'–'+e.level,avg,con:sgn(con),n,v:g*n}))}
+    if(n>0){const g=Math.max(1,avg+con);total+=g*n;lines.push((entries.length>1?esc(e.cls)+': ':'')+fill(t('hpLn'),{range:from===e.level?from:from+'–'+e.level,avg,con:sgn(con),n,v:g*n}))}
+    const co=CAT.classes.find(x=>x.name===e.cls),so=co&&co.subs.find(x=>x.name===e.sub);
+    [['hsClass',e.cls,num(co&&co.bhp)],['hsSub',e.sub,num(so&&so.bhp)]].forEach(([src,name,b])=>{
+      if(!b)return;total+=b*e.level;lines.push(fill(t('hpBonus'),{src:t(src),name:esc(name),b:sgn(b),lvl:e.level,v:sgn(b*e.level)}))});
   });
-  const race=CAT.races.find(x=>x.name===d.race),co=CAT.classes.find(x=>x.name===d.cls),so=co&&co.subs.find(x=>x.name===d.sub);
-  [['hsRace',d.race,num(race&&race.bhp)],['hsClass',d.cls,num(co&&co.bhp)],['hsSub',d.sub,num(so&&so.bhp)]].forEach(([src,name,b])=>{
-    if(!b)return;total+=b*lvl;lines.push(fill(t('hpBonus'),{src:t(src),name:esc(name),b:sgn(b),lvl,v:sgn(b*lvl)}))});
+  const race=CAT.races.find(x=>x.name===d.race),rb=num(race&&race.bhp);
+  if(rb){total+=rb*lvl;lines.push(fill(t('hpBonus'),{src:t('hsRace'),name:esc(d.race),b:sgn(rb),lvl,v:sgn(rb*lvl)}))}
   const fh=fxAll(d);if(fh.hp){total+=fh.hp;lines.push(fill(t('hpFeat'),{src:fxLine(fh,'hp'),v:sgn(fh.hp)}))}
   total=Math.max(1,total);
-  return{max:total,lines,lvl,die:dieOf(d.cls),missing};
+  return{max:total,lines,lvl,die:dieOf(d.cls),dice:entries.map(e=>({cls:e.cls,die:dieOf(e.cls),n:e.level})),missing};
 }
 function effMax(d){return d.hpMode==='manual'&&num(d.hpManual)>=1?Math.round(num(d.hpManual)):hpCalc(d).max}
 const curOf=(d,max)=>d.hpCur==null?max:Math.max(0,Math.min(num(d.hpCur),max));
@@ -94,9 +103,9 @@ function hpBody(d){
    <div class="field"><label for="hp_amt">${t('hpAmt')}</label><input id="hp_amt" type="number" min="0" placeholder="0"></div>
    <div class="hpbtns"><button type="button" class="btn" id="hpb_dmg" data-hpa="dmg">${t('hpDamage')}</button><button type="button" class="btn" id="hpb_heal" data-hpa="heal">${t('hpHeal')}</button><button type="button" class="btn" id="hpb_grant" data-hpa="grant">${t('hpGrant')}</button></div></div>
   <p class="note" style="margin:0">${t('hpRule')}</p>
-  <div class="hpsub"><div><span class="lbl">${t('hdTitle')}</span><div class="stepper"><button type="button" class="btn small" id="hd_m" data-hpa="hd-" aria-label="${t('hdUsed')} −">−</button><span class="mono">d${c.die||'?'} · ${t('hdUsed')} ${used} · ${t('hdLeft')} ${left} / ${c.lvl}</span><button type="button" class="btn small" id="hd_p" data-hpa="hd+" aria-label="${t('hdUsed')} +">+</button></div></div>
+  <div class="hpsub"><div><span class="lbl">${t('hdTitle')}</span><div class="stepper"><button type="button" class="btn small" id="hd_m" data-hpa="hd-" aria-label="${t('hdUsed')} −">−</button><span class="mono">${c.dice.length>1?c.dice.map(x=>x.n+'d'+(x.die||'?')).join(' + '):'d'+(c.die||'?')} · ${t('hdUsed')} ${used} · ${t('hdLeft')} ${left} / ${c.lvl}</span><button type="button" class="btn small" id="hd_p" data-hpa="hd+" aria-label="${t('hdUsed')} +">+</button></div></div>
    <div><span class="lbl">${t('deathTitle')}</span><div class="stepper"><span class="note">${t('dsSucc')}</span><div class="dots">${dots('s','ok')}</div><span class="note">${t('dsFail')}</span><div class="dots">${dots('f','bad')}</div></div></div>
-   <div class="restbtns"><button type="button" class="btn small" id="hp_short" data-hpa="hdroll" title="${t('shortRestHint')}">${t('shortRest')}</button><button type="button" class="btn small" id="hp_long" data-hpa="long" title="${t('longRestHint')}">${t('longRest')}</button></div></div>
+   <div class="restbtns">${c.dice.length>1?`<select id="hd_die" aria-label="${t('hdDie')}">${[...new Set(c.dice.map(x=>x.die).filter(Boolean))].map(x=>`<option value="${x}">d${x}</option>`).join('')}</select>`:''}<button type="button" class="btn small" id="hp_short" data-hpa="hdroll" title="${t('shortRestHint')}">${t('shortRest')}</button><button type="button" class="btn small" id="hp_long" data-hpa="long" title="${t('longRestHint')}">${t('longRest')}</button></div></div>
   ${hdMsg?`<p class="note" id="hd_msg" style="margin:0">${esc(hdMsg)}</p>`:''}
   ${adm?`<div class="hpgrid"><div class="field"><label for="hp_mode">${t('hpMode')}</label><select id="hp_mode" data-hp="mode"><option value="auto" ${d.hpMode==='manual'?'':'selected'}>${t('hpModeAuto')}</option><option value="manual" ${d.hpMode==='manual'?'selected':''}>${t('hpModeManual')}</option></select></div>
    ${d.hpMode==='manual'?`<div class="field"><label for="hp_manual">${t('hpManualVal')}</label><input id="hp_manual" data-hp="manual" type="number" min="1" value="${esc(d.hpManual)}"></div>`:''}</div>`:`<p class="note" style="margin:0">${manual?t('hpLockedManual'):t('hpLocked')}</p>`}
@@ -119,7 +128,7 @@ function hpAction(a,id){
   else if(a==='heal'){d.hpCur=Math.min(max,cur+amt);if(d.hpCur>0&&amt>0)d.death={s:0,f:0}}
   else if(a==='grant'){d.hpTemp=Math.max(Math.round(num(d.hpTemp)),amt)}
   else if(a==='long'){restLong(d);hdMsg='';spMsg='';refreshSp()}
-  else if(a==='hdroll'){const die=dieOf(d.cls),used=Math.max(0,Math.round(num(d.hdUsed)));
+  else if(a==='hdroll'){const sel=document.getElementById('hd_die'),die=sel&&sel.value?Number(sel.value):dieOf(d.cls),used=Math.max(0,Math.round(num(d.hdUsed)));
     if(!die)hdMsg=t('hpNoDie');else if(used>=lvl)hdMsg=t('hdNone');
     else{const r=1+Math.floor(Math.random()*die),cn=mod(abT(d,'con')),v=Math.max(0,r+cn);d.hdUsed=used+1;d.hpCur=Math.min(max,cur+v);if(d.hpCur>0&&v>0)d.death={s:0,f:0};hdMsg=fill(t('hdRolled'),{d:die,r,con:sgn(cn),v})}}
   else if(a==='hd-'){d.hdUsed=Math.max(0,Math.round(num(d.hdUsed))-1)}

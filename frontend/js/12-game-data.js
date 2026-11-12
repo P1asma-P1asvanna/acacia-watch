@@ -34,7 +34,7 @@ const flFor=(cat,k)=>(cat==='armor'||cat==='slots')&&GEAR_FL[k]?GEAR_FL[k][lang=
 const usageKey={races:'race',classes:'cls',alignments:'align',backgrounds:'bg'};
 const pickKey={languages:'lang',tools:'tool',vehicles:'veh'};
 const featUse=(r,n)=>Object.values(r.asi||{}).some(p=>p&&p.t==='feat'&&p.f===n)||(r.xf||[]).some(p=>p.f===n);
-const usage=(c,it)=>c==='slots'?CAT.armor.filter(a=>a.slot===it.id).length:c==='spells'?[...pcs,...npcs].filter(r=>(r.spells||[]).some(s=>s.n===it.name)).length:c==='feats'?[...pcs,...npcs].filter(r=>featUse(r,it.name)).length+CAT.backgrounds.filter(b=>b.originFeat===it.name).length:usageKey[c]?[...pcs,...npcs].filter(r=>r[usageKey[c]]===it.name).length:pickKey[c]?[...pcs,...npcs].filter(r=>(r.pick&&r.pick[pickKey[c]]||[]).includes(it.name)).length:0;
+const usage=(c,it)=>c==='slots'?CAT.armor.filter(a=>a.slot===it.id).length:c==='spells'?[...pcs,...npcs].filter(r=>(r.spells||[]).some(s=>s.n===it.name)).length:c==='feats'?[...pcs,...npcs].filter(r=>featUse(r,it.name)).length+CAT.backgrounds.filter(b=>b.originFeat===it.name).length:usageKey[c]?[...pcs,...npcs].filter(r=>r[usageKey[c]]===it.name||(c==='classes'&&(r.mc||[]).some(m=>m.cls===it.name))).length:pickKey[c]?[...pcs,...npcs].filter(r=>(r.pick&&r.pick[pickKey[c]]||[]).includes(it.name)).length:0;
 function blankItem(c){const o={id:uid()};SCHEMA[c].f.forEach(([k,ty])=>o[k]=ty==='b'?0:(ty==='n'&&/^n[A-Z]/.test(k)?0:''));if(c==='classes'){o.subs=[];o.feats=[]}if(c==='backgrounds'){o.sk=[];o.feats=[]}if(c==='classes')o.asiLv='4,8,12,16,19';if(c==='backgrounds')o.originFeat='';if(c==='spells'){o.lvl=1;o.conc=0;o.rit=0;o.school='Evocation';o.timeK='action';o.timeN='';o.timeX='';o.durK='instant';o.durN='';o.durX='';spCompose(o)}if(c==='armor'){o.slot='';o.kind='';o.pts=0;o.fx=[];o.att=0}if(c==='slots'){o.max=1;o.sp=0;o.types=[]}if(c==='feats'){o.cat='general';o.minLv=4;o.asi='';o.rep=0;o.pts=1;o.cap=20;o.fx=[]}if(c==='conditions'){o.icon='';o.color='';o.dur={u:'',n:0};o.rules=[];o.stack='no';o.maxLv=0;o.ends=[]}return o}
 const cell=v=>{const s=String(v??'').replace(/\s+/g,' ').trim();return s?esc(s.length>60?s.slice(0,57)+'…':s):'<span class="muted">—</span>'};
 let dataPage=0;
@@ -91,9 +91,9 @@ function cascade(c,old,d){
   if(c==='feats'){if(old.name!==d.name){[...pcs,...npcs].forEach(r=>{Object.values(r.asi||{}).forEach(p=>{if(p&&p.f===old.name)p.f=d.name});(r.xf||[]).forEach(p=>{if(p.f===old.name)p.f=d.name})});CAT.backgrounds.forEach(b=>{if(b.originFeat===old.name)b.originFeat=d.name});commit('pc');commit('npc')}return}
   if(pickKey[c]){if(old.name!==d.name){let c2=false;[...pcs,...npcs].forEach(r=>{const a=r.pick&&r.pick[pickKey[c]];if(a)a.forEach((x,i)=>{if(x===old.name){a[i]=d.name;c2=true}})});if(c2){commit('pc');commit('npc')}}return}
   const key=usageKey[c];if(!key)return;let ch=false;
-  [...pcs,...npcs].forEach(r=>{if(old.name!==d.name&&r[key]===old.name){r[key]=d.name;ch=true}});
+  [...pcs,...npcs].forEach(r=>{if(old.name!==d.name&&r[key]===old.name){r[key]=d.name;ch=true}if(c==='classes'&&old.name!==d.name)(r.mc||[]).forEach(m=>{if(m.cls===old.name){m.cls=d.name;ch=true}})});
   if(c==='classes')(old.subs||[]).forEach(os=>{const ns=d.subs.find(s=>s.id===os.id);
-    if(ns&&ns.name!==os.name)[...pcs,...npcs].forEach(r=>{if(r.cls===d.name&&r.sub===os.name){r.sub=ns.name;ch=true}})});
+    if(ns&&ns.name!==os.name)[...pcs,...npcs].forEach(r=>{if(r.cls===d.name&&r.sub===os.name){r.sub=ns.name;ch=true}(r.mc||[]).forEach(m=>{if(m.cls===d.name&&m.sub===os.name){m.sub=ns.name;ch=true}})})});
   if(ch){commit('pc');commit('npc')}
 }
 function saveData(){

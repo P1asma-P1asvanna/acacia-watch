@@ -8,16 +8,23 @@ const SLOT_PACT=[[1,1],[2,1],[2,2],[2,2],[2,3],[2,3],[2,4],[2,4],[2,5],[2,5],[3,
 const spellOf=n=>(CAT.spells||[]).find(s=>s.name===n);
 /* what the class can do: ability, save DC / attack bonus, slots (full / half / third caster) or pact slots (Warlock) */
 function spellInfo(d){
-  const cls=CAT.classes.find(c=>c.name===d.cls),st=String(cls&&cls.spellType||'').toLowerCase();if(!st)return null;
-  const lv=Math.max(1,Math.min(20,Math.round(num(d.level))||1)),ab=ABS.find(k=>String(cls.spellAb||'').toLowerCase().startsWith(k))||'',pb=prof(lv),m=ab?mod(abT(d,ab)):0;
-  const pact=st.includes('pact')?SLOT_PACT[lv-1]:null,tb=pact?null:st.includes('third')?SLOT_THIRD:st.includes('half')?SLOT_HALF:SLOT_FULL;
-  return{ab,dc:8+pb+m,atk:pb+m,slots:tb?tb[lv-1]:[],pact}}
+  const R=clsRows(d).map(r=>{const cls=CAT.classes.find(c=>c.name===r.cls),st=String(cls&&cls.spellType||'').toLowerCase();return st?{...r,cls,st}:null}).filter(Boolean);
+  if(!R.length)return null;
+  const pb=prof(Math.max(1,Math.min(20,Math.round(num(d.level))||1)));
+  const rows=R.map(r=>{const ab=ABS.find(k=>String(r.cls.spellAb||'').toLowerCase().startsWith(k))||'',m=ab?mod(abT(d,ab)):0;return{cls:r.cls.name,ab,dc:8+pb+m,atk:pb+m}});
+  const norm=R.filter(r=>!r.st.includes('pact')),pr=R.find(r=>r.st.includes('pact')),kind=r=>r.st.includes('third')?SLOT_THIRD:r.st.includes('half')?SLOT_HALF:SLOT_FULL;
+  let slots=[];
+  if(norm.length===1)slots=kind(norm[0])[norm[0].level-1];   /* one spellcasting class: its own table */
+  else if(norm.length>1){   /* several: add full levels, half levels (rounded up) and third levels (rounded down), then use the full-caster table */
+    const cl=norm.reduce((a,r)=>a+(r.st.includes('third')?Math.floor(r.level/3):r.st.includes('half')?Math.ceil(r.level/2):r.level),0);
+    slots=cl>0?SLOT_FULL[Math.min(20,cl)-1]:[]}
+  return{ab:rows[0].ab,dc:rows[0].dc,atk:rows[0].atk,rows,slots,pact:pr?SLOT_PACT[pr.level-1]:null}}
 let spMsg='';
 const spDots=(n,used,at)=>Array.from({length:n},(_,j)=>`<button type="button" class="dot ${j<used?'on':''}" ${at} data-j="${j}" aria-label="${j+1}"></button>`).join('');
 function spBody(d){
   d.sl=d.sl||{u:[],p:0};d.spells=d.spells||[];
   const I=spellInfo(d),catN=(CAT.spells||[]).length;
-  const head=I?`<div class="spinfo"><span class="chip"><span>${t('spAb')}</span><b>${I.ab?I.ab.toUpperCase():'—'}</b></span><span class="chip"><span>${t('spDc')}</span><b>${I.dc}</b></span><span class="chip"><span>${t('spAtk')}</span><b>${sgn(I.atk)}</b></span></div>`:`<p class="note" style="margin:0">${t('spNone')}</p>`;
+  const head=I?I.rows.map(r=>`<div class="spinfo">${I.rows.length>1?`<span class="chip"><span>${t('fClass')}</span><b>${esc(r.cls)}</b></span>`:''}<span class="chip"><span>${t('spAb')}</span><b>${r.ab?r.ab.toUpperCase():'—'}</b></span><span class="chip"><span>${t('spDc')}</span><b>${r.dc}</b></span><span class="chip"><span>${t('spAtk')}</span><b>${sgn(r.atk)}</b></span></div>`).join(''):`<p class="note" style="margin:0">${t('spNone')}</p>`;
   const sl=I?`<div class="slots">${I.slots.map((n,i)=>`<div class="slot"><span class="lbl">${t('spLv')} ${i+1}</span><div class="dots">${spDots(n,Math.min(n,d.sl.u[i]||0),`data-spa="slot" data-l="${i}"`)}</div></div>`).join('')}${I.pact?`<div class="slot"><span class="lbl">${t('spPact')} (${t('spLv')} ${I.pact[1]})</span><div class="dots">${spDots(I.pact[0],Math.min(I.pact[0],d.sl.p||0),'data-spa="pact"')}</div><button type="button" class="btn small" data-spa="pactrest">${t('spPactRest')}</button></div>`:''}</div>`:'';
   const conc=d.conc?`<div class="concbar"><b>${t('spConc')}:</b> ${esc(d.conc)} <button type="button" class="btn small" data-spa="endc">${t('spEndConc')}</button></div>`:'';
   const lvls=[...new Set((d.spells).map(s=>(spellOf(s.n)||{lvl:0}).lvl))].sort((a,b)=>a-b);

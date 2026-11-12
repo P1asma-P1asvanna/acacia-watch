@@ -7,15 +7,17 @@ const abList=s=>{const f=Array.isArray(s)?s.map(x=>String(x).toLowerCase()):(Str
 const featOf=n=>(CAT.feats||[]).find(f=>f.name===n);
 const featPts=f=>f&&Number(f.pts)===2?2:1;
 const featCap=f=>{const c=Math.round(num(f&&f.cap));return c>=20&&c<=30?c:(f&&f.cat==='epic'?30:20)};
+/* ASI / Feat slots a character has unlocked: key "4" = primary class level 4, "4@id" = level 4 of the extra class with that id */
+function asiSlots(d){const out=[];clsRows(d).forEach(r=>{const cls=CAT.classes.find(c=>c.name===r.cls),all=asiLvOf(cls);all.filter(x=>x<=r.level).forEach(x=>out.push({key:x+(r.id?'@'+r.id:''),lvl:x,cls:r.cls,id:r.id}));const nx=all.find(x=>x>r.level);if(nx)out.next=out.next?Math.min(out.next,nx):nx;});return out}
 /* every feat the character has: background origin feat, feats taken at ASI levels, extra feats */
 function featsActive(d){
-  const lv=Math.max(1,Math.min(20,Math.round(num(d.level))||1)),cls=CAT.classes.find(c=>c.name===d.cls),slots=new Set(asiLvOf(cls).filter(x=>x<=lv).map(String)),out=[],b=CAT.backgrounds.find(x=>x.name===d.bg),o=b&&featOf(b.originFeat);
+  const slots=new Set(asiSlots(d).map(x=>x.key)),out=[],b=CAT.backgrounds.find(x=>x.name===d.bg),o=b&&featOf(b.originFeat);
   if(o)out.push([o,{}]);
   Object.entries(d.asi||{}).forEach(([k,p])=>{if(slots.has(k)&&p&&p.t==='feat'&&featOf(p.f))out.push([featOf(p.f),p])});
   (d.xf||[]).forEach(p=>{if(p&&featOf(p.f))out.push([featOf(p.f),p])});
   return out}
 function abAll(d){
-  const lv=Math.max(1,Math.min(20,Math.round(num(d.level))||1)),cls=CAT.classes.find(c=>c.name===d.cls),slots=new Set(asiLvOf(cls).filter(x=>x<=lv).map(String)),base={},bonus={},cap={},out={};
+  const slots=new Set(asiSlots(d).map(x=>x.key)),base={},bonus={},cap={},out={};
   ABS.forEach(k=>{base[k]=Math.max(1,Math.min(30,Math.round(num(d.abil&&d.abil[k]))));bonus[k]=0;cap[k]=20});
   Object.entries(d.asi||{}).forEach(([k,p])=>{if(!slots.has(k)||!p||p.t==='feat')return;if(p.m==='2'){if(ABS.includes(p.a1))bonus[p.a1]+=2}else[p.a1,p.a2].forEach(a=>{if(ABS.includes(a))bonus[a]++})});
   featsActive(d).forEach(([f,p])=>{const L=abList(f.asi);(featPts(f)===2?[p.ab,p.ab2]:[p.ab]).forEach(a=>{if(ABS.includes(a)&&L.includes(a)){bonus[a]++;cap[a]=Math.max(cap[a],featCap(f))}})});
@@ -45,12 +47,12 @@ const asiAbOpts=(d,cur,list)=>`<option value="">—</option>`+(list||ABS).map(k=
 function featAbSel(f,p,attrs){const L=f?abList(f.asi):[];if(!L.length)return'';const sel=(key,cur)=>`<select ${attrs.replace('@',key)} aria-label="${t('asiWhich')}">${asiAbOpts(null,cur,L)}</select>`;return sel('ab',p.ab)+(featPts(f)===2?`<span class="plus">+1</span>`+sel('ab2',p.ab2)+`<span class="plus">+1</span>`:`<span class="plus">+1</span>`)}
 function asiBody(d){
   d.asi=d.asi||{};d.xf=d.xf||[];
-  const lv=Math.max(1,Math.min(20,Math.round(num(d.level))||1)),cls=CAT.classes.find(c=>c.name===d.cls),all=asiLvOf(cls),slots=all.filter(x=>x<=lv),nxt=all.find(x=>x>lv),b=bgOf(d),of=b&&b.originFeat?featOf(b.originFeat):null;
+  const SL=asiSlots(d),slots=SL,nxt=SL.next,multi=clsRows(d).length>1,b=bgOf(d),of=b&&b.originFeat?featOf(b.originFeat):null;
   const origin=b&&b.originFeat?`<div class="asirow"><b class="lv">${t('asiOrigin')}</b><span>${esc(b.originFeat)}</span><span class="note">${esc(b.name)}</span></div>${of?featDescHtml(of):''}`:'';
-  const rows=slots.map(L=>{const p=d.asi[L]||{t:'asi',m:'2',a1:'',a2:''},isF=p.t==='feat',f=isF?featOf(p.f):null,mm=p.m==='11'?'11':p.m==='2'?'2':'11';
-    return`<div class="asirow"><b class="lv">Lv ${L}</b>
+  const rows=slots.map(S=>{const L=S.key,p=d.asi[L]||{t:'asi',m:'2',a1:'',a2:''},isF=p.t==='feat',f=isF?featOf(p.f):null,mm=p.m==='11'?'11':p.m==='2'?'2':'11';
+    return`<div class="asirow"><b class="lv">${multi?esc(S.cls)+' ':''}Lv ${S.lvl}</b>
      <select data-asi="t" data-sl="${L}" aria-label="${t('asiKind')}"><option value="asi2" ${!isF&&mm==='2'?'selected':''}>${t('asiKind2')}</option><option value="asi11" ${!isF&&mm==='11'?'selected':''}>${t('asiKind11')}</option><option value="feat" ${isF?'selected':''}>${t('asiKindFeat')}</option></select>
-     ${isF?`<select data-asi="f" data-sl="${L}" aria-label="${t('asiFeat')}"><option value="">—</option>${featOpts(d,L,p.f,false)}</select>${featAbSel(f,p,`data-asi="@" data-sl="${L}"`)}`
+     ${isF?`<select data-asi="f" data-sl="${L}" aria-label="${t('asiFeat')}"><option value="">—</option>${featOpts(d,Math.max(S.lvl,multi?num(d.level):S.lvl),p.f,false)}</select>${featAbSel(f,p,`data-asi="@" data-sl="${L}"`)}`
       :mm==='2'?`<select data-asi="a1" data-sl="${L}" aria-label="+2">${asiAbOpts(d,p.a1)}</select><span class="plus">+2</span>`
       :`<select data-asi="a1" data-sl="${L}" aria-label="+1">${asiAbOpts(d,p.a1)}</select><span class="plus">+1</span><select data-asi="a2" data-sl="${L}" aria-label="+1">${asiAbOpts(d,p.a2)}</select><span class="plus">+1</span>`}</div>${isF?featDescHtml(f):`<p class="note asin">${mm==='2'?t('asiHint2'):t('asiHint11')}</p>`}`}).join('');
   const xr=d.xf.map((p,i)=>{const f=featOf(p.f);return`<div class="asirow"><select data-xf="f" data-xi="${i}" aria-label="${t('asiFeat')}"><option value="">—</option>${featOpts(d,20,p.f,true)}</select>${featAbSel(f,p,`data-xf="@" data-xi="${i}"`)}<button type="button" class="btn small danger" data-asia="xdel" data-xi="${i}">${t('subRemove')}</button></div>${featDescHtml(f)}`}).join('');
