@@ -60,6 +60,8 @@ async function prepImage(file,slot){
 async function uploadSlot(slot,file){
   if(imgBusy)return;const prof=['pavatar','pbg','pframe','pcard'].includes(slot),tgt=prof?profDraft:slot==='cpic'?(edit&&edit.draft):slot==='cond'?(dedit&&dedit.draft):(slot==='logo'||slot==='cover')?adminDraft:siteDraft;if(!tgt)return;
   const redraw=()=>{if(view==='site'||view==='adminset'||view==='profile'||(slot==='cpic'&&edit)||(slot==='cond'&&view==='data'))render()};
+  /* still pictures that pass the basic checks go through the cropper first; GIFs and refused files skip it */
+  if(IMG_TYPES.includes(file.type)&&file.type!=='image/gif'&&file.size>=IMG_MINBYTES&&file.size<=IMG_SLOTS[slot].inBytes){const r=await cropImage(file,slot);if(!r)return;file=r}
   imgBusy=true;imgMsg=t('rWorking');redraw();
   try{
     const p=await prepImage(file,slot);

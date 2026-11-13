@@ -221,3 +221,9 @@ details.feat summary{cursor:pointer;display:flex;gap:8px;flex-wrap:wrap;align-it
 .cpicrow{display:flex;gap:16px;align-items:center;padding:4px 16px 8px;flex-wrap:wrap}.cpicctl{flex:1 1 220px;display:grid;gap:6px}
 .pfpins li{flex-direction:row;align-items:center;gap:10px}.pfpins li>div{display:flex;flex-direction:column;min-width:0}
 .pfcard .pfdiag{width:84px;height:84px;flex:none}
+.cropwrap{position:fixed;inset:0;z-index:200;background:rgba(0,0,0,.72);display:flex;align-items:center;justify-content:center;padding:16px;overflow:auto}
+.cropbox{background:var(--panel,#1e1e20);color:var(--text,#dcdcdf);border-radius:14px;padding:16px;max-width:420px;width:100%;display:grid;gap:10px;box-shadow:0 10px 40px rgba(0,0,0,.6)}
+.cropbox h3{margin:0}.cropasp{display:flex;gap:6px;flex-wrap:wrap}.cropasp .btn[aria-pressed=true]{outline:2px solid var(--accent,#c9a227)}
+.cropstage{justify-self:center;touch-action:none;cursor:grab;border:2px solid var(--accent,#c9a227);border-radius:6px;overflow:hidden;background:#000;max-width:100%}
+.cropstage canvas{display:block}.cropz{display:flex;gap:10px;align-items:center}.cropz input{flex:1;min-height:32px}
+.cropacts{display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end}.cropacts .btn{min-height:44px}
