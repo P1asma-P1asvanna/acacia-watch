@@ -20,7 +20,7 @@ const SCHEMA={
  tools:{cols:['name'],f:[['name','t']]},
  vehicles:{cols:['name'],f:[['name','t']]},
  conditions:{cols:['name','sum'],f:[['name','t'],['sum','t'],['desc','a']]},
- spells:{cols:['name','lvl','school','src','conc'],f:[['name','t'],['lvl','n'],['school','t'],['src','t'],['time','t'],['range','t'],['comp','t'],['dur','t'],['conc','b'],['rit','b'],['classes','t'],['desc','a']]},
+ spells:{cols:['name','lvl','school','conc','src'],f:[['name','t'],['lvl','n'],['school','t'],['src','t'],['time','t'],['range','t'],['comp','t'],['dur','t'],['conc','b'],['rit','b'],['classes','t'],['desc','a']]},
  feats:{cols:['name','cat','minLv','asi'],f:[['name','t'],['cat','t'],['minLv','n'],['prereq','t'],['asi','t'],['pts','n'],['cap','n'],['rep','b'],['desc','a']]}};
 Object.assign(FL,{sum:['สรุปสั้น','Short summary'],desc:['รายละเอียดผลของสถานะ','Full effects']});
 Object.assign(FL,{sk:['Skill Proficiencies ที่ได้','Skill proficiencies granted'],equip:['อุปกรณ์เริ่มต้น (หนึ่งรายการต่อบรรทัด เช่น 2x Torch)','Starting equipment (one item per line, e.g. 2x Torch)']});

@@ -75,6 +75,8 @@ def check(slot, raw):
     if len(raw) > (sp["gif_bytes"] if gif else sp["out_bytes"]):
         raise Err(400, "img_big_file")
     short, long_ = min(w, h), max(w, h)
+    if sp.get("square") and w != h:
+        raise Err(400, "img_square")
     if short < sp["min_short"] or long_ < sp["min_long"]:
         raise Err(400, "img_small_px")
     if long_ > (sp["gif_side"] if gif else sp["out"]):
@@ -91,6 +93,8 @@ def referenced(c, owner):
     else:
         p = kv_get(c, "prefs:" + owner) or {}
         vals = [p.get(k) for k in ("imgBg", "imgPanel", "imgDeco")]
+        pr = kv_get(c, "profile:" + owner) or {}
+        vals += [pr.get("avatar"), pr.get("bg"), (pr.get("frame") or {}).get("img")]
     return {m.group(1) for v in vals if isinstance(v, str) for m in [URL_RE.match(v)] if m}
 
 

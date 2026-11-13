@@ -1,5 +1,6 @@
 /* ---------- events ---------- */
 document.addEventListener('click',e=>{
+  if(pfClick(e))return;
   const sb=e.target.closest('#authForm [type=submit]');if(sb){e.preventDefault();submitAuth(sb.form);return}
   const ia=e.target.closest('[data-ita]');
   const ma=e.target.closest('[data-mca]');
@@ -106,6 +107,7 @@ document.addEventListener('input',e=>{
   if(el.dataset.featq!==undefined){featFilter();return}
   if(el.dataset.spq!==undefined){spellFilter();return}
   if(el.dataset.td!==undefined){tdSet(el);return}
+  if(el.dataset.pf!==undefined){pfInput(el);return}
   if(el.dataset.bk){if(el.dataset.bk==='text')bkText=el.value;return}
   if(view==='site'&&siteDraft&&(el.dataset.sk||el.dataset.s)){
     if(el.dataset.sk){siteDraft[el.dataset.sk]=el.value;const h=$('#hx_'+el.dataset.sk);if(h)h.textContent=el.value}
@@ -148,6 +150,8 @@ document.addEventListener('change',e=>{
   if(el.dataset.sk){render();return}
   if(el.dataset.ini){iniChange(el);return}
   if(el.dataset.it&&edit){itChange(el);return}
+  if(el.dataset.pf!==undefined&&el.tagName==='SELECT'){pfInput(el);return}
+  if(el.dataset.pfpin&&profDraft){const a=profDraft.pins,i=a.indexOf(el.dataset.pfpin);if(el.checked&&i<0){if(a.length>=3){el.checked=false;return}a.push(el.dataset.pfpin)}if(!el.checked&&i>=0)a.splice(i,1);pfRefreshPrev();return}
   if(el.dataset.ac&&edit&&el.dataset.ac==='mode'){edit.draft.acMode=el.value;refreshAc('ac_mode');return}
   if(el.dataset.seat!==undefined){const rm=rooms.find(r=>r.id===roomOpen);if(rm){rm.assign[Number(el.dataset.seat)]=el.value;saveRooms();render()}return}
   if(el.dataset.img){
@@ -171,7 +175,7 @@ document.addEventListener('change',e=>{
   if(f==='cls'||f==='sub'||f==='race'){refreshHp();refreshExtra()}
   if(f==='cls')requestAnimationFrame(()=>{if(edit)refreshMc()});
 });
-window.addEventListener('hashchange',()=>{const h=location.hash.slice(1);if(me()&&['players','npcs','data','games','site','adventure','conditions','feats','spells'].includes(h)&&h!==view&&(isAdmin()||h==='players'||h==='adventure'||h==='site'||h==='conditions'||h==='feats'||h==='spells')){view=h;edit=null;dedit=null;roomOpen=null;roomEdit=null;siteDraft=h==='site'?siteInit():null;render()}});
+window.addEventListener('hashchange',()=>{const h=location.hash.slice(1);if(me()&&['players','npcs','data','games','site','adventure','conditions','feats','spells','profile'].includes(h)&&h!==view&&(isAdmin()||h==='players'||h==='adventure'||h==='site'||h==='conditions'||h==='feats'||h==='spells'||h==='profile')){view=h;edit=null;dedit=null;roomOpen=null;roomEdit=null;siteDraft=h==='site'?siteInit():null;render()}});
 document.addEventListener('visibilitychange',()=>{if(!document.hidden)pull()});
 async function boot(){
   const served=!!document.querySelector('meta[name=dd-server]');

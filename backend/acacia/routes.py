@@ -10,7 +10,7 @@ from .config import COOKIE, FAILS
 from .errors import Err
 from .security import check_pw, hash_pw, new_user_row
 from .store import boot_state, clean_cat, clean_site, kv_get, kv_set, user_pub
-from . import dice, images
+from . import dice, images, profile
 from .config import IMG_SLOTS
 from .validation import ID_RE, clean_prefs, clean_record, ADMIN_ONLY
 
@@ -87,6 +87,13 @@ class Routes:
         if path == "/api/prefs":  # every user keeps their own look; nobody else's screen changes
             val = clean_prefs(b.get("value"), images.owned_ids(c, me["id"]))
             kv_set(c, "prefs:" + me["id"], val)
+            images.purge(c, me["id"])
+            return {"ok": True, "value": val}
+
+        if path == "/api/profile":  # my own public profile; nobody can edit someone else's
+            own_pcs = {r["id"] for r in c.execute("SELECT id FROM docs WHERE kind='pc' AND owner=?", (me["id"],))}
+            val = profile.clean_profile(b.get("value"), images.owned_ids(c, me["id"]), own_pcs)
+            kv_set(c, "profile:" + me["id"], val)
             images.purge(c, me["id"])
             return {"ok": True, "value": val}
 
@@ -177,6 +184,7 @@ class Routes:
                     raise Err(409, "last_admin")
                 c.execute("DELETE FROM users WHERE id=?", (uid,))
                 c.execute("DELETE FROM kv WHERE k=?", ("prefs:" + uid,))
+                c.execute("DELETE FROM kv WHERE k=?", ("profile:" + uid,))
                 images.delete_owner(c, uid)
                 c.execute("DELETE FROM sessions WHERE uid=?", (uid,))
                 for r in c.execute("SELECT id,data FROM docs WHERE kind='pc' AND owner=?", (uid,)).fetchall():

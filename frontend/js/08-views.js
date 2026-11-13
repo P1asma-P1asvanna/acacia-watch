@@ -1,14 +1,14 @@
 /* ---------- views ---------- */
 function renderApp(){
   const u=me(), adm=isAdmin();
-  const items=adm?[['players','players'],['npcs','npcs'],['data','data'],['adventure','adventure'],['conditions','conditions'],['feats','conditions'],['spells','conditions'],['games','games'],['site','site']]:[['players','players'],['adventure','adventure'],['conditions','conditions'],['feats','conditions'],['spells','conditions'],['site','site']];
-  if(!adm&&!['players','adventure','conditions','feats','spells','site'].includes(view))view='players';
+  const items=adm?[['players','players'],['npcs','npcs'],['data','data'],['adventure','adventure'],['conditions','conditions'],['feats','conditions'],['spells','conditions'],['profile','players'],['games','games'],['site','site']]:[['players','players'],['adventure','adventure'],['conditions','conditions'],['feats','conditions'],['spells','conditions'],['profile','players'],['site','site']];
+  if(!adm&&!['players','adventure','conditions','feats','spells','profile','site'].includes(view))view='players';
   const stage=inStage();
   return`<div class="app${stage?' stagemode':''}"><aside class="side">
    <div class="brand">${brandHtml()}</div>
    <nav class="nav" aria-label="Main">${items.map(([k,ic])=>`<button data-act="nav" data-v="${k}" ${view===k?'aria-current="page"':''}>${ICON[ic]}<span>${t(k)}</span></button>`).join('')}</nav>
    <div class="side-foot"><div class="me"><b>${esc(u.disp)}</b><span>${adm?t('admin'):t('player')}</span></div>${langSwitch()}<button class="btn small" data-act="logout">${t('logout')}</button></div>
-  </aside><main class="main${stage?' stage':''}" id="main">${view==='players'?renderPlayers():view==='npcs'?renderNpcs():view==='data'?renderData():view==='site'?renderSite():view==='conditions'?renderConditions():view==='feats'?renderFeatsPage():view==='spells'?renderSpellsPage():view==='adventure'?(adm?renderAdventure():renderPlayerAdv()):renderGames()}</main>${condPopHtml()}</div>`;
+  </aside><main class="main${stage?' stage':''}" id="main">${view==='players'?renderPlayers():view==='npcs'?renderNpcs():view==='data'?renderData():view==='site'?renderSite():view==='conditions'?renderConditions():view==='feats'?renderFeatsPage():view==='spells'?renderSpellsPage():view==='profile'?renderProfilePage():view==='adventure'?(adm?renderAdventure():renderPlayerAdv()):renderGames()}</main>${condPopHtml()}</div>`;
 }
 function head(title,sub,btn){return`<div class="head"><div><h1>${title}</h1><p>${sub}</p></div>${btn||''}</div>`}
 function table(kind){

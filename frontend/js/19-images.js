@@ -7,7 +7,10 @@ const IMG_SLOTS={
   bg:{key:'imgBg',minShort:480,minLong:800,out:1920,inBytes:5*MB,outBytes:450*KB,gifBytes:2*MB,gifSide:1280},
   panel:{key:'imgPanel',minShort:256,minLong:256,out:1024,inBytes:3*MB,outBytes:300*KB,gifBytes:1*MB,gifSide:800},
   cond:{key:'icon',minShort:128,minLong:128,out:512,inBytes:2*MB,outBytes:150*KB,gifBytes:1*MB,gifSide:512},
-  deco:{key:'imgDeco',minShort:64,minLong:64,out:512,inBytes:1*MB,outBytes:200*KB,gifBytes:1*MB,gifSide:512}};
+  deco:{key:'imgDeco',minShort:64,minLong:64,out:512,inBytes:1*MB,outBytes:200*KB,gifBytes:1*MB,gifSide:512},
+  pavatar:{key:'avatar',minShort:96,minLong:96,out:512,inBytes:2*MB,outBytes:200*KB,gifBytes:1*MB,gifSide:512},
+  pbg:{key:'bg',minShort:200,minLong:600,out:1600,inBytes:5*MB,outBytes:400*KB,gifBytes:2*MB,gifSide:1280},
+  pframe:{key:'frameimg',minShort:160,minLong:160,out:640,inBytes:2*MB,outBytes:250*KB,gifBytes:1536*KB,gifSide:640,square:true}};
 const SITE_SLOTS=['logo','cover','cond'];
 const IMG_MAXPX=6000,IMG_MINBYTES=1*KB,IMG_TYPES=['image/jpeg','image/png','image/webp','image/gif'];
 let imgMsg='',imgBusy=false;
@@ -33,6 +36,7 @@ async function prepImage(file,slot){
   const url=URL.createObjectURL(file);
   try{
     const img=await loadImg(url),w=img.naturalWidth,h=img.naturalHeight,short=Math.min(w,h),long=Math.max(w,h);
+    if(s.square&&w!==h)throw imgFail('img_square');
     if(short<s.minShort||long<s.minLong)throw imgFail('img_small_px');
     if(long>IMG_MAXPX)throw imgFail('img_big_px');
     if(gif){if(long>s.gifSide)throw imgFail('img_big_gif_px');return{b64:await toB64(file),mime:file.type}}
@@ -52,16 +56,16 @@ async function prepImage(file,slot){
 }
 /* upload one picture for a slot and put it in the settings draft (nothing is final until Save) */
 async function uploadSlot(slot,file){
-  if(imgBusy)return;const tgt=slot==='cond'?(dedit&&dedit.draft):siteDraft;if(!tgt)return;
-  const redraw=()=>{if(view==='site'||(slot==='cond'&&view==='data'))render()};
+  if(imgBusy)return;const prof=['pavatar','pbg','pframe'].includes(slot),tgt=prof?profDraft:slot==='cond'?(dedit&&dedit.draft):siteDraft;if(!tgt)return;
+  const redraw=()=>{if(view==='site'||view==='profile'||(slot==='cond'&&view==='data'))render()};
   imgBusy=true;imgMsg=t('rWorking');redraw();
   try{
     const p=await prepImage(file,slot);
     let url;
     if(REMOTE){const r=await api('POST','api/img',{slot,data:p.b64});url=r.url}
     else url='data:'+p.mime+';base64,'+p.b64;
-    tgt[IMG_SLOTS[slot].key]=url;imgMsg='';
-  }catch(e){imgMsg=imgErrText(e.code||(e.status===409?'img_quota':e.message),slot);if(e.status===409)imgMsg=imgErrText('img_quota',slot)}
+    if(slot==='pframe'){tgt.frame.img=url;tgt.frame.mode='image'}else tgt[IMG_SLOTS[slot].key]=url;imgMsg='';profMsg='';
+  }catch(e){imgMsg=imgErrText(e.code||(e.status===409?'img_quota':e.message),slot);if(e.status===409)imgMsg=imgErrText('img_quota',slot);if(prof)profMsg=imgMsg}
   imgBusy=false;redraw();
 }
 /* ---- drawing: background, panel texture and corner picture. One fixed layer each, no filters (keeps phones smooth) ---- */

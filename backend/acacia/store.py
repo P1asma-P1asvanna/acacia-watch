@@ -1,7 +1,7 @@
 """Reading what the browser needs at start-up, and the small key/value store."""
 import json
 
-from . import live
+from . import live, profile
 from .numbers import clampi, num
 
 
@@ -134,6 +134,16 @@ def player_rooms(c, me):
     return out
 
 
+def members(c):
+    """Every account with its public profile (display name, role, profile, pinned characters). No login names."""
+    out = []
+    for r in c.execute("SELECT * FROM users ORDER BY created"):
+        pr = kv_get(c, "profile:" + r["id"]) or {}
+        out.append({"id": r["id"], "disp": r["disp"], "role": r["role"], "created": r["created"] if "created" in r.keys() else 0,
+                    "p": pr, "pins": profile.pin_cards(c, r["id"], pr.get("pins"))})
+    return out
+
+
 def boot_state(c, me):
     # the version is read BEFORE the data: if somebody saves in between, the next poll sees a newer version and refreshes
     out = {"v": live.current(), "me": None, "hasUsers": c.execute("SELECT 1 FROM users LIMIT 1").fetchone() is not None,
@@ -143,6 +153,7 @@ def boot_state(c, me):
     out["me"] = user_pub(me)
     out["cat"] = kv_get(c, "cat")
     out["prefs"] = kv_get(c, "prefs:" + me["id"]) or {}
+    out["members"] = members(c)
     if me["role"] == "admin":
         out["users"] = [user_pub(r) for r in c.execute("SELECT * FROM users ORDER BY created")]
         out["pcs"] = [json.loads(r["data"]) for r in c.execute("SELECT data FROM docs WHERE kind='pc'")]
