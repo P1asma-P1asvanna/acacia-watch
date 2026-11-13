@@ -96,7 +96,7 @@ def referenced(c, owner):
         pr = kv_get(c, "profile:" + owner) or {}
         vals += [pr.get("avatar"), pr.get("bg"), (pr.get("frame") or {}).get("img"), (pr.get("card") or {}).get("img")]
         import json
-        for r in c.execute("SELECT data FROM docs WHERE data LIKE '%\"pic\": \"img/%'").fetchall():
+        for r in c.execute("SELECT data FROM docs WHERE data LIKE ?", ('%"pic": "img/%',)).fetchall():
             try:
                 vals.append(json.loads(r["data"]).get("pic"))
             except Exception:
