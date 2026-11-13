@@ -77,7 +77,7 @@ def check(slot, raw):
     short, long_ = min(w, h), max(w, h)
     if sp.get("square") and w != h:
         raise Err(400, "img_square")
-    if short < sp["min_short"] or long_ < sp["min_long"]:
+    if short < (sp["min_short"] if gif else 8):  # still pictures: the page already shrinks and crops them, only refuse absurdly tiny ones
         raise Err(400, "img_small_px")
     if long_ > (sp["gif_side"] if gif else sp["out"]):
         raise Err(400, "img_big_px")

@@ -53,5 +53,5 @@ function cropImage(file,slot){
     (root.querySelector('[data-crop=ok]')).focus();
   });
 }
-Object.assign(TX.th,{cropT:'เลือกส่วนของรูปที่ต้องการ',cropHint:'ลากรูปเพื่อเลื่อน ใช้แถบ/ล้อเมาส์/บีบสองนิ้วเพื่อซูม ส่วนที่เห็นในกรอบคือส่วนที่จะถูกใช้',cropZoom:'ซูม',cropOk:'ใช้ส่วนนี้',cropWhole:'ใช้รูปทั้งใบ',cropOwn:'ตามรูป',cropSel:'ส่วนที่เลือก {w}×{h} px (ขั้นต่ำ {m} px)'});
-Object.assign(TX.en,{cropT:'Choose the part of the picture',cropHint:'Drag to move, use the slider, mouse wheel or two fingers to zoom. What is inside the frame is what gets used.',cropZoom:'Zoom',cropOk:'Use this part',cropWhole:'Use whole picture',cropOwn:'Original',cropSel:'Selected {w}×{h} px (minimum {m} px)'});
+Object.assign(TX.th,{cropT:'เลือกส่วนของรูปที่ต้องการ',cropHint:'ลากรูปเพื่อเลื่อน ใช้แถบ/ล้อเมาส์/บีบสองนิ้วเพื่อซูม ส่วนที่เห็นในกรอบคือส่วนที่จะถูกใช้',cropZoom:'ซูม',cropOk:'ใช้ส่วนนี้',cropWhole:'ใช้รูปทั้งใบ',cropOwn:'ตามรูป',cropSel:'ส่วนที่เลือก {w}×{h} px (ควรไม่ต่ำกว่า {m} px ไม่งั้นภาพอาจเบลอ)'});
+Object.assign(TX.en,{cropT:'Choose the part of the picture',cropHint:'Drag to move, use the slider, mouse wheel or two fingers to zoom. What is inside the frame is what gets used.',cropZoom:'Zoom',cropOk:'Use this part',cropWhole:'Use whole picture',cropOwn:'Original',cropSel:'Selected {w}×{h} px (best at {m} px or more, smaller may look blurry)'});

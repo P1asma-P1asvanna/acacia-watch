@@ -50,7 +50,7 @@ function pfViewPage(m){
   const mineP=m.id===session;
   return head(m.disp||t('profile'),'',`<div class="acts"><button class="btn" data-pfa="back">← ${t('pfBack')}</button>${mineP?`<button class="btn primary" data-pfa="edit">${t('pfEdit')}</button>`:''}</div>`)+`<section class="panel pfpanel">${pfCard(m,true)}</section>`}
 /* ---- the editor: every change shows in the preview at once; nothing is saved until Save ---- */
-const pfRule=(slot)=>{const s=IMG_SLOTS[slot];return t('rTypes')+' · '+fill(t('rFile'),{min:fmtB(IMG_MINBYTES),max:fmtB(s.inBytes)})+' · '+fill(t('rPx'),{s:s.minShort,l1:s.minLong,l2:IMG_MAXPX})+' · '+fill(t('rGif'),{b:fmtB(s.gifBytes),p:s.gifSide})};
+const pfRule=slot=>ruleText(slot);
 const pfSel=(k,val,opts,lab)=>`<select data-pf="${k}" aria-label="${lab}">${opts.map(([v,l])=>`<option value="${v}" ${String(val)===String(v)?'selected':''}>${esc(l)}</option>`).join('')}</select>`;
 const pfPreset=v=>t('pfp_'+v);
 function pfEditBody(d){

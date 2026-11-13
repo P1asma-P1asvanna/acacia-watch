@@ -14,17 +14,15 @@ const IMG_SLOTS={
   pcard:{key:'cardimg',minShort:96,minLong:96,out:512,inBytes:2*MB,outBytes:250*KB,gifBytes:1536*KB,gifSide:512,square:true},
   pframe:{key:'frameimg',minShort:160,minLong:160,out:640,inBytes:2*MB,outBytes:250*KB,gifBytes:1536*KB,gifSide:640,square:true}};
 const SITE_SLOTS=['logo','cover','cond'];
-const IMG_MAXPX=6000,IMG_MINBYTES=1*KB,IMG_TYPES=['image/jpeg','image/png','image/webp','image/gif'];
+const IMG_MAXPX=16000,IMG_STILL_IN=40*MB,IMG_MINBYTES=1*KB,IMG_TYPES=['image/jpeg','image/png','image/webp','image/gif'];
 let imgMsg='',imgBusy=false;
 const fmtB=n=>n>=MB?(n/MB).toFixed(n%MB?1:0)+' MB':Math.round(n/KB)+' KB';
 function ruleText(slot){
   const s=IMG_SLOTS[slot];
-  return t('rTypes')+' · '+t('rFile').replace('{min}',fmtB(IMG_MINBYTES)).replace('{max}',fmtB(s.inBytes))
-    +' · '+t('rPx').replace('{s}',s.minShort).replace('{l1}',s.minLong).replace('{l2}',IMG_MAXPX)
-    +' · '+t('rGif').replace('{b}',fmtB(s.gifBytes)).replace('{p}',s.gifSide);
+  return t('rTypes')+' · '+t('rAuto').replace('{out}',s.out)+' · '+t('rGif').replace('{b}',fmtB(s.gifBytes)).replace('{p}',s.gifSide);
 }
 const imgFail=code=>{const e=new Error(code);e.code=code;return e};
-const imgErrText=(code,slot)=>{const s=IMG_SLOTS[slot]||{};return (t('e_'+code+(code==='img_quota'&&SITE_SLOTS.includes(slot)?'_site':''))||t('sImgErr')).replace('{in}',fmtB(s.inBytes||0)).replace('{gif}',fmtB(s.gifBytes||0)).replace('{out}',fmtB(s.outBytes||0)).replace('{s}',s.minShort).replace('{l}',s.minLong).replace('{max}',IMG_MAXPX).replace('{gp}',s.gifSide).replace('{q}',t('rQuota'))};
+const imgErrText=(code,slot)=>{const s=IMG_SLOTS[slot]||{};return (t('e_'+code+(code==='img_quota'&&SITE_SLOTS.includes(slot)?'_site':''))||t('sImgErr')+' ['+code+']').replace('{in}',fmtB(s.inBytes||0)).replace('{gif}',fmtB(s.gifBytes||0)).replace('{out}',fmtB(s.outBytes||0)).replace('{s}',s.minShort).replace('{l}',s.minLong).replace('{max}',IMG_MAXPX).replace('{gp}',s.gifSide).replace('{q}',t('rQuota'))};
 const loadImg=url=>new Promise((res,rej)=>{const i=new Image();i.onload=()=>res(i);i.onerror=()=>rej(imgFail('img_read'));i.src=url});
 const toB64=blob=>new Promise((res,rej)=>{const r=new FileReader();r.onload=()=>res(String(r.result).split(',')[1]);r.onerror=()=>rej(imgFail('img_read'));r.readAsDataURL(blob)});
 const toBlob=(c,type,q)=>new Promise(r=>c.toBlob(r,type,q));
@@ -34,24 +32,24 @@ async function prepImage(file,slot){
   if(!IMG_TYPES.includes(file.type))throw imgFail('img_type');
   const gif=file.type==='image/gif';
   if(file.size<IMG_MINBYTES)throw imgFail('img_small_file');
-  if(file.size>(gif?s.gifBytes:s.inBytes))throw imgFail(gif?'img_big_gif':'img_big_file');
+  if(file.size>(gif?s.gifBytes:IMG_STILL_IN))throw imgFail(gif?'img_big_gif':'img_big_file');
   const url=URL.createObjectURL(file);
   try{
     const img=await loadImg(url),w=img.naturalWidth,h=img.naturalHeight,short=Math.min(w,h),long=Math.max(w,h);
-    if(s.square&&w!==h)throw imgFail('img_square');
-    if(short<s.minShort||long<s.minLong)throw imgFail('img_small_px');
     if(long>IMG_MAXPX)throw imgFail('img_big_px');
-    if(gif){if(long>s.gifSide)throw imgFail('img_big_gif_px');return{b64:await toB64(file),mime:file.type}}
-    let sc=Math.min(1,s.out/long);
-    for(let tries=0;tries<8;tries++){
-      const cw=Math.max(1,Math.round(w*sc)),ch=Math.max(1,Math.round(h*sc)),c=document.createElement('canvas');c.width=cw;c.height=ch;
-      c.getContext('2d').drawImage(img,0,0,cw,ch);
+    if(gif){if(s.square&&w!==h)throw imgFail('img_square');if(short<s.minShort||long<s.minLong)throw imgFail('img_small_px');if(long>s.gifSide)throw imgFail('img_big_gif_px');return{b64:await toB64(file),mime:file.type}}
+    /* still pictures: any size is fine. A square slot gets the middle square; the result is shrunk until it fits the slot */
+    const side=s.square?short:0,sx=s.square?Math.round((w-short)/2):0,sy=s.square?Math.round((h-short)/2):0,sw=s.square?short:w,sh=s.square?short:h,sl=Math.max(sw,sh);
+    let sc=Math.min(1,s.out/sl);
+    for(let tries=0;tries<12;tries++){
+      const cw=Math.max(1,Math.round(sw*sc)),ch=Math.max(1,Math.round(sh*sc)),c=document.createElement('canvas');c.width=cw;c.height=ch;
+      c.getContext('2d').drawImage(img,sx,sy,sw,sh,0,0,cw,ch);
       for(const q of [.82,.7,.58,.46]){
         let b=await toBlob(c,'image/webp',q);
-        if(!b||b.type!=='image/webp'){const c2=document.createElement('canvas');c2.width=cw;c2.height=ch;const x=c2.getContext('2d');x.fillStyle='#fff';x.fillRect(0,0,cw,ch);x.drawImage(img,0,0,cw,ch);b=await toBlob(c2,'image/jpeg',q)}
+        if(!b||b.type!=='image/webp'){const c2=document.createElement('canvas');c2.width=cw;c2.height=ch;const x=c2.getContext('2d');x.fillStyle='#fff';x.fillRect(0,0,cw,ch);x.drawImage(img,sx,sy,sw,sh,0,0,cw,ch);b=await toBlob(c2,'image/jpeg',q)}
         if(b&&b.size<=s.outBytes&&b.size>=100)return{b64:await toB64(b),mime:b.type};
       }
-      sc*=.8;if(Math.min(w,h)*sc<s.minShort||long*sc<s.minLong)break;
+      sc*=.8;if(sl*sc<24)break;
     }
     throw imgFail('img_detail');
   }finally{URL.revokeObjectURL(url)}
@@ -61,7 +59,7 @@ async function uploadSlot(slot,file){
   if(imgBusy)return;const prof=['pavatar','pbg','pframe','pcard'].includes(slot),tgt=prof?profDraft:slot==='cpic'?(edit&&edit.draft):slot==='cond'?(dedit&&dedit.draft):(slot==='logo'||slot==='cover')?adminDraft:siteDraft;if(!tgt)return;
   const redraw=()=>{if(view==='site'||view==='adminset'||view==='profile'||(slot==='cpic'&&edit)||(slot==='cond'&&view==='data'))render()};
   /* still pictures that pass the basic checks go through the cropper first; GIFs and refused files skip it */
-  if(IMG_TYPES.includes(file.type)&&file.type!=='image/gif'&&file.size>=IMG_MINBYTES&&file.size<=IMG_SLOTS[slot].inBytes){const r=await cropImage(file,slot);if(!r)return;file=r}
+  if(IMG_TYPES.includes(file.type)&&file.type!=='image/gif'&&file.size>=IMG_MINBYTES&&file.size<=IMG_STILL_IN){const r=await cropImage(file,slot);if(!r)return;file=r}
   imgBusy=true;imgMsg=t('rWorking');redraw();
   try{
     const p=await prepImage(file,slot);
