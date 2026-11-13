@@ -6,7 +6,9 @@ const asiLvOf=c=>{const s=c&&typeof c.asiLv==='string'?c.asiLv:'';if(!s.trim())r
 const abList=s=>{const f=Array.isArray(s)?s.map(x=>String(x).toLowerCase()):(String(s||'').toLowerCase().match(/[a-z]{3}/g)||[]);return ABS.filter(a=>f.includes(a))};
 const featOf=n=>(CAT.feats||[]).find(f=>f.name===n);
 const featPts=f=>f&&Number(f.pts)===2?2:1;
-const featCap=f=>{const c=Math.round(num(f&&f.cap));return c>=20&&c<=30?c:(f&&f.cat==='epic'?30:20)};
+/* ability limit set by the admin (CAT.abMax, default 20). A feat may lift it only when its own cap is above 20 (Epic Boons: 30) */
+const abMax=()=>{const n=Math.round(num(CAT.abMax));return n>=10&&n<=30?n:20};
+const featCap=f=>{const c=Math.round(num(f&&f.cap));if(f&&f.cap!=null&&f.cap!==''&&c>=20&&c<=30)return c>20?c:0;return f&&f.cat==='epic'?30:0};
 /* ASI / Feat slots a character has unlocked: key "4" = primary class level 4, "4@id" = level 4 of the extra class with that id */
 function asiSlots(d){const out=[];clsRows(d).forEach(r=>{const cls=CAT.classes.find(c=>c.name===r.cls),all=asiLvOf(cls);all.filter(x=>x<=r.level).forEach(x=>out.push({key:x+(r.id?'@'+r.id:''),lvl:x,cls:r.cls,id:r.id}));const nx=all.find(x=>x>r.level);if(nx)out.next=out.next?Math.min(out.next,nx):nx;});return out}
 /* every feat the character has: background origin feat, feats taken at ASI levels, extra feats */
@@ -18,7 +20,7 @@ function featsActive(d){
   return out}
 function abAll(d){
   const slots=new Set(asiSlots(d).map(x=>x.key)),base={},bonus={},cap={},out={};
-  ABS.forEach(k=>{base[k]=Math.max(1,Math.min(30,Math.round(num(d.abil&&d.abil[k]))));bonus[k]=0;cap[k]=20});
+  ABS.forEach(k=>{base[k]=Math.max(1,Math.min(abMax(),Math.round(num(d.abil&&d.abil[k]))));bonus[k]=0;cap[k]=abMax()});
   Object.entries(d.asi||{}).forEach(([k,p])=>{if(!slots.has(k)||!p||p.t==='feat')return;if(p.m==='2'){if(ABS.includes(p.a1))bonus[p.a1]+=2}else[p.a1,p.a2].forEach(a=>{if(ABS.includes(a))bonus[a]++})});
   featsActive(d).forEach(([f,p])=>{const L=abList(f.asi);(featPts(f)===2?[p.ab,p.ab2]:[p.ab]).forEach(a=>{if(ABS.includes(a)&&L.includes(a)){bonus[a]++;cap[a]=Math.max(cap[a],featCap(f))}})});
   ABS.forEach(k=>out[k]=base[k]>=cap[k]?base[k]:Math.min(cap[k],base[k]+bonus[k]));

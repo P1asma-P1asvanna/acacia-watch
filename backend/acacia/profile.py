@@ -6,7 +6,7 @@ Stored in kv "profile:<user id>":
   avatar, bg      own pictures (img/<id>) : avatar, and the page background (a still picture or a GIF)
   dim             0-90, how dark the background picture is made so text stays readable
   frame           {mode: none|preset|image, preset, w, c1, c2, shape, img}  the ring around the avatar
-  card            {style, w, c}  the border of the whole card (no picture, just a preset border)
+  card            {style none|preset|image, w, c, iw, img}  the border of the whole card: a preset, or a square picture cut in nine pieces (iw = drawn thickness)
   pins            up to 3 ids of the person's own characters shown on the profile
 """
 import re
@@ -55,12 +55,16 @@ def clean_profile(v, own_imgs=(), own_pcs=()):
             "img": _img(fr.get("img"), own_imgs),
         },
         "card": {
-            "style": cd.get("style") if cd.get("style") in ("none",) + PRESETS else "none",
+            "style": cd.get("style") if cd.get("style") in ("none", "image") + PRESETS else "none",
             "w": clampi(cd.get("w"), 0, 12, 2),
+            "iw": clampi(cd.get("iw"), 8, 48, 24),
+            "img": _img(cd.get("img"), own_imgs),
             "c": _color(cd.get("c"), "#c9a227"),
         },
         "pins": pins[:MAX_PINS],
     }
+    if out["card"]["style"] == "image" and not out["card"]["img"]:
+        out["card"]["style"] = "none"
     if out["frame"]["mode"] == "image" and not out["frame"]["img"]:
         out["frame"]["mode"] = "none"
     return out
@@ -80,5 +84,5 @@ def pin_cards(c, uid, pins):
         row = c.execute("SELECT data FROM docs WHERE kind='pc' AND id=? AND owner=?", (pid, uid)).fetchone()
         if row:
             d = json.loads(row["data"])
-            out.append({"id": pid, "name": str(d.get("name") or "")[:60], "race": str(d.get("race") or "")[:60], "cls": class_label(d)[:120]})
+            out.append({"id": pid, "name": str(d.get("name") or "")[:60], "race": str(d.get("race") or "")[:60], "cls": class_label(d)[:120], "pic": d.get("pic") or ""})
     return out

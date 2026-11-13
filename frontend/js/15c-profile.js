@@ -2,8 +2,8 @@
 let MEMBERS=[],profView='',profDraft=null,profMsg='',profBusy=false;
 const PF_PRESETS=['solid','double','dashed','dotted','ridge','glow','gradient'],PF_SHAPES=['circle','rounded','square'];
 /* picture rules shown to the person (the same numbers as IMG_SLOTS in backend/acacia/config.py) */
-const PF_FRAME_IDEAL=320,PF_FRAME_SHOW=160;
-const pfDefault=()=>({tag:'',bio:'',accent:'',avatar:'',bg:'',dim:55,frame:{mode:'none',preset:'solid',w:4,c1:'#c9a227',c2:'#7a5c00',shape:'circle',img:''},card:{style:'none',w:2,c:'#c9a227'},pins:[]});
+const PF_FRAME_IDEAL=320,PF_FRAME_SHOW=160,PF_CARD_IDEAL=192;
+const pfDefault=()=>({tag:'',bio:'',accent:'',avatar:'',bg:'',dim:55,frame:{mode:'none',preset:'solid',w:4,c1:'#c9a227',c2:'#7a5c00',shape:'circle',img:''},card:{style:'none',w:2,c:'#c9a227',iw:24,img:''},pins:[]});
 const pfNorm=p=>{const d=pfDefault(),s=p||{};return{...d,...s,frame:{...d.frame,...(s.frame||{})},card:{...d.card,...(s.card||{})},pins:Array.isArray(s.pins)?s.pins.slice():[]}};
 const memberOf=id=>MEMBERS.find(m=>m.id===id)||null;
 const myMember=()=>memberOf(session)||{id:session,disp:(me()||{}).disp||'',role:(me()||{}).role||'player',p:{},pins:[]};
@@ -20,8 +20,9 @@ function pfAvatar(p,name,size){
   const img=p.avatar?`<img src="${esc(p.avatar)}" alt="" loading="lazy" decoding="async" style="border-radius:${rad}">`:`<span class="pfini" style="border-radius:${rad}">${pfInit(name)}</span>`;
   const over=f.mode==='image'&&f.img?`<img class="pfover" src="${esc(f.img)}" alt="" loading="lazy" decoding="async">`:'';
   return`<div class="pfav" style="width:${size}px;height:${size}px;border-radius:${rad};${ring}"><div class="pfavin" style="border-radius:${rad}">${img}</div>${over}</div>`}
-const pfCardStyle=(p,adm)=>{const c=p.card,col=p.accent||'';let s=col?`--pf-acc:${col};`:'';
-  if(c.style!=='none'&&c.w>0){if(c.style==='gradient')s+=`border:${c.w}px solid transparent;background:linear-gradient(var(--panel,#1e1e20),var(--panel,#1e1e20)) padding-box,conic-gradient(${c.c},${p.accent||c.c},${c.c}) border-box;`;
+const pfCardStyle=(p,full)=>{const c=p.card,col=p.accent||'';let s=col?`--pf-acc:${col};`:'';
+  if(c.style==='image'&&c.img){const w=Math.max(4,Math.round((Number(c.iw)||24)*(full?1:.5)));return s+`border:${w}px solid transparent;border-image:url('${esc(c.img)}') 25% / ${w}px stretch;`}
+  if(c.style!=='none'&&c.style!=='image'&&c.w>0){if(c.style==='gradient')s+=`border:${c.w}px solid transparent;background:linear-gradient(var(--panel,#1e1e20),var(--panel,#1e1e20)) padding-box,conic-gradient(${c.c},${p.accent||c.c},${c.c}) border-box;`;
     else if(c.style==='glow')s+=`border:1px solid ${c.c};box-shadow:0 0 ${c.w*3}px ${c.w}px ${c.c};`;
     else s+=`border:${c.style==='double'?Math.max(3,c.w):c.w}px ${c.style} ${c.c};`}
   return s};
@@ -31,11 +32,11 @@ const pfDate=ts=>{try{return new Date((ts||0)*1000).toLocaleDateString(lang==='t
 function pfCard(m,full){
   const p=pfNorm(m.p),size=full?PF_FRAME_SHOW:96,pins=full?(m.pins||[]):[];
   const bg=p.bg?`<div class="pfbg" data-bgsrc="${esc(p.bg)}" data-full="${full?1:0}" style="background-image:url('${esc(p.bg)}')"></div><div class="pfdim" style="opacity:${(Number(p.dim)||0)/100}"></div>`:'';
-  return`<article class="pfcard${full?' full':''}${p.bg?' hasbg':''}" style="${pfCardStyle(p)}" aria-label="${esc(m.disp)}">${bg}
+  return`<article class="pfcard${full?' full':''}${p.bg?' hasbg':''}" style="${pfCardStyle(p,full)}" aria-label="${esc(m.disp)}">${bg}
    <div class="pfmain">${pfAvatar(p,m.disp,size)}
     <div class="pftxt"><h2 class="pfname">${esc(m.disp||'—')}</h2><div class="pfmeta"><span class="pill${m.role==='admin'?' admin':''}">${pfRole(m)}</span>${p.tag?`<span class="pftag">${esc(p.tag)}</span>`:''}</div></div></div>
    ${full&&p.bio?`<p class="pfbio">${esc(p.bio).replace(/\n/g,'<br>')}</p>`:''}
-   ${full&&pins.length?`<div class="pfpins"><h3>${t('pfPins')}</h3><ul>${pins.map(x=>`<li><b>${esc(x.name||'—')}</b><span>${esc(x.race)} · ${esc(x.cls)}</span></li>`).join('')}</ul></div>`:''}
+   ${full&&pins.length?`<div class="pfpins"><h3>${t('pfPins')}</h3><ul>${pins.map(x=>`<li>${cpicHtml(x,'sm')}<div><b>${esc(x.name||'—')}</b><span>${esc(x.race)} · ${esc(x.cls)}</span></div></li>`).join('')}</ul></div>`:''}
    ${full&&m.created?`<p class="note pfjoin">${t('pfJoined')} ${pfDate(m.created)}</p>`:''}</article>`}
 function pfStills(){document.querySelectorAll('.pfbg[data-bgsrc]').forEach(e=>{const u=e.dataset.bgsrc,animate=PREFS.anim?PREFS.anim==='on':!REDUCED;if(isGif(u)&&(!animate||e.dataset.full!=='1')){stillOf(u).then(d=>{if(e.dataset.bgsrc===u)e.style.backgroundImage=`url("${d}")`})}})}
 function renderProfilePage(){
@@ -73,9 +74,13 @@ function pfEditBody(d){
      ${up('pframe',!!f.img,'frameimg')}<p class="note rule">${pfRule('pframe')} · ${t('pfSquareOnly')}</p>`:''}
    </fieldset>
    <fieldset class="pfset"><legend>${t('pfCard')}</legend><p class="note">${t('pfCardHint')}</p>
-    <div class="pfrow"><div class="field"><label>${t('pfStyle')}</label>${pfSel('cstyle',d.card.style,[['none',t('pfFNone')],...PF_PRESETS.map(v=>[v,pfPreset(v)])],t('pfStyle'))}</div>
-     <div class="field"><label for="pf_cc">${t('pfColor1')}</label><input type="color" id="pf_cc" data-pf="cc" value="${d.card.c}"></div></div>
-    ${d.card.style!=='none'?`<div class="field"><label for="pf_cw">${t('pfThick')} <small id="pf_cwv">${d.card.w}px</small></label><input id="pf_cw" data-pf="cw" type="range" min="0" max="12" value="${d.card.w}"></div>`:''}</fieldset>
+    <div class="pfrow"><div class="field"><label>${t('pfStyle')}</label>${pfSel('cstyle',d.card.style,[['none',t('pfFNone')],['image',t('pfFImage')],...PF_PRESETS.map(v=>[v,pfPreset(v)])],t('pfStyle'))}</div>
+     ${d.card.style==='image'?'':`<div class="field"><label for="pf_cc">${t('pfColor1')}</label><input type="color" id="pf_cc" data-pf="cc" value="${d.card.c}"></div>`}</div>
+    ${d.card.style==='image'?`<div class="pfguide"><b>${t('pfCardSize')}</b><ul><li>${fill(t('pfCardIdeal'),{n:PF_CARD_IDEAL,r:PF_CARD_IDEAL/4})}</li><li>${fill(t('pfFrameLimit'),{min:IMG_SLOTS.pcard.minShort,max:IMG_SLOTS.pcard.out})}</li><li>${t('pfCardHole')}</li></ul>
+      <svg class="pfdiag" viewBox="0 0 120 120" role="img" aria-label="${t('pfFrameDiag')}"><rect x="2" y="2" width="116" height="116" fill="none" stroke="currentColor"/><rect x="32" y="32" width="56" height="56" fill="none" stroke="currentColor" stroke-dasharray="4 3"/><text x="60" y="62" text-anchor="middle" font-size="9" fill="currentColor">${PF_CARD_IDEAL}×${PF_CARD_IDEAL}</text><text x="17" y="20" text-anchor="middle" font-size="8" fill="currentColor">${PF_CARD_IDEAL/4}</text></svg></div>
+     ${up('pcard',!!d.card.img,'cardimg')}<p class="note rule">${pfRule('pcard')} · ${t('pfSquareOnly')}</p>
+     <div class="field"><label for="pf_ciw">${t('pfThick')} <small id="pf_ciwv">${d.card.iw}px</small></label><input id="pf_ciw" data-pf="ciw" type="range" min="8" max="48" value="${d.card.iw}"></div>`:''}
+    ${d.card.style!=='none'&&d.card.style!=='image'?`<div class="field"><label for="pf_cw">${t('pfThick')} <small id="pf_cwv">${d.card.w}px</small></label><input id="pf_cw" data-pf="cw" type="range" min="0" max="12" value="${d.card.w}"></div>`:''}</fieldset>
    <fieldset class="pfset"><legend>${t('pfPins')}</legend><p class="note">${t('pfPinsHint')}</p>${my.length?my.map(c=>`<label class="chk"><input type="checkbox" data-pfpin="${esc(c.id)}" ${d.pins.includes(c.id)?'checked':''}> ${esc(c.name||'—')} <small>${esc(c.race)} · ${clsLabel(c)}</small></label>`).join(''):`<p class="note">${t('pfNoChars')}</p>`}</fieldset>
   </div>`}
 function pfEditPage(){
@@ -100,6 +105,7 @@ function pfInput(el){
   else if(k==='fc1')d.frame.c1=v;else if(k==='fc2')d.frame.c2=v;
   else if(k==='cstyle'){d.card.style=v;render();return true}
   else if(k==='cc')d.card.c=v;
+  else if(k==='ciw'){d.card.iw=Number(v);const c=document.getElementById('pf_ciwv');if(c)c.textContent=v+'px'}
   else if(k==='cw'){d.card.w=Number(v);const c=document.getElementById('pf_cwv');if(c)c.textContent=v+'px'}
   else return false;
   pfRefreshPrev();return true}
@@ -110,7 +116,7 @@ function pfClick(e){
   else if(a==='edit')pfStart();
   else if(a==='cancel'){profDraft=null;profMsg='';render()}
   else if(a==='save')pfSave();
-  else if(a==='rm'&&profDraft){const k=b.dataset.k;if(k==='frameimg'){profDraft.frame.img='';if(profDraft.frame.mode==='image')profDraft.frame.mode='none'}else if(k==='accent')profDraft.accent='';else profDraft[k]='';render()}
+  else if(a==='rm'&&profDraft){const k=b.dataset.k;if(k==='cardimg'){profDraft.card.img='';profDraft.card.style='none'}else if(k==='frameimg'){profDraft.frame.img='';if(profDraft.frame.mode==='image')profDraft.frame.mode='none'}else if(k==='accent')profDraft.accent='';else profDraft[k]='';render()}
   return true}
 Object.assign(TX.th,{pfCancel:'ยกเลิก',profile:'โปรไฟล์',pfSub:'โปรไฟล์ของทุกคนในกลุ่ม กดดูได้ และแต่งโปรไฟล์ของตัวเองได้',pfEdit:'แต่งโปรไฟล์ของฉัน',pfYou:'ของฉัน',pfBack:'กลับ',pfNoOthers:'ยังไม่มีสมาชิกคนอื่น',pfAdmin:'ผู้ดูแล',pfPlayer:'ผู้เล่น',pfPins:'ตัวละครที่ปักหมุด',pfJoined:'เข้าร่วมเมื่อ',
  pfEditTitle:'แต่งโปรไฟล์',pfEditSub:'เปลี่ยนอะไรแล้วเห็นในตัวอย่างทันที ต้องกดบันทึกถึงจะมีผลกับคนอื่น',pfPreview:'ตัวอย่าง',pfSaveFail:'บันทึกโปรไฟล์ไม่สำเร็จ ลองใหม่อีกครั้ง',
@@ -120,8 +126,8 @@ Object.assign(TX.th,{pfCancel:'ยกเลิก',profile:'โปรไฟล�
  pfFrame:'กรอบรูปโปรไฟล์',pfFrameMode:'แบบกรอบ',pfFNone:'ไม่มีกรอบ',pfFPreset:'กรอบสำเร็จรูป (ปรับความหนา/สีเอง)',pfFImage:'กรอบจากรูปของฉัน',pfStyle:'ลายกรอบ',pfShape:'รูปทรง',pfThick:'ความหนา',pfColor1:'สีหลัก',pfColor2:'สีรอง',
  pfp_solid:'เส้นทึบ',pfp_double:'เส้นคู่',pfp_dashed:'เส้นประ',pfp_dotted:'จุดไข่ปลา',pfp_ridge:'นูน',pfp_glow:'เรืองแสง',pfp_gradient:'ไล่สี',pfs_circle:'วงกลม',pfs_rounded:'สี่เหลี่ยมมน',pfs_square:'สี่เหลี่ยม',
  pfFrameSize:'ขนาดรูปกรอบที่พอดี',pfFrameIdeal:'แนะนำ {n}×{n} px จัตุรัส (แสดงจริงที่ {s} px จึงคมบนจอความละเอียดสูง)',pfFrameLimit:'ขนาดที่รับได้: จัตุรัสเท่านั้น ตั้งแต่ {min}×{min} ถึง {max}×{max} px',pfFrameHole:'เว้นตรงกลางให้โปร่งใส (PNG/WebP/GIF) รูปโปรไฟล์จะโผล่ตรงช่องนั้น กรอบวางทับรูปเต็มขนาดพอดี',pfFrameDiag:'ตัวอย่างขนาดกรอบ',pfSquareOnly:'ต้องเป็นรูปจัตุรัส',
- pfCard:'ขอบการ์ดโปรไฟล์',pfCardHint:'ขอบรอบการ์ดทั้งใบ (กรอบสำเร็จรูป ปรับสีและความหนาได้)',pfPinsHint:'เลือกตัวละครของคุณได้ไม่เกิน 3 ตัวเพื่อโชว์ (คนอื่นเห็นแค่ชื่อ เผ่าพันธุ์ อาชีพ เลเวล)',pfNoChars:'ยังไม่มีตัวละครของคุณ'});
-Object.assign(TX.en,{pfCancel:'Cancel',e_img_square:'The frame picture must be square (same width and height), for example 320×320 px',profile:'Profile',pfSub:'Everyone\'s profile. Open any of them, and decorate your own.',pfEdit:'Edit my profile',pfYou:'You',pfBack:'Back',pfNoOthers:'No other members yet.',pfAdmin:'Admin',pfPlayer:'Player',pfPins:'Pinned characters',pfJoined:'Joined',
+ pfCard:'ขอบการ์ดโปรไฟล์',pfCardHint:'ขอบรอบการ์ดทั้งใบ ใช้กรอบสำเร็จรูป (ปรับสีและความหนาได้) หรือรูปของคุณเอง',pfCardSize:'ขนาดรูปขอบการ์ดที่พอดี',pfCardIdeal:'แนะนำ {n}×{n} px จัตุรัส โดยให้ส่วนที่เป็นขอบหนาประมาณ {r} px จากริมทั้งสี่ด้าน (ระบบแบ่งรูปเป็น 9 ช่อง มุมคงรูปไว้ ด้านข้างยืดตามขนาดการ์ด)',pfCardHole:'เว้นตรงกลางให้โปร่งใส ส่วนตรงกลางไม่ถูกใช้ ข้อมูลในการ์ดจะอยู่ข้างใน ปรับความหนาที่แสดงได้ 8–48 px',pfCardPick:'รูปขอบการ์ด',pfPinsHint:'เลือกตัวละครของคุณได้ไม่เกิน 3 ตัวเพื่อโชว์ (คนอื่นเห็นแค่ชื่อ เผ่าพันธุ์ อาชีพ เลเวล)',pfNoChars:'ยังไม่มีตัวละครของคุณ'});
+Object.assign(TX.en,{pfCancel:'Cancel',e_img_square:'This picture must be square (same width and height), for example 320×320 px',profile:'Profile',pfSub:'Everyone\'s profile. Open any of them, and decorate your own.',pfEdit:'Edit my profile',pfYou:'You',pfBack:'Back',pfNoOthers:'No other members yet.',pfAdmin:'Admin',pfPlayer:'Player',pfPins:'Pinned characters',pfJoined:'Joined',
  pfEditTitle:'Edit profile',pfEditSub:'Changes show in the preview at once. Others only see them after you press Save.',pfPreview:'Preview',pfSaveFail:'Could not save the profile. Try again.',
  pfTag:'Tagline',pfTagPh:'e.g. Tipsy swordsman',pfBio:'About me',pfAccent:'Accent colour',pfNoColor:'Use theme colour',pfUpload:'Choose picture',pfRemove:'Remove',
  pfAvatar:'Avatar',pfAvatarHint:'A square picture of 256×256 px or more is best (other shapes are cropped in the middle). GIF works.',
@@ -129,4 +135,4 @@ Object.assign(TX.en,{pfCancel:'Cancel',e_img_square:'The frame picture must be s
  pfFrame:'Avatar frame',pfFrameMode:'Frame type',pfFNone:'No frame',pfFPreset:'Ready-made frame (set thickness and colour)',pfFImage:'Frame from my own picture',pfStyle:'Style',pfShape:'Shape',pfThick:'Thickness',pfColor1:'Main colour',pfColor2:'Second colour',
  pfp_solid:'Solid',pfp_double:'Double',pfp_dashed:'Dashed',pfp_dotted:'Dotted',pfp_ridge:'Ridge',pfp_glow:'Glow',pfp_gradient:'Gradient',pfs_circle:'Circle',pfs_rounded:'Rounded square',pfs_square:'Square',
  pfFrameSize:'Frame picture size',pfFrameIdeal:'Best: {n}×{n} px square (shown at {s} px, so it stays sharp on sharp screens)',pfFrameLimit:'Accepted: square only, from {min}×{min} to {max}×{max} px',pfFrameHole:'Keep the middle transparent (PNG/WebP/GIF): the avatar shows through. The frame is laid over the avatar at full size.',pfFrameDiag:'Frame size example',pfSquareOnly:'must be square',
- pfCard:'Card border',pfCardHint:'A border around the whole card (ready-made styles, set colour and thickness).',pfPinsHint:'Pick up to 3 of your characters to show off (others see only name, race, class and level).',pfNoChars:'You have no characters yet.'});
+ pfCard:'Card border',pfCardHint:'A border around the whole card: a ready-made style (set colour and thickness) or your own picture.',pfCardSize:'Card border picture size',pfCardIdeal:'Best: {n}×{n} px square with a ring about {r} px thick on all four sides (the picture is cut in 9 parts: corners stay as they are, sides stretch to the card size)',pfCardHole:'Keep the middle transparent: it is not used, the card content sits inside. You can set the drawn thickness from 8 to 48 px.',pfCardPick:'Card border picture',pfPinsHint:'Pick up to 3 of your characters to show off (others see only name, race, class and level).',pfNoChars:'You have no characters yet.'});

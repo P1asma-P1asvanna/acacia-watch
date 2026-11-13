@@ -86,7 +86,9 @@ function savePrefs(){
   return put('dd_prefs_'+session,PREFS)&&ok;
 }
 let rooms=load('dd_rooms',[]), roomOpen=null, roomEdit=null, roomErr='', advGame='dice';
-const curSite=()=>(view==='site'&&siteDraft&&isAdmin())?siteDraft:SITE;
+let adminDraft=null,adminMsg='';
+const adminInit=()=>({name:SITE.name||'',tagline:SITE.tagline||'',logo:SITE.logo||'',cover:SITE.cover||'',abMax:abMax()});
+const curSite=()=>(view==='adminset'&&adminDraft&&isAdmin())?adminDraft:SITE;
 const brandName=()=>(curSite().name||'').trim()||t('brand');
 const brandMark=()=>curSite().logo?`<img class="logo" src="${esc(curSite().logo)}" alt="">`:ICON.d20;
 const brandHtml=()=>`${brandMark()}<span>${esc(brandName())}</span>`;

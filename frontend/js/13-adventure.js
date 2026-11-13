@@ -47,7 +47,7 @@ function playerRoom(rm){
   const rows=act.map(e=>{
     const now=started&&e.id===rm.cur,nxt=e.id===nextId,dn=done.has(e.id),c=e.pc?pcs.find(x=>x.id===e.pc):null;
     return`<li class="ini-row ro ${now?'now':nxt?'next':dn?'done':''}" ${now?'aria-current="true"':''}><span class="ini-mark" aria-hidden="true">${now?'▶':nxt?'→':dn?'✓':''}</span>
-     <div class="ini-name"><b>${esc(e.name)}</b><small>${e.kind==='pc'?t('iniPc'):t('iniGm')}${now?' · '+t('iniNow'):nxt?' · '+t('iniNextTag'):dn?' · '+t('iniDoneTag'):''}</small>${(e.fx||[]).length?`<div class="cb-fx">${e.fx.map(f=>cbChip(e,f,false)).join('')}</div>`:''}</div>
+     <div class="ini-name">${e.pic?cpicHtml({pic:e.pic,name:e.name},'sm'):''}<div><b>${esc(e.name)}</b><small>${e.kind==='pc'?t('iniPc'):t('iniGm')}${now?' · '+t('iniNow'):nxt?' · '+t('iniNextTag'):dn?' · '+t('iniDoneTag'):''}</small>${(e.fx||[]).length?`<div class="cb-fx">${e.fx.map(f=>cbChip(e,f,false)).join('')}</div>`:''}</div></div>
      <span class="ini-num" aria-label="${t('iniInit')}">${esc(e.init)}</span>${c?`<span class="ini-hp">HP ${curHp(c)}/${c.hp}</span>`:'<span></span>'}</li>`}).join('');
   return`${tableDice(rm.id)}<section class="panel ini"><div class="ph"><h2>${esc(rm.name)}</h2></div>
    ${mineNow?`<div class="turn-banner" role="status">${t('pAdvYourTurn')}</div>`:''}

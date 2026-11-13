@@ -114,6 +114,7 @@ class Routes:
                 raise Err(403, "admin_only")
             user_ids = {r["id"] for r in c.execute("SELECT id FROM users")}
             saved, rejected = [], []
+            own_imgs = images.owned_ids(c, me["id"])
             for rec in (b.get("upsert") or [])[:500]:
                 rid = str(rec.get("id", "")) if isinstance(rec, dict) else ""
                 row = c.execute("SELECT owner,data FROM docs WHERE kind=? AND id=?", (kind, rid)).fetchone()
@@ -121,7 +122,7 @@ class Routes:
                 if row and not admin and row["owner"] != me["id"]:
                     rejected.append(rid)
                     continue
-                d = clean_record(rec, kind, existing, admin, me["id"], user_ids, cat)
+                d = clean_record(rec, kind, existing, admin, me["id"], user_ids, cat, own_imgs)
                 if d is None:
                     rejected.append(rid)
                     continue

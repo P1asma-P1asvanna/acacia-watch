@@ -94,7 +94,13 @@ def referenced(c, owner):
         p = kv_get(c, "prefs:" + owner) or {}
         vals = [p.get(k) for k in ("imgBg", "imgPanel", "imgDeco")]
         pr = kv_get(c, "profile:" + owner) or {}
-        vals += [pr.get("avatar"), pr.get("bg"), (pr.get("frame") or {}).get("img")]
+        vals += [pr.get("avatar"), pr.get("bg"), (pr.get("frame") or {}).get("img"), (pr.get("card") or {}).get("img")]
+        import json
+        for r in c.execute("SELECT data FROM docs WHERE data LIKE '%\"pic\": \"img/%'").fetchall():
+            try:
+                vals.append(json.loads(r["data"]).get("pic"))
+            except Exception:
+                pass
     return {m.group(1) for v in vals if isinstance(v, str) for m in [URL_RE.match(v)] if m}
 
 

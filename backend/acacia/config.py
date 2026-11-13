@@ -32,6 +32,8 @@ IMG_SLOTS = {
     # profile page: avatar, background and avatar frame (the frame must be square: it is drawn over the avatar, 160 px on screen, 320 px is ideal)
     "pavatar": {"scope": "user", "min_short": 96,  "min_long": 96,  "out": 512,  "in_bytes": 2 << 20, "out_bytes": 200 * 1024, "gif_bytes": 1 << 20, "gif_side": 512},
     "pbg":     {"scope": "user", "min_short": 200, "min_long": 600, "out": 1600, "in_bytes": 5 << 20, "out_bytes": 400 * 1024, "gif_bytes": 2 << 20, "gif_side": 1280},
+    "cpic":    {"scope": "user", "min_short": 96,  "min_long": 96,  "out": 512,  "in_bytes": 3 << 20, "out_bytes": 200 * 1024, "gif_bytes": 1 << 20, "gif_side": 512},
+    "pcard":   {"scope": "user", "min_short": 96,  "min_long": 96,  "out": 512,  "in_bytes": 2 << 20, "out_bytes": 250 * 1024, "gif_bytes": 1536 * 1024, "gif_side": 512, "square": True},
     "pframe":  {"scope": "user", "min_short": 160, "min_long": 160, "out": 640,  "in_bytes": 2 << 20, "out_bytes": 250 * 1024, "gif_bytes": 1536 * 1024, "gif_side": 640, "square": True},
 }
 IMG_USER_MAX_COUNT = 10         # pictures one person can keep

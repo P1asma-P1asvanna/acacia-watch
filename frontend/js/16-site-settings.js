@@ -2,7 +2,7 @@
 const COLORS=[['bg','cBg','--bg'],['surface','cSurface','--surface'],['ink','cInk','--ink'],['accent','cAccent','--accent'],['side','cSide','--side'],['fxc','cFx','--fx-color'],['tnow','cTurnNow','--turn-now'],['tnext','cTurnNext','--turn-next'],['tdone','cTurnDone','--turn-done'],['navb','cNavb','--nav-edge'],['fxb','cFxb','--fxb']];
 const hexOf=v=>/^#[0-9a-f]{6}$/i.test(v)?v.toLowerCase():'#000000';
 function mediaBlock(slot,label){
-  const key=IMG_SLOTS[slot].key,d=siteDraft,has=!!d[key];
+  const key=IMG_SLOTS[slot].key,d=(slot==='logo'||slot==='cover')?adminDraft:siteDraft,has=!!d[key];
   return`<div class="media"><div class="lbl">${label}</div>
    <div class="thumb ${slot}" ${has?`style="background-image:url('${esc(d[key])}')"`:''}>${has?'':`<span class="muted">${t('sNoImg')}</span>`}</div>
    <div class="acts" style="justify-content:flex-start"><label class="btn small">${t('sUpload')}<input class="sr" type="file" accept="image/jpeg,image/png,image/webp,image/gif" data-img="${slot}" aria-label="${label}"></label>
@@ -15,13 +15,8 @@ function renderSite(){
     return`<div class="crow"><label for="k_${k}">${t(lab)}</label><input type="color" id="k_${k}" data-sk="${k}" value="${hex}"><code id="hx_${k}">${hex}</code>
      ${d[k]?`<button class="btn small" data-act="sc-reset" data-k="${k}">${t('sDefault')}</button>`:`<span class="pill">${t('sDefault')}</span>`}</div>`}).join('');
   const radius=d.radius===undefined||d.radius===''||d.radius===null?parseInt(cs.getPropertyValue('--r'))||8:d.radius;
-  return head(t('site'),adm?t('siteSub'):t('siteSubP'),arrangeBtn('site'))+`
-  ${arrangeBar('site')}${adm?'':`<p class="note" style="margin:0 0 4px">${t('sPlayerNote')}</p>`}<div class="wgrid${arrangePage==='site'?' arranging':''}" data-page="site">
-  ${adm?`<section class="panel" data-w="identity">${wc('site','identity')}<div class="ph"><h2>${t('sIdentity')}</h2><span class="note">${t('sSharedNote')}</span></div><div class="grid wide">
-    <div class="field"><label for="s_name">${t('sName')}</label><input id="s_name" data-s="name" value="${esc(d.name||'')}" placeholder="${esc(t('brand'))}"></div>
-    <div class="field"><label for="s_tag">${t('sTagline')}</label><input id="s_tag" data-s="tagline" value="${esc(d.tagline||'')}"></div></div>
-   <div class="medias">${mediaBlock('logo',t('sLogo'))}${mediaBlock('cover',t('sCover'))}</div>
-   <div class="err" style="padding:0 16px 12px">${esc(siteErr)}</div></section>`:''}
+  return head(t('site'),t('siteSubP'),arrangeBtn('site'))+`
+  ${arrangeBar('site')}<div class="wgrid${arrangePage==='site'?' arranging':''}" data-page="site">
   <section class="panel" data-w="colors">${wc('site','colors')}<div class="ph"><h2>${t('sColors')}</h2><span class="note">${t('sNote')}</span></div><div class="crows">${rows}</div></section>
   <section class="panel" data-w="decor">${wc('site','decor')}<div class="ph"><h2>${t('sDecor')}</h2><span class="note">${t('sDecorNote')}</span></div>
    <div class="medias">${mediaBlock('bg',t('sBg'))}${mediaBlock('panel',t('sPanelImg'))}${mediaBlock('deco',t('sDeco'))}</div>
@@ -43,7 +38,25 @@ function renderSite(){
     <div class="field"><label for="s_radius">${t('sRadius')}: <span id="rv">${radius}</span>px</label><input id="s_radius" data-s="radius" type="range" min="0" max="20" step="1" value="${radius}" style="padding:0"></div>
     <div class="field"><label for="s_font">${t('sFont')}</label><select id="s_font" data-s="font"><option value="" ${d.font?'':'selected'}>${t('sDefault')} (Alegreya)</option>${Object.keys(FONTS).filter(f=>f!=='Alegreya').map(f=>`<option value="${f}" ${d.font===f?'selected':''}>${f==='Plex'?'IBM Plex Mono':f}</option>`).join('')}</select></div>
     <div class="field"><label for="s_pg">${t('sPage')}</label><select id="s_pg" data-s="pg">${[5,10,15,20,30,50].map(n=>`<option value="${n}" ${(Number(d.pg)||10)===n?'selected':''}>${n}</option>`).join('')}</select></div></div></section>
-  ${adm?bkPanel():''}</div>
+  </div>
   <div class="bar" style="padding:0"><div style="display:flex;gap:10px;flex-wrap:wrap"><button class="btn" data-act="srevert">${t('sRevert')}</button><button class="btn danger" data-act="sresetall">${dataArm==='siteReset'?t('sResetSure'):t('sResetAll')}</button></div>
    <div style="display:flex;gap:12px;align-items:center"><span class="note" role="status">${esc(siteMsg)}</span><button class="btn primary" data-act="ssave">${t('sSave')}</button></div></div>`;
+}
+
+function renderAdminSet(){
+  const d=adminDraft||(adminDraft=adminInit());
+  return head(t('adminset'),t('adminSub'),arrangeBtn('adminset'))+`
+  ${arrangeBar('adminset')}<div class="wgrid${arrangePage==='adminset'?' arranging':''}" data-page="adminset">
+  <section class="panel" data-w="identity">${wc('adminset','identity')}<div class="ph"><h2>${t('sIdentity')}</h2><span class="note">${t('sSharedNote')}</span></div><div class="grid wide">
+    <div class="field"><label for="a_name">${t('sName')}</label><input id="a_name" data-ad="name" value="${esc(d.name||'')}" placeholder="${esc(t('brand'))}"></div>
+    <div class="field"><label for="a_tag">${t('sTagline')}</label><input id="a_tag" data-ad="tagline" value="${esc(d.tagline||'')}"></div></div>
+   <div class="medias">${mediaBlock('logo',t('sLogo'))}${mediaBlock('cover',t('sCover'))}</div>
+   <div class="imgmsg err" role="alert">${esc(imgMsg)}</div>
+   <div class="err" style="padding:0 16px 12px">${esc(siteErr)}</div></section>
+  <section class="panel" data-w="rules">${wc('adminset','rules')}<div class="ph"><h2>${t('aRules')}</h2></div><div class="grid wide">
+    <div class="field"><label for="a_abmax">${t('abMaxL')}</label><input id="a_abmax" data-ad="abMax" type="number" min="10" max="30" value="${d.abMax}"></div></div>
+   <p class="note" style="padding:0 16px 14px">${t('abMaxNote')}</p></section>
+  ${bkPanel()}</div>
+  <div class="bar" style="padding:0"><div style="display:flex;gap:10px;flex-wrap:wrap"><button class="btn" data-act="arevert">${t('sRevert')}</button></div>
+   <div style="display:flex;gap:12px;align-items:center"><span class="note" role="status">${esc(adminMsg)}</span><button class="btn primary" data-act="asave">${t('sSave')}</button></div></div>`;
 }

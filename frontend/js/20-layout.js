@@ -6,7 +6,8 @@ const LAYOUT={
   sheet:{ids:['basic','bgpick','abil','asi','prof','hp','spells','weapons','profs','items','ac','feat','combat'],
     label:{basic:'secBasic',bgpick:'secBgPick',abil:'secAbil',asi:'secAsi',prof:'secProf',hp:'hpTitle',spells:'spTitle',weapons:'wTitle',profs:'prTitle',items:'itTitle',ac:'acTitle',feat:'featTitleP',combat:'secCombat'}},
   players:{ids:['list','accounts'],label:{list:'players',accounts:'accounts'}},
-  site:{ids:['identity','colors','decor','fx','shape','backup'],label:{identity:'sIdentity',colors:'sColors',decor:'sDecor',fx:'sFx',shape:'sShape',backup:'bkTitle'}},
+  site:{ids:['colors','decor','fx','shape'],label:{colors:'sColors',decor:'sDecor',fx:'sFx',shape:'sShape'}},
+  adminset:{ids:['identity','rules','backup'],label:{identity:'sIdentity',rules:'aRules',backup:'bkTitle'}},
   stage:{ids:['main','rail'],label:{main:'advMain',rail:'playersRail'},nosize:true}
 };
 let arrangePage=null,layTimer=0;

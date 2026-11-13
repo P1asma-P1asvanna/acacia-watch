@@ -26,7 +26,7 @@ document.addEventListener('click',e=>{
   if(a==='lang'){lang=v;put('dd_lang',lang);render()}
   else if(a==='tab'){authTab=v;authErr='';render()}
   else if(a==='logout'){if(REMOTE){api('POST','api/logout',{}).catch(()=>{});users=[];pcs=[];npcs=[];rooms=[];netBar('')}session=null;put('dd_session',null);edit=null;dedit=null;siteDraft=null;roomOpen=null;roomEdit=null;authTab='signin';render()}
-  else if(a==='nav'){condPop=null;view=v;edit=null;dedit=null;delArm=null;dataArm=null;flashMsg='';siteDraft=v==='site'?siteInit():null;siteMsg='';siteErr='';roomOpen=null;roomEdit=null;location.hash=v;render();pull()}
+  else if(a==='nav'){condPop=null;view=v;edit=null;dedit=null;delArm=null;dataArm=null;flashMsg='';siteDraft=v==='site'?siteInit():null;adminDraft=v==='adminset'?adminInit():null;adminMsg='';siteMsg='';siteErr='';roomOpen=null;roomEdit=null;location.hash=v;render();pull()}
   else if(a==='new'){edit={kind:k,draft:blank(k),isNew:true};delArm=null;render()}
   else if(a==='edit'){const r=list(k).find(x=>x.id===id);edit={kind:k,draft:JSON.parse(JSON.stringify(r)),isNew:false};delArm=null;render()}
   else if(a==='back'){edit=null;delArm=null;render()}
@@ -58,13 +58,16 @@ document.addEventListener('click',e=>{
   else if(a==='ropen'){roomOpen=id;render()}
   else if(a==='rclose'){roomOpen=null;render()}
   else if(a==='rgame'){advGame=v;render()}
-  else if(a==='simg-rm'){siteDraft[IMG_SLOTS[k].key]='';siteErr='';imgMsg='';render()}
+  else if(a==='simg-rm'){(k==='logo'||k==='cover'?adminDraft:siteDraft)[IMG_SLOTS[k].key]='';siteErr='';imgMsg='';render()}
+  else if(a==='cpic-rm'){if(edit&&edit.draft){edit.draft.pic='';imgMsg='';render()}}
+  else if(a==='arevert'){adminDraft=adminInit();adminMsg='';siteErr='';imgMsg='';render()}
+  else if(a==='asave'){const d=adminDraft,g={};['name','tagline','logo','cover'].forEach(x=>{if(d[x])g[x]=d[x]});SITE=g;let ok=put('dd_site',SITE);CAT.abMax=Math.max(10,Math.min(30,Math.round(Number(d.abMax))||20));ok=put('dd_cat',CAT)&&ok;adminMsg=ok?t('aSaved'):t('sSavedTemp');adminDraft=adminInit();const bd=document.querySelector('.side .brand');if(bd)bd.innerHTML=brandHtml();render()}
   else if(a==='sc-reset'){delete siteDraft[k];render()}
   else if(a==='srevert'){siteDraft=siteInit();siteMsg='';siteErr='';render()}
   else if(a==='ssave'){
     const d=siteDraft,g={},p={};
-    GLOBAL_KEYS.forEach(x=>{if(d[x])g[x]=d[x]});PREF_KEYS.forEach(x=>{if(d[x]!==undefined&&d[x]!==''&&d[x]!==null)p[x]=d[x]});
-    let ok=true;if(isAdmin()){SITE=g;ok=put('dd_site',SITE)}
+    PREF_KEYS.forEach(x=>{if(d[x]!==undefined&&d[x]!==''&&d[x]!==null)p[x]=d[x]});
+    let ok=true;
     if(PREFS.lay)p.lay=PREFS.lay;else delete p.lay;
     PREFS=p;ok=savePrefs()&&ok;siteMsg=ok?t('sSaved'):t('sSavedTemp');siteDraft=siteInit();render()}
   else if(a==='sresetall'){if(dataArm!=='siteReset'){dataArm='siteReset';render();return}PREFS={};savePrefs();siteDraft=siteInit();dataArm=null;siteMsg=t('sSaved');render()}
@@ -109,6 +112,7 @@ document.addEventListener('input',e=>{
   if(el.dataset.td!==undefined){tdSet(el);return}
   if(el.dataset.pf!==undefined){pfInput(el);return}
   if(el.dataset.bk){if(el.dataset.bk==='text')bkText=el.value;return}
+  if(view==='adminset'&&adminDraft&&el.dataset.ad){const f=el.dataset.ad;adminDraft[f]=f==='abMax'?el.value:el.value;if(f!=='abMax'){const bd=document.querySelector('.side .brand');if(bd)bd.innerHTML=brandHtml()}return}
   if(view==='site'&&siteDraft&&(el.dataset.sk||el.dataset.s)){
     if(el.dataset.sk){siteDraft[el.dataset.sk]=el.value;const h=$('#hx_'+el.dataset.sk);if(h)h.textContent=el.value}
     else{const f=el.dataset.s;siteDraft[f]=['radius','fxms','fxamt','dim','pdim','decoSize','decoOp'].includes(f)?Number(el.value):el.value;const sp=f==='radius'?$('#rv'):$('#v_'+f);if(sp)sp.textContent=el.value}
@@ -137,7 +141,7 @@ document.addEventListener('input',e=>{
     else if(h==='temp')d.hpTemp=Math.max(0,Math.round(num(el.value)));
     else if(h==='manual')d.hpManual=el.value;
     updateHpBar();return}
-  if(el.dataset.a){d.abil[el.dataset.a]=Number(el.value)||10;refreshAbil(d);schedRefresh({h:el.dataset.a==='con',a:el.dataset.a==='dex'||el.dataset.a==='str'})}
+  if(el.dataset.a){let v=Number(el.value)||10;if(v>abMax()){v=abMax();el.value=v}d.abil[el.dataset.a]=v;refreshAbil(d);schedRefresh({h:el.dataset.a==='con',a:el.dataset.a==='dex'||el.dataset.a==='str'})}
   else if(el.dataset.f&&el.tagName!=='SELECT'){
     const f=el.dataset.f;d[f]=el.type==='number'?Number(el.value):el.value;
     if(f==='level'||f==='dex')$('#derived').innerHTML=derived(d);
@@ -175,7 +179,7 @@ document.addEventListener('change',e=>{
   if(f==='cls'||f==='sub'||f==='race'){refreshHp();refreshExtra()}
   if(f==='cls')requestAnimationFrame(()=>{if(edit)refreshMc()});
 });
-window.addEventListener('hashchange',()=>{const h=location.hash.slice(1);if(me()&&['players','npcs','data','games','site','adventure','conditions','feats','spells','profile'].includes(h)&&h!==view&&(isAdmin()||h==='players'||h==='adventure'||h==='site'||h==='conditions'||h==='feats'||h==='spells'||h==='profile')){view=h;edit=null;dedit=null;roomOpen=null;roomEdit=null;siteDraft=h==='site'?siteInit():null;render()}});
+window.addEventListener('hashchange',()=>{const h=location.hash.slice(1);if(me()&&['players','npcs','data','games','site','adminset','adventure','conditions','feats','spells','profile'].includes(h)&&h!==view&&(isAdmin()||h==='players'||h==='adventure'||h==='site'||h==='conditions'||h==='feats'||h==='spells'||h==='profile')){view=h;edit=null;dedit=null;roomOpen=null;roomEdit=null;siteDraft=h==='site'?siteInit():null;adminDraft=h==='adminset'?adminInit():null;render()}});
 document.addEventListener('visibilitychange',()=>{if(!document.hidden)pull()});
 async function boot(){
   const served=!!document.querySelector('meta[name=dd-server]');
@@ -187,7 +191,7 @@ async function boot(){
   }catch(e){
     {$('#root').innerHTML='<div class="login"><div class="login-card"><h1 style="margin:0">'+t('netDown')+'</h1><button class="btn primary" id="retryBoot" type="button">'+t('netRetry')+'</button></div></div>';document.getElementById('retryBoot').onclick=()=>location.reload();return}
   }
-  const h=location.hash.slice(1);if(['players','npcs','data','games','site','adventure'].includes(h))view=h;
+  const h=location.hash.slice(1);if(['players','npcs','data','games','site','adminset','adventure'].includes(h))view=h;
   if(session&&!me())session=null;
   render();
 }

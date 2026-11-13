@@ -10,6 +10,8 @@ const IMG_SLOTS={
   deco:{key:'imgDeco',minShort:64,minLong:64,out:512,inBytes:1*MB,outBytes:200*KB,gifBytes:1*MB,gifSide:512},
   pavatar:{key:'avatar',minShort:96,minLong:96,out:512,inBytes:2*MB,outBytes:200*KB,gifBytes:1*MB,gifSide:512},
   pbg:{key:'bg',minShort:200,minLong:600,out:1600,inBytes:5*MB,outBytes:400*KB,gifBytes:2*MB,gifSide:1280},
+  cpic:{key:'pic',minShort:96,minLong:96,out:512,inBytes:3*MB,outBytes:200*KB,gifBytes:1*MB,gifSide:512},
+  pcard:{key:'cardimg',minShort:96,minLong:96,out:512,inBytes:2*MB,outBytes:250*KB,gifBytes:1536*KB,gifSide:512,square:true},
   pframe:{key:'frameimg',minShort:160,minLong:160,out:640,inBytes:2*MB,outBytes:250*KB,gifBytes:1536*KB,gifSide:640,square:true}};
 const SITE_SLOTS=['logo','cover','cond'];
 const IMG_MAXPX=6000,IMG_MINBYTES=1*KB,IMG_TYPES=['image/jpeg','image/png','image/webp','image/gif'];
@@ -56,15 +58,15 @@ async function prepImage(file,slot){
 }
 /* upload one picture for a slot and put it in the settings draft (nothing is final until Save) */
 async function uploadSlot(slot,file){
-  if(imgBusy)return;const prof=['pavatar','pbg','pframe'].includes(slot),tgt=prof?profDraft:slot==='cond'?(dedit&&dedit.draft):siteDraft;if(!tgt)return;
-  const redraw=()=>{if(view==='site'||view==='profile'||(slot==='cond'&&view==='data'))render()};
+  if(imgBusy)return;const prof=['pavatar','pbg','pframe','pcard'].includes(slot),tgt=prof?profDraft:slot==='cpic'?(edit&&edit.draft):slot==='cond'?(dedit&&dedit.draft):(slot==='logo'||slot==='cover')?adminDraft:siteDraft;if(!tgt)return;
+  const redraw=()=>{if(view==='site'||view==='adminset'||view==='profile'||(slot==='cpic'&&edit)||(slot==='cond'&&view==='data'))render()};
   imgBusy=true;imgMsg=t('rWorking');redraw();
   try{
     const p=await prepImage(file,slot);
     let url;
     if(REMOTE){const r=await api('POST','api/img',{slot,data:p.b64});url=r.url}
     else url='data:'+p.mime+';base64,'+p.b64;
-    if(slot==='pframe'){tgt.frame.img=url;tgt.frame.mode='image'}else tgt[IMG_SLOTS[slot].key]=url;imgMsg='';profMsg='';
+    if(slot==='pframe'){tgt.frame.img=url;tgt.frame.mode='image'}else if(slot==='pcard'){tgt.card.img=url;tgt.card.style='image'}else tgt[IMG_SLOTS[slot].key]=url;imgMsg='';profMsg='';
   }catch(e){imgMsg=imgErrText(e.code||(e.status===409?'img_quota':e.message),slot);if(e.status===409)imgMsg=imgErrText('img_quota',slot);if(prof)profMsg=imgMsg}
   imgBusy=false;redraw();
 }
@@ -94,3 +96,6 @@ function applyDecor(s){
     if(isGif(s.imgPanel)&&!animate)stillOf(s.imgPanel).then(set);else set(s.imgPanel);
   }else{r.classList.remove('has-panelimg');r.style.removeProperty('--panel-img')}
 }
+
+/* ---- character portrait: shown cropped square on the sheet, in lists, in the initiative order and on pinned profile cards ---- */
+const cpicHtml=(c,cls)=>`<span class="cpic ${cls||''}" aria-hidden="true">${c&&c.pic?`<img src="${esc(c.pic)}" alt="" loading="lazy" decoding="async">`:`<i>${esc(String((c&&c.name)||'?').trim().slice(0,1).toUpperCase()||'?')}</i>`}</span>`;

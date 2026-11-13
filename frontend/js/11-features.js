@@ -28,7 +28,10 @@ function renderEditor(){
   d.items=d.items||[];d.weapons=d.weapons||[];d.profOther=d.profOther||'';d.speeds=d.speeds||'';
   normHp(d);normAc(d);
   const owners=users.map(u=>`<option value="${u.id}" ${u.id===d.owner?'selected':''}>${esc(u.disp)} (${esc(u.name)})</option>`).join('');
-  const basic=`<section class="panel"><div class="ph"><h2>${t('secBasic')}</h2></div><div class="grid wide">
+  const basic=`<section class="panel"><div class="ph"><h2>${t('secBasic')}</h2></div>
+   <div class="cpicrow">${cpicHtml(d,'xl')}<div class="cpicctl"><b>${t('cpicT')}</b><div class="pfup"><label class="btn small filebtn">${t('pfUpload')}<input type="file" accept="image/png,image/jpeg,image/webp,image/gif" data-img="cpic" hidden></label>${d.pic?`<button type="button" class="btn small danger" data-act="cpic-rm">${t('pfRemove')}</button>`:''}</div>
+    <p class="note rule">${t('cpicHint')} ${pfRule('cpic')}</p><p class="err" role="alert">${esc(imgMsg)}</p></div></div>
+   <div class="grid wide">
    <div class="field"><label for="e_name">${t('fName')}</label><input id="e_name" data-f="name" value="${esc(d.name)}"></div>
    ${pc?`<div class="field"><label for="e_owner">${t('fPlayer')}</label><select id="e_owner" data-f="owner" ${adm?'':'disabled'}><option value="">${t('unassigned')}</option>${owners}</select></div>`
        :`<div class="field"><label for="e_type">${t('fType')}</label><select id="e_type" data-f="type"><option value="ally" ${d.type==='ally'?'selected':''}>${t('tAlly')}</option><option value="neutral" ${d.type==='neutral'?'selected':''}>${t('tNeutral')}</option><option value="villain" ${d.type==='villain'?'selected':''}>${t('tVillain')}</option></select></div>`}
@@ -40,8 +43,8 @@ function renderEditor(){
    <div class="field"><label for="e_bg">${t('fBg')}</label><select id="e_bg" data-f="bg"><option value="">${t('none')}</option>${optCur(names('backgrounds'),d.bg)}</select></div>
    <div class="field"><label for="e_align">${t('fAlign')}</label><select id="e_align" data-f="align">${optCur(names('alignments'),d.align)}</select></div>
   </div><div id="mcwrap">${mcBody(d)}</div></section>`,
-   abil=`<section class="panel"><div class="ph"><h2>${t('secAbil')}</h2></div><div class="abilities">
-   ${ABS.map(k=>`<div class="ab"><span class="k">${k.toUpperCase()}</span><div class="mod ${abT(d,k)!==Math.max(1,Math.min(30,Math.round(num(d.abil[k]))))?'fxv':''}" id="m_${k}">${sgn(mod(abT(d,k)))}</div><span class="abt" id="t_${k}">${abT(d,k)!==Math.max(1,Math.min(30,Math.round(num(d.abil[k]))))?'= '+abT(d,k):''}</span><input id="e_${k}" aria-label="${k.toUpperCase()}" data-a="${k}" type="number" min="1" max="30" value="${d.abil[k]}"></div>`).join('')}
+   abil=`<section class="panel"><div class="ph"><h2>${t('secAbil')}</h2><span class="note">${fill(t('abLimit'),{n:abMax()})}</span></div><div class="abilities">
+   ${ABS.map(k=>`<div class="ab"><span class="k">${k.toUpperCase()}</span><div class="mod ${abT(d,k)!==Math.max(1,Math.min(abMax(),Math.round(num(d.abil[k]))))?'fxv':''}" id="m_${k}">${sgn(mod(abT(d,k)))}</div><span class="abt" id="t_${k}">${abT(d,k)!==Math.max(1,Math.min(abMax(),Math.round(num(d.abil[k]))))?'= '+abT(d,k):''}</span><input id="e_${k}" aria-label="${k.toUpperCase()}" data-a="${k}" type="number" min="1" max="${abMax()}" value="${Math.min(abMax(),d.abil[k])}" title="${esc(fill(t('abLimitTip'),{n:abMax()}))}"></div>`).join('')}
   </div><div class="derived" id="derived">${derived(d)}</div></section>`,
    combat=`<section class="panel"><div class="ph"><h2>${t('secCombat')}</h2></div><div class="grid">
    <div class="field"><label for="e_speed">${t('fSpeed')}</label><input id="e_speed" data-f="speed" type="number" min="0" value="${d.speed}"></div>

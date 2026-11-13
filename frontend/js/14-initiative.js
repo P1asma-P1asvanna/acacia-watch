@@ -17,7 +17,7 @@ function iniPanel(rm){
     const c=iniChar(e),now=started&&e.id===I.cur,nxt=e.id===nextId,dn=doneIds.has(e.id),kind=e.ref&&e.ref.startsWith('pc:')?t('iniPc'):e.ref?t('iniGm'):t('iniFoe');
     const hp=c?`${curHp(c)} / ${c.hp}${num(c.hpTemp)?' +'+num(c.hpTemp):''}`:`<input type="number" min="0" aria-label="${t('iniHpF')}" data-ini="hp" data-id="${e.id}" value="${e.hp==null?'':esc(e.hp)}" placeholder="HP">`;
     return`<li class="ini-row ${now?'now':nxt?'next':dn?'done':''}" ${now?'aria-current="true"':''}><span class="ini-mark" aria-hidden="true">${now?'▶':nxt?'→':dn?'✓':''}</span>
-     <div class="ini-name"><b>${esc(iniName(e))}</b><small>${kind} · ${t('iniMod')} ${sgn(iniModOf(e))}${now?' · '+t('iniNow'):nxt?' · '+t('iniNextTag'):dn?' · '+t('iniDoneTag'):''}</small></div>
+     <div class="ini-name">${c?cpicHtml(c,'sm'):''}<div><b>${esc(iniName(e))}</b><small>${kind} · ${t('iniMod')} ${sgn(iniModOf(e))}${now?' · '+t('iniNow'):nxt?' · '+t('iniNextTag'):dn?' · '+t('iniDoneTag'):''}</small></div></div>
      <input type="number" aria-label="${t('iniInit')}: ${esc(iniName(e))}" data-ini="init" data-id="${e.id}" value="${e.init==null?'':e.init}" placeholder="${t('iniNoRoll')}">
      <span class="ini-hp">${t('iniHpF')} ${hp}</span>
      <div class="ini-act"><button class="btn small" data-act="ini-roll" data-id="${e.id}">${t('iniRoll')}</button><button class="btn small danger" data-act="ini-del" data-id="${e.id}" aria-label="${t('iniDel')} ${esc(iniName(e))}">✕</button></div>${cbSub(e)}</li>`}).join('');

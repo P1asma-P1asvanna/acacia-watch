@@ -63,14 +63,14 @@ def clean_prefs(v, own_imgs=()):
 ADMIN_ONLY = ("hpMode", "hpManual", "acMode", "acManual")
 
 
-def clean_record(rec, kind, existing, actor_is_admin, actor_id, user_ids, cat):
+def clean_record(rec, kind, existing, actor_is_admin, actor_id, user_ids, cat, own_imgs=()):
     """Return a record that is safe to store, or None to reject."""
     if not isinstance(rec, dict) or not ID_RE.match(str(rec.get("id", ""))):
         return None
     d = dict(rec)
     d["kind"] = kind
     ab = d.get("abil") if isinstance(d.get("abil"), dict) else {}
-    d["abil"] = {k: clampi(ab.get(k), 1, 30, 10) for k in ("str", "dex", "con", "int", "wis", "cha")}
+    d["abil"] = {k: clampi(ab.get(k), 1, feats.ab_max(cat), 10) for k in ("str", "dex", "con", "int", "wis", "cha")}
     d["level"] = clampi(d.get("level"), 1, 20, 1)
     multiclass.clean_mc(d)
     feats.clean_picks(d, cat)
@@ -92,6 +92,11 @@ def clean_record(rec, kind, existing, actor_is_admin, actor_id, user_ids, cat):
                 d[k] = existing[k]
             else:
                 d[k] = "auto" if k.endswith("Mode") else ""
+    # portrait: one of the actor's own pictures, or the one the record already had
+    pic = d.get("pic")
+    m = isinstance(pic, str) and URL_RE.match(pic)
+    keep = existing.get("pic") if isinstance(existing, dict) else ""
+    d["pic"] = pic if m and (m.group(1) in own_imgs or pic == keep) else ""
     d["hpTemp"] = clampi(d.get("hpTemp"), 0, 999, 0)
     d["hdUsed"] = clampi(d.get("hdUsed"), 0, 20, 0)
     if cat is None:  # catalog not uploaded yet (should not happen): trust the sizes the page computed

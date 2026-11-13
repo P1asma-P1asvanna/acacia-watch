@@ -139,12 +139,19 @@ def active(d, cat):
     return out
 
 
+def ab_max(cat):
+    """Highest score normal means can reach (admin setting, stored in the catalogue as abMax; default 20)."""
+    n = clampi((cat or {}).get("abMax"), 0, 30, 20)
+    return n if n >= 10 else 20
+
+
 def totals(d, cat):
     """Ability scores including Ability Score Improvements and feat bonuses."""
-    base = {k: clampi((d.get("abil") or {}).get(k), 1, 30, 10) for k in ABS}
+    lim = ab_max(cat)
+    base = {k: clampi((d.get("abil") or {}).get(k), 1, lim, 10) for k in ABS}
     slots = _slots(d, cat)
     bonus = {k: 0 for k in ABS}
-    cap = {k: 20 for k in ABS}
+    cap = {k: lim for k in ABS}
     for k, p in (d.get("asi") or {}).items():
         if k not in slots or not isinstance(p, dict) or p.get("t") == "feat":
             continue
@@ -162,7 +169,7 @@ def totals(d, cat):
             if a in ABS and a in L:
                 bonus[a] += 1
                 c = clampi(f.get("cap"), 20, 30, 30 if f.get("cat") == "epic" else 20)
-                cap[a] = max(cap[a], c)
+                cap[a] = max(cap[a], c if c > 20 else 0)
     return {k: base[k] if base[k] >= cap[k] else min(cap[k], base[k] + bonus[k]) for k in ABS}
 
 

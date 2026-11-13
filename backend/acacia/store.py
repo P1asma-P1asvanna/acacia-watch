@@ -52,6 +52,7 @@ def clean_cat(c, v):
         for x in L:
             if isinstance(x, dict):
                 conditions.clean_condition(x, ids)
+    v["abMax"] = feats.ab_max(v)
     feats.clean_cat_feats(v)
     spells.clean_cat_spells(v)
     gear.clean_cat_gear(v)
@@ -92,11 +93,13 @@ def player_rooms(c, me):
     if not mine:
         return []
     rooms = kv_get(c, "rooms") or []
-    pc_name, npc_name = {}, {}
+    pc_name, npc_name, pic_of = {}, {}, {}
     for kind, dst in (("pc", pc_name), ("npc", npc_name)):
         for r in c.execute("SELECT id,data FROM docs WHERE kind=?", (kind,)):
             try:
-                dst[r["id"]] = str(json.loads(r["data"]).get("name") or "")[:80]
+                dj = json.loads(r["data"])
+                dst[r["id"]] = str(dj.get("name") or "")[:80]
+                pic_of[kind + ":" + r["id"]] = str(dj.get("pic") or "")[:80]
             except Exception:
                 pass
     out = []
@@ -123,7 +126,7 @@ def player_rooms(c, me):
             v = num(e.get("init"))
             entries.append({"id": str(e.get("id")), "name": (name or "—")[:80], "init": int(v) if v == int(v) else v,
                             "kind": "pc" if is_pc else "other", "mine": is_pc and cid in mine, "pc": cid if cid in mine else "",
-                            "fx": public_fx(e.get("fx"))})
+                            "fx": public_fx(e.get("fx")), "pic": pic_of.get(ref, "") if ref[:3] == "pc:" or ref[:4] == "npc:" else ""})
         seen = {x["id"] for x in entries}
         evt = [{"k": x.get("k"), "eid": str(x.get("eid")), "cid": str(x.get("cid") or "")[:40], "r": clampi(x.get("r"), 1, 9999, 1)}
                for x in (ini.get("evt") if isinstance(ini.get("evt"), list) else [])[:60]

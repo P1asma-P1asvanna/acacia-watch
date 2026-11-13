@@ -8,7 +8,7 @@ function bkApply(text){
   const d=o.data,str=v=>typeof v==='string';
   if(!bkOkArr(d.users,u=>str(u.id)&&str(u.name)&&str(u.salt)&&str(u.hash)&&(u.role==='admin'||u.role==='player'))||!bkOkArr(d.pcs,c=>str(c.id)&&c.abil&&typeof c.abil==='object')||!bkOkArr(d.npcs,c=>str(c.id)&&c.abil&&typeof c.abil==='object')||!bkOkArr(d.rooms,r=>str(r.id)&&Array.isArray(r.assign))||!d.cat||typeof d.cat!=='object'||Array.isArray(d.cat)||!d.site||typeof d.site!=='object'||Array.isArray(d.site))return{err:t('bkBad')};
   if(!d.users.some(u=>u.role==='admin'))return{err:t('bkNoAdmin')};
-  if(REMOTE)return api('POST','api/import',d).then(async()=>{applyBoot(await api('GET','api/boot'));siteDraft=siteInit();edit=null;dedit=null;roomOpen=null;roomEdit=null;return{ok:true}}).catch(()=>({err:t('netSaveFail')}));
+  if(REMOTE)return api('POST','api/import',d).then(async()=>{applyBoot(await api('GET','api/boot'));siteDraft=siteInit();adminDraft=null;edit=null;dedit=null;roomOpen=null;roomEdit=null;return{ok:true}}).catch(()=>({err:t('netSaveFail')}));
   users=d.users;pcs=d.pcs;npcs=d.npcs;CAT=d.cat;SITE=d.site;rooms=d.rooms;
   normCat();siteDraft=siteInit();edit=null;dedit=null;roomOpen=null;roomEdit=null;
   const ok=[put('dd_users',users),put('dd_pcs',pcs),put('dd_npcs',npcs),put('dd_cat',CAT),put('dd_site',SITE),put('dd_rooms',rooms)].every(Boolean);
@@ -37,7 +37,7 @@ async function bkAction(a){
     render()}
 }
 function bkPanel(){
-  return`<section class="panel" data-w="backup">${wc('site','backup')}<div class="ph"><h2>${t('bkTitle')}</h2><span class="note">${t('bkNote')}</span></div><div class="bkbody">
+  return`<section class="panel" data-w="backup">${wc('adminset','backup')}<div class="ph"><h2>${t('bkTitle')}</h2><span class="note">${t('bkNote')}</span></div><div class="bkbody">
    <div class="bkrow"><button class="btn primary" data-act="bk-dl">${t('bkDownload')}</button><button class="btn" data-act="bk-copy">${t('bkCopy')}</button><button class="btn" data-act="bk-show">${bkShow?t('bkHide'):t('bkShowText')}</button></div>
    ${bkShow?`<textarea class="bktext" readonly id="bk_out" aria-label="${t('bkTitle')}">${esc(bkBuild())}</textarea>`:''}
    <h3 style="margin:8px 0 0">${t('bkImport')}</h3><p class="note" style="margin:0">${t('bkImportNote')}</p>

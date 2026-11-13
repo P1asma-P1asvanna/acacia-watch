@@ -34,3 +34,4 @@ td .sub{display:block;font-size:.82rem;color:var(--muted)}
 .pill.admin{border-color:var(--brass);color:var(--brass)}
 .empty{padding:34px 18px;text-align:center;display:flex;flex-direction:column;gap:12px;align-items:center;color:var(--muted)}
 
+.nav .navh{margin:12px 0 2px;padding:6px .7rem 0;border-top:1px solid var(--side-active,rgba(255,255,255,.12));font-size:.72rem;letter-spacing:.08em;text-transform:uppercase;color:var(--side-muted);opacity:.8}
