@@ -133,7 +133,7 @@ def player_rooms(c, me):
                if isinstance(x, dict) and x.get("k") in ("turn_start", "turn_end", "round_start", "round_end", "expire") and str(x.get("eid")) in seen]
         out.append({"id": str(rm.get("id")), "name": str(rm.get("name") or "")[:80], "round": clampi(ini.get("round"), 1, 9999, 1), "evt": evt,
                     "cur": str(ini.get("cur") or ""), "list": entries, "feed": feed_pub(kv_get(c, "feed:" + str(rm.get("id")))),
-                    "party": [{"name": pc_name.get(a, "—"), "mine": a in mine} for a in assign]})
+                    "party": [{"name": pc_name.get(a, "—"), "mine": a in mine, "pc": a if a in mine else ""} for a in assign]})
     return out
 
 

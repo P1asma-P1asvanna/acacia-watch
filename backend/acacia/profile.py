@@ -6,7 +6,7 @@ Stored in kv "profile:<user id>":
   avatar, bg      own pictures (img/<id>) : avatar, and the page background (a still picture or a GIF)
   dim             0-90, how dark the background picture is made so text stays readable
   frame           {mode: none|preset|image, preset, w, c1, c2, shape, img}  the ring around the avatar
-  card            {style none|preset|image, w, c, iw, img}  the border of the whole card: a preset, or a square picture cut in nine pieces (iw = drawn thickness)
+  card            {style none|preset|image, w, c, c2, iw, img}  the border of the whole card: a preset, or a square picture cut in nine pieces (iw = drawn thickness)
   pins            up to 3 ids of the person's own characters shown on the profile
 """
 import re
@@ -60,6 +60,7 @@ def clean_profile(v, own_imgs=(), own_pcs=()):
             "iw": clampi(cd.get("iw"), 8, 48, 24),
             "img": _img(cd.get("img"), own_imgs),
             "c": _color(cd.get("c"), "#c9a227"),
+            "c2": _color(cd.get("c2"), "#ffffff"),
         },
         "pins": pins[:MAX_PINS],
     }

@@ -252,6 +252,21 @@ class Routes:
                         who = str(json.loads(mine[seated[0]]).get("name") or who)[:60]
                     except Exception:
                         pass
+            # "roll as": a seated character of the player, or (GM) any character / NPC
+            asref = str(b.get("as") or "")
+            if asref[:3] == "pc:" or asref[:4] == "npc:":
+                kind, _, cid = asref.partition(":")
+                if kind == "npc" and not admin:
+                    raise Err(403, "forbidden")
+                if kind == "pc" and not admin and cid not in [a for a in (room.get("assign") or []) if a in mine]:
+                    raise Err(403, "not_seated")
+                row = c.execute("SELECT data FROM docs WHERE kind=? AND id=?", (kind, cid)).fetchone()
+                if not row:
+                    raise Err(404, "no_character")
+                try:
+                    who = str(json.loads(row["data"]).get("name") or who)[:60]
+                except Exception:
+                    pass
             entry = dice.roll(b)
             entry["who"] = who
             entry["mine"] = me["id"]

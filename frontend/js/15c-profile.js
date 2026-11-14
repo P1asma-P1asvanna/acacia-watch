@@ -3,7 +3,7 @@ let MEMBERS=[],profView='',profDraft=null,profMsg='',profBusy=false;
 const PF_PRESETS=['solid','double','dashed','dotted','ridge','glow','gradient'],PF_SHAPES=['circle','rounded','square'];
 /* picture rules shown to the person (the same numbers as IMG_SLOTS in backend/acacia/config.py) */
 const PF_FRAME_IDEAL=320,PF_FRAME_SHOW=160,PF_CARD_IDEAL=192;
-const pfDefault=()=>({tag:'',bio:'',accent:'',avatar:'',bg:'',dim:55,frame:{mode:'none',preset:'solid',w:4,c1:'#c9a227',c2:'#7a5c00',shape:'circle',img:''},card:{style:'none',w:2,c:'#c9a227',iw:24,img:''},pins:[]});
+const pfDefault=()=>({tag:'',bio:'',accent:'',avatar:'',bg:'',dim:55,frame:{mode:'none',preset:'solid',w:4,c1:'#c9a227',c2:'#7a5c00',shape:'circle',img:''},card:{style:'none',w:2,c:'#c9a227',c2:'#ffffff',iw:24,img:''},pins:[]});
 const pfNorm=p=>{const d=pfDefault(),s=p||{};return{...d,...s,frame:{...d.frame,...(s.frame||{})},card:{...d.card,...(s.card||{})},pins:Array.isArray(s.pins)?s.pins.slice():[]}};
 const memberOf=id=>MEMBERS.find(m=>m.id===id)||null;
 const myMember=()=>memberOf(session)||{id:session,disp:(me()||{}).disp||'',role:(me()||{}).role||'player',p:{},pins:[]};
@@ -22,9 +22,10 @@ function pfAvatar(p,name,size){
   return`<div class="pfav" style="width:${size}px;height:${size}px;border-radius:${rad};${ring}"><div class="pfavin" style="border-radius:${rad}">${img}</div>${over}</div>`}
 const pfCardStyle=(p,full)=>{const c=p.card,col=p.accent||'';let s=col?`--pf-acc:${col};`:'';
   if(c.style==='image'&&c.img){const w=Math.max(4,Math.round((Number(c.iw)||24)*(full?1:.5)));return s+`border:${w}px solid transparent;border-image:url('${esc(c.img)}') 25% / ${w}px stretch;`}
-  if(c.style!=='none'&&c.style!=='image'&&c.w>0){if(c.style==='gradient')s+=`border:${c.w}px solid transparent;background:linear-gradient(var(--panel,#1e1e20),var(--panel,#1e1e20)) padding-box,conic-gradient(${c.c},${p.accent||c.c},${c.c}) border-box;`;
-    else if(c.style==='glow')s+=`border:1px solid ${c.c};box-shadow:0 0 ${c.w*3}px ${c.w}px ${c.c};`;
-    else s+=`border:${c.style==='double'?Math.max(3,c.w):c.w}px ${c.style} ${c.c};`}
+  if(c.style!=='none'&&c.style!=='image'&&c.w>0){const c2=c.c2||'#ffffff',ring=`0 0 0 ${Math.max(1,Math.round(c.w/2))}px ${c2}`;
+    if(c.style==='gradient')s+=`border:${c.w}px solid transparent;background:linear-gradient(var(--panel,#1e1e20),var(--panel,#1e1e20)) padding-box,conic-gradient(${c.c},${c2},${c.c}) border-box;`;
+    else if(c.style==='glow')s+=`border:1px solid ${c.c};box-shadow:0 0 ${c.w*3}px ${c.w}px ${c2};`;
+    else s+=`border:${c.style==='double'?Math.max(3,c.w):c.w}px ${c.style} ${c.c};box-shadow:${ring};`}
   return s};
 const pfRole=m=>m.role==='admin'?t('pfAdmin'):t('pfPlayer');
 const pfDate=ts=>{try{return new Date((ts||0)*1000).toLocaleDateString(lang==='th'?'th-TH':'en-GB',{year:'numeric',month:'short',day:'numeric'})}catch(e){return''}};
@@ -75,7 +76,7 @@ function pfEditBody(d){
    </fieldset>
    <fieldset class="pfset"><legend>${t('pfCard')}</legend><p class="note">${t('pfCardHint')}</p>
     <div class="pfrow"><div class="field"><label>${t('pfStyle')}</label>${pfSel('cstyle',d.card.style,[['none',t('pfFNone')],['image',t('pfFImage')],...PF_PRESETS.map(v=>[v,pfPreset(v)])],t('pfStyle'))}</div>
-     ${d.card.style==='image'?'':`<div class="field"><label for="pf_cc">${t('pfColor1')}</label><input type="color" id="pf_cc" data-pf="cc" value="${d.card.c}"></div>`}</div>
+     ${d.card.style==='image'?'':`<div class="field"><label for="pf_cc">${t('pfColor1')}</label><input type="color" id="pf_cc" data-pf="cc" value="${d.card.c}"></div><div class="field"><label for="pf_cc2">${t('pfColor2')}</label><input type="color" id="pf_cc2" data-pf="cc2" value="${d.card.c2||'#ffffff'}"></div>`}</div>
     ${d.card.style==='image'?`<div class="pfguide"><b>${t('pfCardSize')}</b><ul><li>${fill(t('pfCardIdeal'),{n:PF_CARD_IDEAL,r:PF_CARD_IDEAL/4})}</li><li>${fill(t('pfFrameLimit'),{min:IMG_SLOTS.pcard.minShort,max:IMG_SLOTS.pcard.out})}</li><li>${t('pfCardHole')}</li></ul>
       <svg class="pfdiag" viewBox="0 0 120 120" role="img" aria-label="${t('pfFrameDiag')}"><rect x="2" y="2" width="116" height="116" fill="none" stroke="currentColor"/><rect x="32" y="32" width="56" height="56" fill="none" stroke="currentColor" stroke-dasharray="4 3"/><text x="60" y="62" text-anchor="middle" font-size="9" fill="currentColor">${PF_CARD_IDEAL}×${PF_CARD_IDEAL}</text><text x="17" y="20" text-anchor="middle" font-size="8" fill="currentColor">${PF_CARD_IDEAL/4}</text></svg></div>
      ${up('pcard',!!d.card.img,'cardimg')}<p class="note rule">${pfRule('pcard')} · ${t('pfSquareOnly')}</p>
@@ -105,6 +106,7 @@ function pfInput(el){
   else if(k==='fc1')d.frame.c1=v;else if(k==='fc2')d.frame.c2=v;
   else if(k==='cstyle'){d.card.style=v;render();return true}
   else if(k==='cc')d.card.c=v;
+  else if(k==='cc2')d.card.c2=v;
   else if(k==='ciw'){d.card.iw=Number(v);const c=document.getElementById('pf_ciwv');if(c)c.textContent=v+'px'}
   else if(k==='cw'){d.card.w=Number(v);const c=document.getElementById('pf_cwv');if(c)c.textContent=v+'px'}
   else return false;
