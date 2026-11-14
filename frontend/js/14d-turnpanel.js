@@ -112,13 +112,19 @@ function taTargetSel(rid,eid){
   const L=taEnts(rid).filter(x=>x.id!==eid);
   return`<div class="field"><label for="ta_tgt">${t('taTgt')}</label><select id="ta_tgt" data-ta="tgt" data-eid="${eid}"><option value="">${t('taNoTgt')}</option>${L.map(x=>`<option value="${x.id}" ${TA.tgt[eid]===x.id?'selected':''}>${esc(x.name)}</option>`).join('')}</select></div>`}
 function taSection(rid,eid,slot,d){
-  const st=taSt(rid),cur=taSl(st,eid),eidA=`data-rid="${rid}" data-id="${eid}"`,dis=TA.busy?'disabled':'',
+  let other='';const st=taSt(rid),cur=taSl(st,eid),eidA=`data-rid="${rid}" data-id="${eid}"`,dis=TA.busy?'disabled':'',
     btn=(act,lbl,extra,cls)=>`<button type="button" class="btn small ${cls||''}" data-act="${act}" ${eidA} ${extra||''} ${dis}>${lbl}</button>`,rows=[];
   if(slot!=='int'&&d){
-    (d.weapons||[]).map(r=>({r,s:weaponStats(d,r)})).filter(x=>x.s).forEach(({r,s})=>rows.push(`<li><span class="ta-ic">⚔</span><div class="ta-nm"><b>${esc(r.ref)}</b><small>${t('wAtk')} ${sgn(s.atk)} · ${esc(s.dmg||'—')}</small></div><div class="ta-bt">${btn('ta-w',t('wRollAtk'),`data-v="${esc(r.id)}" data-k="atk"`,'primary')}${s.ds?btn('ta-w',t('wRollDmg'),`data-v="${esc(r.id)}" data-k="dmg"`)+btn('ta-w','×2',`data-v="${esc(r.id)}" data-k="crit" title="${esc(t('wRollCrit'))}"`):''}</div></li>`));
-    (d.spells||[]).map(x=>({s:x,sp:spellOf(x.n)})).filter(x=>{const k=x.sp?x.sp.timeK:'action';return slot==='act'?(k!=='bonus'&&k!=='reaction'):k===(slot==='bon'?'bonus':'reaction')}).forEach(({s,sp})=>{
-      const o=sp?taSpellOpts(d,sp):{opts:''},key=s.n.replace(/\W/g,'_');
-      rows.push(`<li><span class="ta-ic">✦</span><div class="ta-nm"><b>${esc(s.n)}</b><small>${sp?(sp.lvl?t('spLv')+' '+sp.lvl:t('spCantrip'))+(sp.conc?' · '+t('spConc'):''):t('spNotInCat')}</small></div><div class="ta-bt">${o.opts?`<select id="ta_sl_${key}" aria-label="${t('spCastAt')}">${o.opts}</select>`:''}${btn('ta-cast',t('spCast'),`data-v="${esc(s.n)}" data-k="${slot}"`,'primary')}${o.I&&o.I.atk!=null?btn('ta-satk','🎯',`data-v="${esc(s.n)}" title="${esc(t('spAtk'))}"`):''}</div></li>`)});
+    const gl=(k,n)=>{if(n)rows.push(`<li class="ta-gl">${t(k)}</li>`)};
+    const WL=(d.weapons||[]).map(r=>({r,s:weaponStats(d,r)})).filter(x=>x.s);gl('taAttack',WL.length);
+    WL.forEach(({r,s})=>rows.push(`<li><span class="ta-ic">⚔</span><div class="ta-nm"><b>${esc(r.ref)}</b><small>${t('wAtk')} ${sgn(s.atk)} · ${esc(s.dmg||'—')}</small></div><div class="ta-bt">${btn('ta-w',t('wRollAtk'),`data-v="${esc(r.id)}" data-k="atk"`,'primary')}${s.ds?btn('ta-w',t('wRollDmg'),`data-v="${esc(r.id)}" data-k="dmg"`)+btn('ta-w','×2',`data-v="${esc(r.id)}" data-k="crit" title="${esc(t('wRollCrit'))}"`):''}</div></li>`));
+    const allSp=(d.spells||[]).map(x=>({s:x,sp:spellOf(x.n)})),fits=x=>{const k=x.sp?x.sp.timeK:'action';return slot==='act'?(k!=='bonus'&&k!=='reaction'):k===(slot==='bon'?'bonus':'reaction')};
+    const spRow=({s,sp})=>{const o=sp?taSpellOpts(d,sp):{opts:''},key=s.n.replace(/\W/g,'_');
+      return`<li><span class="ta-ic">✦</span><div class="ta-nm"><b>${esc(s.n)}</b><small>${sp?(sp.lvl?t('spLv')+' '+sp.lvl:t('spCantrip'))+(sp.conc?' · '+t('spConc'):'')+(sp.time?' · '+esc(sp.time):''):t('spNotInCat')}</small></div><div class="ta-bt">${o.opts?`<select id="ta_sl_${key}" aria-label="${t('spCastAt')}">${o.opts}</select>`:''}${btn('ta-cast',t('spCast'),`data-v="${esc(s.n)}" data-k="${slot}"`,'primary')}${o.I&&o.I.atk!=null?btn('ta-satk','🎯',`data-v="${esc(s.n)}" title="${esc(t('spAtk'))}"`):''}</div></li>`};
+    const SP=allSp.filter(fits);gl('taCast',allSp.length);
+    SP.forEach(x=>rows.push(spRow(x)));
+    if(allSp.length&&!SP.length)rows.push(`<li class="ta-gl ta-none">${t('taNoSpellHere')}</li>`);
+    if(slot!=='act'&&allSp.length>SP.length)other=`<details class="ta-std"><summary>${t('taOtherSp')}</summary><ul class="ta-list">${allSp.filter(x=>!fits(x)).map(spRow).join('')}</ul></details>`;
     if(typeof featList==='function')featList(d).filter(f=>slot==='act'?f.tk==='action':taFeatKind(f)===(slot==='bon'?'bonus':'reaction')).forEach(f=>rows.push(`<li><span class="ta-ic">★</span><div class="ta-nm"><b>${esc(f.name)}</b></div><div class="ta-bt">${btn('ta-free',t('taUse'),`data-v="${esc(f.name)}" data-k="${slot}"`,'primary')}</div></li>`));
     (d.res||[]).forEach(r=>{const mx=resMax(d,r),u=Math.min(mx,Math.max(0,Math.round(num(r.used))));
       rows.push(`<li><span class="ta-ic">◆</span><div class="ta-nm"><b>${esc(r.name)}</b><small>${mx-u}/${mx}</small></div><div class="ta-bt"><button type="button" class="btn small primary" data-act="ta-res" ${eidA} data-v="${esc(r.id)}" data-k="${slot}" ${u>=mx||TA.busy?'disabled':''}>${t('taUse')}</button></div></li>`)})}
@@ -126,6 +132,7 @@ function taSection(rid,eid,slot,d){
   if(cur.s[slot])h+=`<div class="ta-usedline"><span>✔ ${esc(cur.s[slot])}</span>${btn('ta-undo',t('taUndo'),`data-k="${slot}"`)}</div>`;
   h+=taTargetSel(rid,eid);
   if(rows.length)h+=`<ul class="ta-list">${rows.join('')}</ul>`;
+  h+=other;
   h+=`<details class="ta-std"><summary>${t('taStd')}</summary><div class="ta-chips">${TA_STD[slot].map(p=>btn('ta-free',esc(taStdL(p)),`data-v="${esc(p[0])}" data-k="${slot}"`)).join('')}</div></details>`;
   h+=`<div class="ta-custom"><input id="ta_txt" data-ta="txt" data-eid="${eid}" maxlength="120" aria-label="${esc(t('taCustom'))}" placeholder="${esc(t('taCustom')+' — '+t('taCustomPh'))}" value="${esc(TA.txt[eid]||'')}">${btn('ta-free',t('taUse'),`data-v="" data-k="${slot}"`,'primary')}</div>`;
   return h}
@@ -172,12 +179,12 @@ function taSet(el){
   const k=el.dataset.ta;
   if(k==='tgt')TA.tgt[el.dataset.eid]=el.value;else if(k==='txt')TA.txt[el.dataset.eid]=el.value;
   else if(k==='xr')TA.xr=el.value;else if(k==='xw')TA.xw=el.value;else if(k==='mode')TA.mode=el.value}
-Object.assign(TX.th,{taTitle:'ถึงตา {n}',taHint:'แตะ Action / Bonus / Reaction / Interaction เพื่อเลือกสิ่งที่จะทำ',taMore:'ทอยเต๋าเพิ่ม / โหมดทอย',taOlder:'ดูย้อนหลัง',taFree:'ว่าง',taUndo:'คืนค่า (ยังไม่ได้ใช้)',taEnd:'จบ Turn',taEnded:'{n} จบ Turn แล้ว',taWait:'จบ Turn แล้ว — รอ GM เลื่อนไปตาถัดไป',taNext:'ตาถัดไป →',taEndedShort:'จบ Turn',
+Object.assign(TX.th,{taTitle:'ถึงตา {n}',taHint:'แตะ Action / Bonus / Reaction / Interaction เพื่อเลือกสิ่งที่จะทำ',taMore:'ทอยเต๋าเพิ่ม / โหมดทอย',taNoSpellHere:'ไม่มีเวทแบบนี้ในรายการ',taOtherSp:'เวทอื่นๆ ทั้งหมด (ร่ายในช่องนี้)',taOlder:'ดูย้อนหลัง',taFree:'ว่าง',taUndo:'คืนค่า (ยังไม่ได้ใช้)',taEnd:'จบ Turn',taEnded:'{n} จบ Turn แล้ว',taWait:'จบ Turn แล้ว — รอ GM เลื่อนไปตาถัดไป',taNext:'ตาถัดไป →',taEndedShort:'จบ Turn',
  taTgt:'เป้าหมาย',taNoTgt:'— ไม่ระบุ —',taAttack:'โจมตีด้วยอาวุธ',taNoWeap:'ยังไม่มีอาวุธในชีต (เพิ่มได้ที่ชีตตัวละคร) หรือพิมพ์เองด้านล่าง',taCast:'ร่ายเวท',taNoSpell:'ไม่มีเวทที่ใช้ได้ในช่องนี้',taFeat:'ความสามารถ',taRes:'ทรัพยากรคลาส',taUse:'ใช้',taStd:'การกระทำทั่วไป (Dash, Dodge …)',taCustom:'พิมพ์เอง',taCustomPh:'เช่น กระโดดข้ามหน้าผา',
  taXRoll:'ทอยเพิ่ม (เช่น 8d6+2)',taXPh:'d20+3',taXWhy:'เพื่ออะไร (ไม่บังคับ)',taBadDice:'พิมพ์ลูกเต๋าไม่ถูก เช่น d20+3 หรือ 8d6',taRollWord:'ทอย',taLog:'บันทึกการกระทำ',taLogEmpty:'ยังไม่มีบันทึก',taReaOf:'Reaction ของ {n}',
  taAtk:'โจมตี',taDmg:'ดาเมจ',taCrit:'คริติคอล!',taMiss:'พลาดสนิท',taNotTurn:'ยังไม่ใช่ตาของตัวละครนี้',taFail:'บันทึกไม่สำเร็จ ลองใหม่อีกครั้ง',taResOut:'ทรัพยากรนี้หมดแล้ว',
  taTkL:'ประเภทเวลาใช้',taTkAuto:'เดาจากข้อความ',taTkAct:'Action',taTkBon:'Bonus Action',taTkRea:'Reaction',taTkNone:'ไม่ใช้ (พาสซีฟ)',taEndAlert:'{n} จบ Turn แล้ว',taTkHint:'กำหนดว่าฟีเจอร์นี้อยู่ในปุ่มไหนของแผง Turn (ถ้าเลือก "เดาจากข้อความ" ระบบจะหาคำว่า bonus action / reaction ในคำอธิบาย)'});
-Object.assign(TX.en,{taTitle:"{n}'s turn",taHint:'Tap Action / Bonus / Reaction / Interaction to choose what to do.',taMore:'Extra roll / roll mode',taOlder:'Older',taFree:'free',taUndo:'Undo (not used)',taEnd:'End Turn',taEnded:'{n} ended the turn',taWait:'Turn ended — waiting for the GM to move on',taNext:'Next turn →',taEndedShort:'ended the turn',
+Object.assign(TX.en,{taTitle:"{n}'s turn",taHint:'Tap Action / Bonus / Reaction / Interaction to choose what to do.',taMore:'Extra roll / roll mode',taNoSpellHere:'No spell of this type in your list',taOtherSp:'All other spells (cast in this slot)',taOlder:'Older',taFree:'free',taUndo:'Undo (not used)',taEnd:'End Turn',taEnded:'{n} ended the turn',taWait:'Turn ended — waiting for the GM to move on',taNext:'Next turn →',taEndedShort:'ended the turn',
  taTgt:'Target',taNoTgt:'— none —',taAttack:'Weapon attack',taNoWeap:'No weapons on the sheet yet (add them on the character sheet) — or type below',taCast:'Cast a spell',taNoSpell:'No spell fits this option',taFeat:'Features',taRes:'Class resources',taUse:'Use',taStd:'Common actions (Dash, Dodge …)',taCustom:'Type your own',taCustomPh:'e.g. jump across the gap',
  taXRoll:'Extra roll (e.g. 8d6+2)',taXPh:'d20+3',taXWhy:'What for (optional)',taBadDice:'Dice not understood, e.g. d20+3 or 8d6',taRollWord:'Roll',taLog:'Action log',taLogEmpty:'Nothing logged yet',taReaOf:"{n}'s Reaction",
  taAtk:'attack',taDmg:'damage',taCrit:'critical!',taMiss:'natural 1',taNotTurn:"It is not this character's turn",taFail:'Could not save, try again',taResOut:'That resource is used up',

@@ -103,3 +103,5 @@ button.ta-dot{cursor:pointer}
 @media(max-width:560px){.ta-log li{grid-template-columns:20px 1fr}.ta-tm{display:none}}
 .ini>.ta{margin:0 16px 14px}
 .ta-meters>*{min-width:0}.ta,.ta-body{max-width:100%;box-sizing:border-box}.ta-m small{display:block}.ta-list li>*{min-width:0}.ta-custom input{width:100%}
+.ta-list li.ta-gl{display:block;padding:2px 4px;background:none;font-size:.78rem;font-weight:800;opacity:.7;text-transform:uppercase;letter-spacing:.04em}
+.ta-list li.ta-none{text-transform:none;font-weight:400;font-style:italic}
