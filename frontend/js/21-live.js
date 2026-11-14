@@ -4,7 +4,7 @@
    and nobody is typing, so the page never jumps under a finger. */
 const LIVE={v:null,run:false,ac:null,fails:0,dirty:false,timer:0};
 const liveSleep=ms=>new Promise(r=>setTimeout(r,ms));
-const liveSig=()=>JSON.stringify([users,pcs,npcs,rooms,prooms,SITE,PREFS,CAT,FEEDS,MEMBERS]);
+const liveSig=()=>JSON.stringify([users,pcs,npcs,rooms,prooms,SITE,PREFS,CAT,FEEDS,MEMBERS,TURNS]);
 function liveBusy(){
   if(edit||dedit||profDraft||roomEdit||inflight||layTimer||document.body.classList.contains('dragging-w'))return true;
   const a=document.activeElement;

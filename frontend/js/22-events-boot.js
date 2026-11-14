@@ -23,6 +23,7 @@ document.addEventListener('click',e=>{
   if(a==='arrange'||a.startsWith('w-')){layAction(a,b.dataset.page,id);return}
   if(['nav','back','edit','new','save','del-edit','open','ropen','rclose'].includes(a))arrangePage=null;
   if(a.startsWith('bk-')){bkAction(a);return}
+  if(a.startsWith('ta-')){taClick(a,b);return}
   if(a.startsWith('ini-')){iniAction(a,id);return}
   if(a.startsWith('cb-')||a.startsWith('fx-')||a.startsWith('q-')){cbAction(a,b);return}
   if(a==='lang'){lang=v;put('dd_lang',lang);render()}
@@ -113,6 +114,7 @@ document.addEventListener('input',e=>{
   if(el.dataset.featq!==undefined){featFilter();return}
   if(el.dataset.spq!==undefined){spellFilter();return}
   if(el.dataset.td!==undefined){tdSet(el);return}
+  if(el.dataset.ta!==undefined){taSet(el);return}
   if(el.dataset.pf!==undefined){pfInput(el);return}
   if(el.dataset.bk){if(el.dataset.bk==='text')bkText=el.value;return}
   if(view==='adminset'&&adminDraft&&el.dataset.ad){const f=el.dataset.ad;adminDraft[f]=f==='abMax'?el.value:el.value;if(f!=='abMax'){const bd=document.querySelector('.side .brand');if(bd)bd.innerHTML=brandHtml()}return}

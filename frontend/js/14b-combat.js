@@ -108,7 +108,7 @@ function cbFire(I,e,when,unit,only){
    "Turn" durations tick down when the owner's own turn ends. "Round" durations tick down when the round ends (everybody has played).
    Every step records what is in effect (I.evt, and fx.hl on each condition) so both the GM and the players can see it. */
 const cbEvt=(I,k,e,cid)=>{I.evt=I.evt||[];I.evt.push({k,eid:e.id,cid:cid||'',r:I.round})};
-function cbClearHl(I){I.evt=[];I.list.forEach(e=>(e.fx||[]).forEach(f=>{f.hl=''}))}
+function cbClearHl(I){I.tn=(I.tn||0)+1;I.evt=[];I.list.forEach(e=>(e.fx||[]).forEach(f=>{f.hl=''}))}
 function cbMark(I,k,e,hl){(e.fx||[]).forEach(f=>{cbEvt(I,k,e,f.cid);f.hl=hl})}
 function cbExpire(I,e,f){cbEvt(I,'expire',e,f.cid);cbDelFx(I,e,f,lang==='th'?'หมดเวลา':'expired')}
 function cbEndTurn(I,e){

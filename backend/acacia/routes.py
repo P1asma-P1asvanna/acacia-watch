@@ -10,7 +10,7 @@ from .config import COOKIE, FAILS
 from .errors import Err
 from .security import check_pw, hash_pw, new_user_row
 from .store import boot_state, clean_cat, clean_site, kv_get, kv_set, user_pub
-from . import dice, images, profile
+from . import dice, images, profile, turns
 from .config import IMG_SLOTS
 from .validation import ID_RE, clean_prefs, clean_record, ADMIN_ONLY
 
@@ -272,5 +272,35 @@ class Routes:
             entry["mine"] = me["id"]
             kv_set(c, "feed:" + rid, dice.push(kv_get(c, "feed:" + rid), entry))
             return {"ok": True, "entry": entry}
+
+        if path == "/api/turn" and me:
+            rid = str(b.get("room") or "")
+            eid = str(b.get("eid") or "")
+            if not ID_RE.match(rid) or not ID_RE.match(eid):
+                raise Err(400, "bad_room")
+            room = next((r for r in (kv_get(c, "rooms") or []) if isinstance(r, dict) and str(r.get("id")) == rid), None)
+            if not room:
+                raise Err(404, "no_room")
+            ini = room.get("init") if isinstance(room.get("init"), dict) else {}
+            entry = next((e for e in (ini.get("list") or []) if isinstance(e, dict) and str(e.get("id")) == eid and e.get("init") is not None), None)
+            if not entry:
+                raise Err(404, "no_entry")
+            mine = set()
+            if not admin:
+                mine = {r["id"] for r in c.execute("SELECT id FROM docs WHERE kind='pc' AND owner=?", (me["id"],))}
+            ref = str(entry.get("ref") or "")
+            name = str(entry.get("name") or "")
+            if ref[:3] == "pc:" or ref[:4] == "npc:":
+                kind, _, cid = ref.partition(":")
+                row = c.execute("SELECT data FROM docs WHERE kind=? AND id=?", (kind, cid)).fetchone()
+                if row:
+                    try:
+                        name = str(json.loads(row["data"]).get("name") or "")
+                    except Exception:
+                        pass
+            st = turns.view(kv_get(c, "turn:" + rid), ini)
+            turns.apply(st, ini, entry, name or "—", admin, mine, b)
+            kv_set(c, "turn:" + rid, st)
+            return {"ok": True}
 
         raise Err(403 if path.startswith("/api/") else 404, "forbidden")

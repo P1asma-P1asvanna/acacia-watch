@@ -17,7 +17,7 @@ function iniPanel(rm){
     const c=iniChar(e),now=started&&e.id===I.cur,nxt=e.id===nextId,dn=doneIds.has(e.id),kind=e.ref&&e.ref.startsWith('pc:')?t('iniPc'):e.ref?t('iniGm'):t('iniFoe');
     const hp=c?`${curHp(c)} / ${c.hp}${num(c.hpTemp)?' +'+num(c.hpTemp):''}`:`<input type="number" min="0" aria-label="${t('iniHpF')}" data-ini="hp" data-id="${e.id}" value="${e.hp==null?'':esc(e.hp)}" placeholder="HP">`;
     return`<li class="ini-row ${now?'now':nxt?'next':dn?'done':''}" ${now?'aria-current="true"':''}><span class="ini-mark" aria-hidden="true">${now?'▶':nxt?'→':dn?'✓':''}</span>
-     <div class="ini-name">${c?cpicHtml(c,'sm'):''}<div><b>${esc(iniName(e))}</b><small>${kind} · ${t('iniMod')} ${sgn(iniModOf(e))}${now?' · '+t('iniNow'):nxt?' · '+t('iniNextTag'):dn?' · '+t('iniDoneTag'):''}</small></div></div>
+     <div class="ini-name">${c?cpicHtml(c,'sm'):''}<div><b>${esc(iniName(e))}</b>${taDots(rm.id,e.id)}<small>${kind} · ${t('iniMod')} ${sgn(iniModOf(e))}${now?' · '+t('iniNow'):nxt?' · '+t('iniNextTag'):dn?' · '+t('iniDoneTag'):''}</small></div></div>
      <input type="number" aria-label="${t('iniInit')}: ${esc(iniName(e))}" data-ini="init" data-id="${e.id}" value="${e.init==null?'':e.init}" placeholder="${t('iniNoRoll')}">
      <span class="ini-hp">${t('iniHpF')} ${hp}</span>
      <div class="ini-act"><button class="btn small" data-act="ini-roll" data-id="${e.id}">${t('iniRoll')}</button><button class="btn small danger" data-act="ini-del" data-id="${e.id}" aria-label="${t('iniDel')} ${esc(iniName(e))}">✕</button></div>${cbSub(e)}</li>`}).join('');
@@ -37,7 +37,7 @@ function iniPanel(rm){
     <div class="field sm"><label for="ini_mod">${t('iniMod')}</label><input id="ini_mod" type="number" value="0"></div>
     <div class="field sm"><label for="ini_hp">${t('iniHpF')}</label><input id="ini_hp" type="number" min="0"></div>
     <button class="btn" data-act="ini-addcustom">${t('iniAdd')}</button><span class="err" role="alert">${esc(iniErr)}</span></div>
-   ${cbEvtHtml(I.evt,I.list,true)}${cbQueue(I)}${cbHowHtml()}${started?`<div class="ini-legend"><span><i style="background:var(--turn-now)"></i>${t('iniNow')}</span><span><i style="background:var(--turn-next)"></i>${t('iniNextTag')}</span><span><i style="background:var(--turn-done)"></i>${t('iniDoneTag')}</span></div>`:''}${I.list.length?`<ul class="ini-list">${rows}</ul><p class="note" style="margin:0;padding:10px 16px 14px">${t('iniTies')} · ${t('iniHpNote')}</p>`:`<div class="empty"><div>${t('iniEmpty')}</div></div>`}${cbLogHtml(I)}</section>`;
+   ${started?taGmPanel(rm.id):taLogHtml(rm.id)}${cbEvtHtml(I.evt,I.list,true)}${cbQueue(I)}${cbHowHtml()}${started?`<div class="ini-legend"><span><i style="background:var(--turn-now)"></i>${t('iniNow')}</span><span><i style="background:var(--turn-next)"></i>${t('iniNextTag')}</span><span><i style="background:var(--turn-done)"></i>${t('iniDoneTag')}</span></div>`:''}${I.list.length?`<ul class="ini-list">${rows}</ul><p class="note" style="margin:0;padding:10px 16px 14px">${t('iniTies')} · ${t('iniHpNote')}</p>`:`<div class="empty"><div>${t('iniEmpty')}</div></div>`}${cbLogHtml(I)}</section>`;
 }
 function iniAction(a,id){
   const rm=rooms.find(r=>r.id===roomOpen);if(!rm)return;const I=iniData(rm);iniErr='';
