@@ -3,8 +3,8 @@
    The person's layout lives in PREFS.lay[page] = {o:[order], h:[hidden ids], s:{id:1 = half width}} and is turned into
    CSS rules (order / grid-column / display) in one <style>, so re-rendering never loses it and the page DOM stays as is. */
 const LAYOUT={
-  sheet:{ids:['basic','bgpick','abil','asi','prof','hp','spells','weapons','profs','items','ac','feat','combat'],
-    label:{basic:'secBasic',bgpick:'secBgPick',abil:'secAbil',asi:'secAsi',prof:'secProf',hp:'hpTitle',spells:'spTitle',weapons:'wTitle',profs:'prTitle',items:'itTitle',ac:'acTitle',feat:'featTitleP',combat:'secCombat'}},
+  sheet:{ids:['basic','bgpick','abil','asi','prof','hp','spells','res','weapons','profs','items','ac','feat','combat'],
+    label:{basic:'secBasic',bgpick:'secBgPick',abil:'secAbil',asi:'secAsi',prof:'secProf',hp:'hpTitle',spells:'spTitle',res:'resTitle',weapons:'wTitle',profs:'prTitle',items:'itTitle',ac:'acTitle',feat:'featTitleP',combat:'secCombat'}},
   players:{ids:['list','accounts'],label:{list:'players',accounts:'accounts'}},
   site:{ids:['colors','decor','fx','shape'],label:{colors:'sColors',decor:'sDecor',fx:'sFx',shape:'sShape'}},
   adminset:{ids:['identity','rules','backup'],label:{identity:'sIdentity',rules:'aRules',backup:'bkTitle'}},

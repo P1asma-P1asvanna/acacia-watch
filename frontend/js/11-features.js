@@ -51,7 +51,7 @@ function renderEditor(){
    <div class="field"><label for="e_insp">${t('fInsp')}</label><select id="e_insp" data-f="insp"><option value="0" ${d.insp?'':'selected'}>—</option><option value="1" ${d.insp?'selected':''}>✓</option></select></div>
   </div><div class="grid wide" style="padding-top:0"><div class="field"><label for="e_notes">${t('fNotes')}</label><textarea id="e_notes" data-f="notes">${esc(d.notes)}</textarea></div></div></section>`;
   return`${head(esc(d.name)||t('add'),pc?t('players'):t('npcs'),`<div class="acts">${arrangeBtn('sheet')}<button class="btn" data-act="back">← ${t('back')}</button></div>`)}
-  ${arrangeBar('sheet')}${wgrid('sheet',[['basic',basic],['bgpick',bgPanel(d)],['abil',abil],['asi',asiPanel(d)],['prof',profPanel(d)],['hp',hpPanel(d)],['spells',spellPanel(d)],['weapons',weaponsPanel(d)],['profs',profsPanel(d)],['items',itemsPanel(d)],['ac',acPanel(d)],['feat',featPanel(d)],['combat',combat]])}
+  ${arrangeBar('sheet')}${wgrid('sheet',[['basic',basic],['bgpick',bgPanel(d)],['abil',abil],['asi',asiPanel(d)],['prof',profPanel(d)],['hp',hpPanel(d)],['spells',spellPanel(d)],['res',resPanel(d)],['weapons',weaponsPanel(d)],['profs',profsPanel(d)],['items',itemsPanel(d)],['ac',acPanel(d)],['feat',featPanel(d)],['combat',combat]])}
   <section class="panel"><div class="bar"><button class="btn danger" data-act="del-edit">${delArm===d.id?t('delSure'):t('del')}</button><button class="btn primary" data-act="save">${t('save')}</button></div></section>`;
 }
 

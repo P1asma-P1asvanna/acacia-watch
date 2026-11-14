@@ -31,6 +31,7 @@ function renderSite(){
    <p class="note" style="padding:0 16px 14px">${t('sGifNote')}</p></section>
   <section class="panel" data-w="fx">${wc('site','fx')}<div class="ph"><h2>${t('sFx')}</h2></div><div class="grid wide">
     <div class="field"><label for="s_fx">${t('fxStyle')}</label><select id="s_fx" data-s="fx">${['lift','glow','shine','bounce','none'].map(o=>`<option value="${o}" ${(d.fx||'lift')===o?'selected':''}>${t('fx_'+o)}</option>`).join('')}</select></div>
+    <div class="field"><label for="s_turn">${t('turnSet')}</label><select id="s_turn" data-s="turn"><option value="on" ${(d.turn||'on')==='on'?'selected':''}>${t('turnOnL')}</option><option value="off" ${d.turn==='off'?'selected':''}>${t('turnOffL')}</option></select></div>
     <div class="field"><label for="s_fxms">${t('fxSpeed')}: <span id="v_fxms">${d.fxms||160}</span> ms</label><input id="s_fxms" data-s="fxms" type="range" min="60" max="500" step="20" value="${d.fxms||160}" style="padding:0"></div>
     <div class="field"><label for="s_fxamt">${t('fxAmt')}: <span id="v_fxamt">${d.fxamt??3}</span></label><input id="s_fxamt" data-s="fxamt" type="range" min="0" max="10" step="1" value="${d.fxamt??3}" style="padding:0"></div></div>
    <div class="fxprev"><span class="note">${t('fxPreview')}</span><button class="btn primary" type="button">${t('save')}</button><button class="btn" type="button">${t('edit')}</button><button class="btn small danger" type="button">${t('del')}</button></div></section>

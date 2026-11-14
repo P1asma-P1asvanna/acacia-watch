@@ -121,8 +121,8 @@ function updateHpBar(){
   if(g('hp_bt'))g('hp_bt').style.width=tmp/tot*100+'%';if(g('hp_txt'))g('hp_txt').textContent=cur+' / '+max;if(g('hp_ttxt'))g('hp_ttxt').textContent=tmp?'+'+tmp+' temp':'';
 }
 /* long rest: full HP, no temp HP, regain half the hit dice (at least 1), death saves cleared */
-function restShort(d){d.sl=d.sl||{u:[],p:0};d.sl.p=0}
-function restLong(d){const lvl=hpCalc(d).lvl;d.sl={u:[],p:0};d.conc='';d.hpCur=null;d.hpTemp=0;d.hdUsed=Math.max(0,Math.round(num(d.hdUsed))-Math.max(1,Math.floor(lvl/2)));d.death={s:0,f:0}}
+function restShort(d){d.sl=d.sl||{u:[],p:0};d.sl.p=0;resRest(d,'short')}
+function restLong(d){const lvl=hpCalc(d).lvl;d.sl={u:[],p:0};d.conc='';d.hpCur=null;d.hpTemp=0;d.hdUsed=Math.max(0,Math.round(num(d.hdUsed))-Math.max(1,Math.floor(lvl/2)));d.death={s:0,f:0};resRest(d,'long')}
 let hdMsg='';
 function hpAction(a,id){
   const d=edit.draft,max=effMax(d),cur=curOf(d,max),lvl=hpCalc(d).lvl,amtEl=document.getElementById('hp_amt'),amt=Math.max(0,Math.round(num(amtEl&&amtEl.value)));

@@ -2,7 +2,7 @@
 import re
 
 from .images import URL_RE
-from . import feats, multiclass, spells
+from . import feats, multiclass, resources, spells
 from .numbers import clampi, num
 from .rules import ac_calc, eff_ac, eff_max, hp_calc
 
@@ -43,6 +43,8 @@ def clean_prefs(v, own_imgs=()):
         out["font"] = v["font"]
     if v.get("decoPos") in ("tl", "tr", "bl", "br"):
         out["decoPos"] = v["decoPos"]
+    if v.get("turn") in ("on", "off"):
+        out["turn"] = v["turn"]
     if v.get("anim") in ("on", "off"):
         out["anim"] = v["anim"]
     for k, lo, hi in (("fxms", 60, 500), ("fxamt", 0, 10), ("radius", 0, 20), ("pg", 3, 100), ("dim", 0, 90),
@@ -75,6 +77,7 @@ def clean_record(rec, kind, existing, actor_is_admin, actor_id, user_ids, cat, o
     multiclass.clean_mc(d)
     feats.clean_picks(d, cat)
     spells.clean_casting(d)
+    resources.clean_res(d)
     d["xp"] = clampi(d.get("xp"), 0, 10_000_000, 0)
     d["name"] = str(d.get("name") or "")[:120]
     if kind == "pc":

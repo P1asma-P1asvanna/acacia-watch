@@ -6,6 +6,8 @@ document.addEventListener('click',e=>{
   const ma=e.target.closest('[data-mca]');
   if(ma&&edit){const d0=edit.draft;d0.mc=Array.isArray(d0.mc)?d0.mc:[];if(ma.dataset.mca==='add'){if(d0.mc.length<MC_MAX&&(Math.round(num(d0.level))||1)>1){const used=clsRows(d0).map(r=>r.cls);d0.mc.push({id:uid().slice(0,6).replace(/[^A-Za-z0-9]/g,'x'),cls:names('classes').filter(n=>!used.includes(n))[0]||names('classes')[0],sub:'',level:1})}}else d0.mc=d0.mc.filter(x=>x.id!==ma.dataset.id);mcChanged();return}
   if(ia&&edit){const d0=edit.draft;if(ia.dataset.ita==='add'){const it={id:uid(),name:'',qty:1,src:''};d0.items.push(it);refreshItems('it_n_'+it.id)}else{d0.items=d0.items.filter(x=>x.id!==ia.dataset.id);refreshItems()}return}
+  const ra=e.target.closest('[data-ra]');if(ra&&edit){resAction(ra.dataset.ra,ra);return}
+  const wr=e.target.closest('[data-wroll]');if(wr){weaponRoll(wr.dataset.wroll,wr.dataset.id);return}
   const wa=e.target.closest('[data-wa]');
   if(wa&&edit){const d0=edit.draft;if(wa.dataset.wa==='add'){const v=document.getElementById('w_add').value;if(v){d0.weapons.push({id:uid(),ref:v,bonus:0});refreshWeapons()}}else{d0.weapons=d0.weapons.filter(x=>x.id!==wa.dataset.id);refreshWeapons()}return}
   const ha=e.target.closest('[data-hpa]');
@@ -106,6 +108,7 @@ document.addEventListener('click',e=>{
 });
 document.addEventListener('submit',e=>{if(e.target.id==='authForm'){e.preventDefault();submitAuth(e.target)}});
 document.addEventListener('input',e=>{
+  if(e.target.dataset&&e.target.dataset.rf&&edit&&(e.target.dataset.rf==='name'||e.target.dataset.rf==='max')){resField(e.target);return}
   const el=e.target;
   if(el.dataset.featq!==undefined){featFilter();return}
   if(el.dataset.spq!==undefined){spellFilter();return}
@@ -150,6 +153,8 @@ document.addEventListener('input',e=>{
 });
 document.addEventListener('change',e=>{
   const el=e.target;
+  if(el.dataset.rf&&edit){resField(el);return}
+  if(el.dataset.wset){if(el.dataset.wset==='room')wRoom=el.value;else wMode=el.value;return}
   if(el.dataset.bk==='file'){const f=el.files&&el.files[0];if(!f)return;const fr=new FileReader();fr.onload=()=>{bkText=String(fr.result||'');bkMsg=fill(t('bkLoaded'),{n:Math.round(bkText.length/1024)});dataArm=null;render()};fr.onerror=()=>{bkMsg=t('bkBad');render()};fr.readAsText(f);return}
   if(el.dataset.sk){render();return}
   if(el.dataset.ini){iniChange(el);return}
