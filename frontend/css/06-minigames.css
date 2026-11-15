@@ -52,3 +52,7 @@
 .mgpad{height:84px;border-radius:14px;border:3px solid rgba(255,255,255,.7);color:#fff;font-size:1.3rem;font-weight:800;touch-action:none}
 .mgpad.on{filter:brightness(1.6);transform:scale(.95)}
 .mgplay:has(.mglanes) .mgmid{position:absolute;inset:0;pointer-events:none}
+.mgsimon{display:grid;grid-template-columns:repeat(var(--n),1fr);gap:10px;width:min(92vw,440px);margin:auto 0 max(16px,env(safe-area-inset-bottom))}
+.mgsp{aspect-ratio:1;border-radius:18px;border:3px solid rgba(255,255,255,.5);background:var(--c);color:#fff;font-size:1.4rem;font-weight:800;touch-action:none;transition:background .06s,transform .06s}
+.mgsp.on{background:var(--lit);transform:scale(1.06);box-shadow:0 0 26px var(--lit)}
+.mgprog{width:min(92vw,520px);height:22px;border-radius:11px;overflow:hidden;box-shadow:0 0 0 2px rgba(255,255,255,.4)}.mgprog i{display:block;height:100%;width:0;transition:width .08s}

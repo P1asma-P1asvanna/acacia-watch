@@ -1,7 +1,7 @@
 /* ---------- rhythm minigames: game list + editor (GM) and the timing-bar engine ---------- */
 let GAMES=[],GD=null,mgMsg='',mgBusy=false;
 const MG_COL=['bar','zone','perfect','marker'];
-function mgNew(){return{id:'g'+Math.random().toString(36).slice(2,10),name:'',type:'timing',media:'',bpm:100,offset:0,rounds:8,beats:2,zone:75,zw:16,key:'',lanes:4,fall:1500,sub:1,pat:'',dir:'down',col:{bar:'#2a2a30',zone:'#3b82f6',perfect:'#facc15',marker:'#ffffff'},dmg:'1d6',dmgMode:'confirm',play:'all'}}
+function mgNew(){return{id:'g'+Math.random().toString(36).slice(2,10),name:'',type:'timing',media:'',bpm:100,offset:0,rounds:8,beats:2,zone:75,zw:16,key:'',lanes:4,dur:10,goal:30,tmo:4000,start:2,fall:1500,sub:1,pat:'',dir:'down',col:{bar:'#2a2a30',zone:'#3b82f6',perfect:'#facc15',marker:'#ffffff'},dmg:'1d6',dmgMode:'confirm',play:'all'}}
 function mgItem(id){return MEDIA.find(m=>m.id===id)}
 function gamesPanel(){
   if(!isAdmin())return'';
@@ -18,13 +18,20 @@ function mgForm(){
   const clips=MEDIA.filter(m=>m.type.startsWith('video')||m.type.startsWith('audio'));
   return`<section class="panel mgpanel mgform"><div class="ph"><h2>${t('mgEdit')}</h2></div>
    <div class="mggrid">
-    ${f('type',t('mgTypeL'),`<select data-mgf="type"><option value="timing" ${g.type==='timing'?'selected':''}>${t('mgType_timing')}</option><option value="lane" ${g.type==='lane'?'selected':''}>${t('mgType_lane')}</option></select>`)}
+    ${f('type',t('mgTypeL'),`<select data-mgf="type"><option value="timing" ${g.type==='timing'?'selected':''}>${t('mgType_timing')}</option><option value="lane" ${g.type==='lane'?'selected':''}>${t('mgType_lane')}</option><option value="simon" ${g.type==='simon'?'selected':''}>${t('mgType_simon')}</option><option value="tap" ${g.type==='tap'?'selected':''}>${t('mgType_tap')}</option></select>`)}
     ${f('name',t('mgName'),`<input data-mgf="name" maxlength="60" value="${esc(g.name)}">`)}
     ${f('media',t('mgMedia'),`<select data-mgf="media"><option value="">${t('mgNoMedia')}</option>${clips.map(m=>`<option value="${esc(m.id)}" ${g.media===m.id?'selected':''}>${esc(m.name)}</option>`).join('')}</select>`)}
     ${num('bpm',30,300,'BPM')}
-    ${num('offset',-5000,60000,t('mgOffset'),t('mgOffsetH'))}
-    ${num('rounds',1,64,g.type==='lane'?t('mgNotes'):t('mgRounds'))}
-    ${g.type==='lane'?`${num('lanes',2,8,t('mgLanes'))}
+    ${g.type==='simon'||g.type==='tap'?'':num('offset',-5000,60000,t('mgOffset'),t('mgOffsetH'))}
+    ${g.type==='tap'?'':num('rounds',1,64,g.type==='lane'?t('mgNotes'):g.type==='simon'?t('mgLevels'):t('mgRounds'))}
+    ${g.type==='tap'?`${num('dur',3,60,t('mgDur'))}
+    ${num('goal',1,500,t('mgGoal'),t('mgGoalH'))}
+    ${f('key',t('mgKey'),`<input data-mgf="key" maxlength="12" value="${esc(g.key)}" placeholder="${t('mgKeyPh')}">`,t('mgKeyH'))}`
+    :g.type==='simon'?`${num('lanes',2,8,t('mgPads'))}
+    ${num('start',1,8,t('mgStartLen'),t('mgStartLenH'))}
+    ${num('tmo',1000,10000,t('mgTmo'),t('mgTmoH'))}
+    ${f('key',t('mgKeys'),`<input data-mgf="key" maxlength="40" value="${esc(g.key)}" placeholder="d f j k">`,t('mgKeysH'))}`
+    :g.type==='lane'?`${num('lanes',2,8,t('mgLanes'))}
     ${num('sub',1,4,t('mgSub'),t('mgSubH'))}
     ${num('fall',400,4000,t('mgFall'),t('mgFallH'))}
     ${f('dir',t('mgDir'),`<select data-mgf="dir"><option value="down" ${g.dir==='down'?'selected':''}>${t('mgDown')}</option><option value="up" ${g.dir==='up'?'selected':''}>${t('mgUp')}</option></select>`)}
@@ -85,6 +92,7 @@ function mgChart(g){
   return out}
 function mgPlay(g){
   if(!g||MGP)return;
+  if(g.type==='simon'||g.type==='tap')return mgPlay2(g);
   const it=g.media?mgItem(g.media):null,isV=it&&it.type.startsWith('video'),isL=g.type==='lane';
   const col=g.col,key=(g.key||'').trim(),keyLab=key||'●',keys=isL?mgKeys(g):[],notes=isL?mgChart(g):[];
   const total=isL?notes.length:g.rounds,D=isL?0:g.beats*60000/g.bpm,WIN=150,PERF=60;
