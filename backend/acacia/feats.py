@@ -57,8 +57,44 @@ def clean_fx(L):
     return out
 
 
+def clean_sources(v):
+    """One list of source books for the whole catalog: {id, name, full, col}; col is #rrggbb or empty."""
+    import re
+    out, seen = [], set()
+    for x in (v.get("sources") if isinstance(v.get("sources"), list) else [])[:200]:
+        if not isinstance(x, dict):
+            continue
+        name = str(x.get("name") or "").strip()[:40]
+        if not name or name.lower() in seen:
+            continue
+        seen.add(name.lower())
+        col = x.get("col")
+        out.append({"id": str(x.get("id") or name)[:40], "name": name, "full": str(x.get("full") or "")[:100],
+                    "col": col if isinstance(col, str) and re.match(r"^#[0-9a-fA-F]{6}$", col) else ""})
+    v["sources"] = out
+    return out
+
+
+def clean_featcats(v):
+    """The GM's own feat categories: {id, name}. The id is what a feat stores in `cat`."""
+    out, seen = [], set()
+    for x in (v.get("featcats") if isinstance(v.get("featcats"), list) else [])[:40]:
+        if not isinstance(x, dict):
+            continue
+        name = str(x.get("name") or "").strip()[:40]
+        i = str(x.get("id") or "")[:40]
+        if not name or not i or i in seen or i in CATS:
+            continue
+        seen.add(i)
+        out.append({"id": i, "name": name})
+    v["featcats"] = out
+    return out
+
+
 def clean_cat_feats(v):
     """Clean the feat list, the class `asiLv` and the background `originFeat` inside a catalog."""
+    clean_sources(v)
+    extra = {c["id"] for c in clean_featcats(v)}
     L = v.get("feats")
     out = []
     seen = set()
@@ -69,7 +105,7 @@ def clean_cat_feats(v):
         if not name or name.lower() in seen:
             continue
         seen.add(name.lower())
-        out.append({"id": str(x.get("id") or name)[:40], "name": name, "cat": x.get("cat") if x.get("cat") in CATS else "general",
+        out.append({"id": str(x.get("id") or name)[:40], "name": name, "cat": x.get("cat") if x.get("cat") in CATS or x.get("cat") in extra else "general", "src": str(x.get("src") or "")[:40],
                     "minLv": clampi(x.get("minLv"), 0, 20, 0), "prereq": str(x.get("prereq") or "")[:200],
                     "asi": ",".join(abil_list(x.get("asi"))), "rep": 1 if x.get("rep") in (1, True, "1") else 0,
                     "pts": 2 if clampi(x.get("pts"), 1, 2, 1) == 2 else 1,

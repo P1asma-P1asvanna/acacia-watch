@@ -87,7 +87,9 @@ document.addEventListener('click',e=>{
   else if(a==='tdside'){tdSide(v)}
   else if(a==='feat-edit'){view='data';dataTab='feats';dataPage=0;dedit=null;location.hash='data';render()}
   else if(a==='cond-edit'){view='data';dataTab='conditions';dataPage=0;dedit=null;location.hash='data';render()}
-  else if(a==='dtab'){dataTab=v;dataPage=0;dataArm=null;render()}
+  else if(a==='dtab'){dataTab=v;dataPage=0;dataArm=null;dataSrc='';render()}
+  else if(a==='dsrc'){dataSrc=v;dataPage=0;render()}
+  else if(a==='srcnocol'){if(dedit){dedit.draft.col='';render()}}
   else if(a==='dpage'){dataPage+=Number(v)||0;render()}
   else if(a==='dnew'){dedit={cat:dataTab,draft:blankItem(dataTab),isNew:true};dataErr='';dataArm=null;render()}
   else if(a==='dedit'){dedit={cat:dataTab,draft:clone(CAT[dataTab].find(x=>x.id===id)),isNew:false};dataErr='';dataArm=null;render()}
@@ -128,7 +130,7 @@ document.addEventListener('input',e=>{
   if(dedit){
     const dd=dedit.draft;
     if(condRuleEdit(el)||featFxEdit(el))return;
-    if(el.dataset.cf){const f=el.dataset.cf;dd[f]=el.tagName==='SELECT'?(['cat','school','src','timeK','durK','slot','kind'].includes(f)?el.value:Number(el.value)):(el.type==='number'?(el.value===''?'':Number(el.value)):el.value);
+    if(el.dataset.cf){const f=el.dataset.cf;dd[f]=el.tagName==='SELECT'?(['cat','school','src','size','timeK','durK','slot','kind'].includes(f)?el.value:Number(el.value)):(el.type==='number'?(el.value===''?'':Number(el.value)):el.value);
       if(dedit.cat==='armor'&&(f==='slot'||f==='kind')){if(f==='slot')dd.kind='';else{const sl=CAT.slots.find(x=>x.id===dd.slot),ty=sl&&(sl.types||[]).find(x=>x.name===dd.kind);if(ty)dd.pts=Math.max(ty.min,Math.min(ty.max,Math.round(Number(dd.pts))||ty.min))}render();return}
       if(dedit.cat==='spells'){spCompose(dd);const row=el.closest('.spcrow');if(row){const nm=row.querySelector('input[type=number]'),k=dd[f==='timeK'||/^time/.test(f)?'timeK':'durK'];if(nm)nm.hidden=!((/^time/.test(f)?SP_NEED_T:SP_NEED_D).includes(k));const nt=row.parentElement.querySelector('.note');if(nt)nt.textContent=/^time/.test(f)?dd.time:dd.dur}}}
     else if(el.dataset.sf){dd.subs[Number(el.dataset.si)][el.dataset.sf]=el.value}

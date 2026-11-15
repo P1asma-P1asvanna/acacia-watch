@@ -56,6 +56,16 @@ def clean_cat(c, v):
     feats.clean_cat_feats(v)
     spells.clean_cat_spells(v)
     gear.clean_cat_gear(v)
+    for k in ("races", "backgrounds"):
+        for x in v.get(k) or []:
+            if isinstance(x, dict):
+                x["src"] = str(x.get("src") or "")[:40]
+    for x in v.get("races") or []:
+        if isinstance(x, dict):
+            x["size"] = str(x.get("size") or "")[:20]
+    for x in v.get("backgrounds") or []:
+        if isinstance(x, dict):
+            x["abil"] = str(x.get("abil") or "")[:80]
     return v
 
 

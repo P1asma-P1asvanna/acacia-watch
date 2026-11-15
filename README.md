@@ -349,3 +349,9 @@ tools/build_single.py      รวมหน้าเว็บเป็นไฟ�
 - จุดเล็กๆ A B R I ข้างชื่อใน Initiative บอกว่าอะไรใช้แล้ว (GM กดจุดเพื่อสลับได้)
 - Bonus/Reaction ของฟีเจอร์: GM ตั้ง "ประเภทเวลาใช้" ได้ที่ ข้อมูลเกม → Class/Background → ฟีเจอร์ (เดาจากคำว่า bonus action / reaction ถ้าไม่ตั้ง); เวทใช้ช่อง Casting time เดิม
 - โค้ด: `backend/acacia/turns.py`, `POST /api/turn`, `frontend/js/14d-turnpanel.js`
+
+## ข้อมูลเกมเพิ่มเติม: Source กลาง, คอลัมน์ใหม่, หมวด Feats
+- **Source** ใช้รายการเดียวกันทั้ง เวท / เผ่า / Feats / Backgrounds จัดการที่ ข้อมูลเกม → Source (ชื่อย่อ, ชื่อเต็ม, สี) เปลี่ยนชื่อแล้วทุกรายการตามให้เอง
+- ตารางข้อมูลเกมมีแถบกรองตาม Source; หน้าเวทของผู้เล่นกรองตาม Source ได้
+- คอลัมน์ใหม่: เวท = Casting time, Range · เผ่า = Size, Source · Feats = Prerequisite, Source · Backgrounds = Ability, Source
+- หมวด Feats เพิ่มเองได้ที่ ข้อมูลเกม → หมวด Feats เพิ่มเติม (เช่น Dragonmark) นอกเหนือจาก Origin / General / Fighting Style / Epic Boon

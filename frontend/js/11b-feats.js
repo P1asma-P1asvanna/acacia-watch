@@ -2,6 +2,8 @@
    character: asi = {"4":{t:'asi',a1,a2} | {t:'feat',f,ab}}  (keyed by class level),  xf = [{f,ab}] extra feats.
    Base scores in d.abil never change; abT(d,k) gives the total. The server (backend/acacia/feats.py) does the same maths. */
 const FEAT_CATS=['origin','general','fighting','epic'];
+const fcats=()=>[...FEAT_CATS,...((typeof CAT!=='undefined'&&CAT.featcats)||[]).map(x=>x.id)];   /* the four standard ones + the GM's own */
+const fcName=c=>FEAT_CATS.includes(c)?t('fc_'+c):((CAT.featcats||[]).find(x=>x.id===c)||{name:c}).name;
 const asiLvOf=c=>{const s=c&&typeof c.asiLv==='string'?c.asiLv:'';if(!s.trim())return[4,8,12,16,19];return[...new Set((s.match(/\d+/g)||[]).map(Number).filter(x=>x>=1&&x<=20))].sort((a,b)=>a-b).slice(0,12)};
 const abList=s=>{const f=Array.isArray(s)?s.map(x=>String(x).toLowerCase()):(String(s||'').toLowerCase().match(/[a-z]{3}/g)||[]);return ABS.filter(a=>f.includes(a))};
 const featOf=n=>(CAT.feats||[]).find(f=>f.name===n);
@@ -40,11 +42,11 @@ const wearsBody=d=>wornGear(d).list.some(x=>isBase(x.a));
 const fxLine=(r,k)=>r.src[k].map(([n,v])=>`${esc(n)} ${sgn(v)}`).join(', ');
 function refreshAbil(d){const tot=abAll(d);ABS.forEach(k=>{const m=document.getElementById('m_'+k),tt=document.getElementById('t_'+k);if(m){m.textContent=sgn(mod(tot[k]));m.classList.toggle('fxv',tot[k]!==Math.max(1,Math.min(30,Math.round(num(d.abil[k])))))}if(tt)tt.textContent=tot[k]!==Math.max(1,Math.min(30,Math.round(num(d.abil[k]))))?'= '+tot[k]:''});const dv=document.getElementById('derived');if(dv)dv.innerHTML=derived(d)}
 
-const featDescHtml=f=>f?`<details class="feat asif"><summary><b>${esc(f.name)}</b> <span class="pill">${esc(t('fc_'+f.cat))}${f.prereq?' · '+esc(f.prereq):''}</span></summary><div class="featd">${f.desc?esc(f.desc).replace(/\n/g,'<br>'):`<span class="muted">${t('asiNoDesc')}</span>`}</div></details>`:'';
+const featDescHtml=f=>f?`<details class="feat asif"><summary><b>${esc(f.name)}</b> <span class="pill">${esc(fcName(f.cat))}${f.prereq?' · '+esc(f.prereq):''}</span></summary><div class="featd">${f.desc?esc(f.desc).replace(/\n/g,'<br>'):`<span class="muted">${t('asiNoDesc')}</span>`}</div></details>`:'';
 function featOpts(d,lvl,cur,all){
   const used=new Set([...Object.values(d.asi||{}).filter(p=>p&&p.t==='feat').map(p=>p.f),...(d.xf||[]).map(p=>p.f)]);const b=bgOf(d);if(b&&b.originFeat)used.add(b.originFeat);
-  return FEAT_CATS.filter(c=>all||c!=='origin').map(c=>{const L=(CAT.feats||[]).filter(f=>f.cat===c&&(all||(f.minLv||0)<=lvl)&&(f.name===cur||f.rep||!used.has(f.name)));
-    return L.length?`<optgroup label="${esc(t('fc_'+c))}">${L.map(f=>`<option value="${esc(f.name)}" ${f.name===cur?'selected':''}>${esc(f.name)}</option>`).join('')}</optgroup>`:''}).join('')}
+  return fcats().filter(c=>all||c!=='origin').map(c=>{const L=(CAT.feats||[]).filter(f=>f.cat===c&&(all||(f.minLv||0)<=lvl)&&(f.name===cur||f.rep||!used.has(f.name)));
+    return L.length?`<optgroup label="${esc(fcName(c))}">${L.map(f=>`<option value="${esc(f.name)}" ${f.name===cur?'selected':''}>${esc(f.name)}</option>`).join('')}</optgroup>`:''}).join('')}
 const asiAbOpts=(d,cur,list)=>`<option value="">—</option>`+(list||ABS).map(k=>`<option value="${k}" ${k===cur?'selected':''}>${k.toUpperCase()}</option>`).join('');
 function featAbSel(f,p,attrs){const L=f?abList(f.asi):[];if(!L.length)return'';const sel=(key,cur)=>`<select ${attrs.replace('@',key)} aria-label="${t('asiWhich')}">${asiAbOpts(null,cur,L)}</select>`;return sel('ab',p.ab)+(featPts(f)===2?`<span class="plus">+1</span>`+sel('ab2',p.ab2)+`<span class="plus">+1</span>`:`<span class="plus">+1</span>`)}
 function asiBody(d){
@@ -110,13 +112,13 @@ Object.assign(TX.en,{shortRest:'Short rest: roll a hit die',shortRestHint:'Spend
 function featCard(f){
   const fx=(f.fx||[]).map(featFxText),ab=abList(f.asi);
   const meta=[f.prereq?esc(f.prereq):'',ab.length?`${featPts(f)===2?'+1 +1':'+1'}: ${ab.map(a=>a.toUpperCase()).join(' / ')}`:'',...fx.map(esc)].filter(Boolean);
-  return`<details class="feat featpg" data-fn="${esc(f.name.toLowerCase())}" data-fc="${f.cat}"><summary><b>${esc(f.name)}</b> <span class="pill">${esc(t('fc_'+f.cat))}</span>${f.minLv?` <span class="pill">Lv ${f.minLv}+</span>`:''}</summary>
+  return`<details class="feat featpg" data-fn="${esc(f.name.toLowerCase())}" data-fc="${f.cat}"><summary><b>${esc(f.name)}</b> <span class="pill">${esc(fcName(f.cat))}</span>${f.minLv?` <span class="pill">Lv ${f.minLv}+</span>`:''}${f.src?` <span class="pill">${esc(f.src)}</span>`:''}</summary>
    <div class="featd">${meta.length?`<p class="note fxmeta">${meta.join(' · ')}</p>`:''}${f.desc?esc(f.desc).replace(/\n/g,'<br>'):`<span class="muted">${t('asiNoDesc')}</span>`}</div></details>`}
 function renderFeatsPage(){
   const L=CAT.feats||[],adm=isAdmin();
   const acts=adm?`<div class="acts"><button class="btn" data-act="feat-edit">${t('condEdit')}</button></div>`:'';
-  const tools=`<div class="featbar"><input type="search" data-featq id="featq" placeholder="${t('featSearch')}" aria-label="${t('featSearch')}"><select data-featq id="featc" aria-label="${t('cat')}"><option value="">${t('featAllCats')}</option>${FEAT_CATS.map(c=>`<option value="${c}">${t('fc_'+c)}</option>`).join('')}</select></div>`;
-  const body=L.length?FEAT_CATS.map(c=>{const g=L.filter(f=>f.cat===c);return g.length?`<h3 class="featgrp" data-fg="${c}">${t('fc_'+c)}</h3><div class="featlist" data-fl="${c}">${g.map(featCard).join('')}</div>`:''}).join(''):`<div class="empty"><div>${t('condNone')}</div></div>`;
+  const tools=`<div class="featbar"><input type="search" data-featq id="featq" placeholder="${t('featSearch')}" aria-label="${t('featSearch')}"><select data-featq id="featc" aria-label="${t('cat')}"><option value="">${t('featAllCats')}</option>${fcats().map(c=>`<option value="${c}">${fcName(c)}</option>`).join('')}</select></div>`;
+  const body=L.length?fcats().map(c=>{const g=L.filter(f=>f.cat===c);return g.length?`<h3 class="featgrp" data-fg="${c}">${fcName(c)}</h3><div class="featlist" data-fl="${c}">${g.map(featCard).join('')}</div>`:''}).join(''):`<div class="empty"><div>${t('condNone')}</div></div>`;
   return head(t('feats'),t('featsSub'),acts)+`<section class="panel"><div class="featwrap">${tools}${body}<p class="note" id="featnone" hidden>${t('featNone')}</p></div></section>`}
 function featFilter(){
   const q=(document.getElementById('featq')||{value:''}).value.trim().toLowerCase(),c=(document.getElementById('featc')||{value:''}).value;let any=false;

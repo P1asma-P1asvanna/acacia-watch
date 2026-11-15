@@ -10,18 +10,21 @@ const fl=k=>(FL[k]||[k,k])[lang==='th'?0:1];
 Object.assign(FL,{nLang:['จำนวนภาษาที่เลือกได้','Languages to choose'],nTool:['จำนวน Tool Proficiencies ที่เลือกได้','Tool proficiencies to choose'],nVeh:['จำนวน Vehicle Proficiencies ที่เลือกได้','Vehicle proficiencies to choose']});
 /* field types: t text, a long text, n number, b yes/no */
 const SCHEMA={
- races:{cols:['name','asi','speed','lang'],f:[['name','t'],['asi','t'],['nac','t'],['speed','n'],['bhp','t'],['res','a'],['lang','t'],['nat','t'],['prof','t'],['other','a']]},
+ races:{cols:['name','asi','size','src'],f:[['name','t'],['asi','t'],['size','t'],['src','t'],['nac','t'],['speed','n'],['bhp','t'],['res','a'],['lang','t'],['nat','t'],['prof','t'],['other','a']]},
  classes:{cols:['name','hd','spellType','subs'],f:[['name','t'],['hd','t'],['alt','t'],['init','t'],['bhp','t'],['saves','a'],['first','t'],['multi','t'],['spellType','t'],['spellAb','t'],['speedInc','t'],['asiLv','t']]},
  weapons:{cols:['name','die','dtype','pcat','range'],f:[['name','t'],['die','t'],['dtype','t'],['pcat','t'],['range','t'],['monk','b'],['ench','t'],['bdie','t'],['btype','t'],['abil','t'],['props','t'],['apply','b']]},
  armor:{cols:['name','ac','acat','maxdex'],f:[['name','t'],['ac','n'],['maxdex','t'],['acat','t'],['str','t'],['stealth','t'],['ench','t'],['pb','t'],['skills','t'],['saves','t'],['props','t'],['slot','t'],['kind','t'],['pts','n'],['att','b']]},
  alignments:{cols:['name'],f:[['name','t']]},
- backgrounds:{cols:['name','nLang','nTool','nVeh','sk'],f:[['name','t'],['nLang','n'],['nTool','n'],['nVeh','n'],['originFeat','t'],['equip','a']]},
+ backgrounds:{cols:['name','abil','sk','src'],f:[['name','t'],['abil','t'],['src','t'],['nLang','n'],['nTool','n'],['nVeh','n'],['originFeat','t'],['equip','a']]},
  languages:{cols:['name'],f:[['name','t']]},
  tools:{cols:['name'],f:[['name','t']]},
  vehicles:{cols:['name'],f:[['name','t']]},
  conditions:{cols:['name','sum'],f:[['name','t'],['sum','t'],['desc','a']]},
- spells:{cols:['name','lvl','school','conc','src'],f:[['name','t'],['lvl','n'],['school','t'],['src','t'],['time','t'],['range','t'],['comp','t'],['dur','t'],['conc','b'],['rit','b'],['classes','t'],['desc','a']]},
- feats:{cols:['name','cat','minLv','asi'],f:[['name','t'],['cat','t'],['minLv','n'],['prereq','t'],['asi','t'],['pts','n'],['cap','n'],['rep','b'],['desc','a']]}};
+ spells:{cols:['name','lvl','time','school','conc','range','src'],f:[['name','t'],['lvl','n'],['school','t'],['src','t'],['time','t'],['range','t'],['comp','t'],['dur','t'],['conc','b'],['rit','b'],['classes','t'],['desc','a']]},
+ feats:{cols:['name','cat','minLv','asi','prereq','src'],f:[['name','t'],['cat','t'],['minLv','n'],['prereq','t'],['asi','t'],['src','t'],['pts','n'],['cap','n'],['rep','b'],['desc','a']]},
+ sources:{cols:['name','full','col'],f:[['name','t'],['full','t'],['col','t']]},
+ featcats:{cols:['name'],f:[['name','t']]}};
+Object.assign(FL,{src:['แหล่งที่มา (Source)','Source'],size:['ขนาด (Size)','Size'],abil:['Ability (เช่น Origin (Str/Con/Cha))','Ability (e.g. Origin (Str/Con/Cha))'],full:['ชื่อเต็มของเล่ม','Full title'],col:['สีที่ใช้แสดง','Display colour']});
 Object.assign(FL,{sum:['สรุปสั้น','Short summary'],desc:['รายละเอียดผลของสถานะ','Full effects']});
 Object.assign(FL,{sk:['Skill Proficiencies ที่ได้','Skill proficiencies granted'],equip:['อุปกรณ์เริ่มต้น (หนึ่งรายการต่อบรรทัด เช่น 2x Torch)','Starting equipment (one item per line, e.g. 2x Torch)']});
 FL.saves=['Saving throw และทักษะอาชีพ','Saving throws and class skills']; /* class saves; armor uses the same key with its own label below */
@@ -34,21 +37,26 @@ const flFor=(cat,k)=>(cat==='armor'||cat==='slots')&&GEAR_FL[k]?GEAR_FL[k][lang=
 const usageKey={races:'race',classes:'cls',alignments:'align',backgrounds:'bg'};
 const pickKey={languages:'lang',tools:'tool',vehicles:'veh'};
 const featUse=(r,n)=>Object.values(r.asi||{}).some(p=>p&&p.t==='feat'&&p.f===n)||(r.xf||[]).some(p=>p.f===n);
-const usage=(c,it)=>c==='slots'?CAT.armor.filter(a=>a.slot===it.id).length:c==='spells'?[...pcs,...npcs].filter(r=>(r.spells||[]).some(s=>s.n===it.name)).length:c==='feats'?[...pcs,...npcs].filter(r=>featUse(r,it.name)).length+CAT.backgrounds.filter(b=>b.originFeat===it.name).length:usageKey[c]?[...pcs,...npcs].filter(r=>r[usageKey[c]]===it.name||(c==='classes'&&(r.mc||[]).some(m=>m.cls===it.name))).length:pickKey[c]?[...pcs,...npcs].filter(r=>(r.pick&&r.pick[pickKey[c]]||[]).includes(it.name)).length:0;
+const usage=(c,it)=>c==='sources'?SRC_CATS.reduce((n,k)=>n+(CAT[k]||[]).filter(x=>x.src===it.name).length,0):c==='featcats'?(CAT.feats||[]).filter(f=>f.cat===it.id).length:c==='slots'?CAT.armor.filter(a=>a.slot===it.id).length:c==='spells'?[...pcs,...npcs].filter(r=>(r.spells||[]).some(s=>s.n===it.name)).length:c==='feats'?[...pcs,...npcs].filter(r=>featUse(r,it.name)).length+CAT.backgrounds.filter(b=>b.originFeat===it.name).length:usageKey[c]?[...pcs,...npcs].filter(r=>r[usageKey[c]]===it.name||(c==='classes'&&(r.mc||[]).some(m=>m.cls===it.name))).length:pickKey[c]?[...pcs,...npcs].filter(r=>(r.pick&&r.pick[pickKey[c]]||[]).includes(it.name)).length:0;
 function blankItem(c){const o={id:uid()};SCHEMA[c].f.forEach(([k,ty])=>o[k]=ty==='b'?0:(ty==='n'&&/^n[A-Z]/.test(k)?0:''));if(c==='classes'){o.subs=[];o.feats=[]}if(c==='backgrounds'){o.sk=[];o.feats=[]}if(c==='classes')o.asiLv='4,8,12,16,19';if(c==='backgrounds')o.originFeat='';if(c==='spells'){o.lvl=1;o.conc=0;o.rit=0;o.school='Evocation';o.timeK='action';o.timeN='';o.timeX='';o.durK='instant';o.durN='';o.durX='';spCompose(o)}if(c==='armor'){o.slot='';o.kind='';o.pts=0;o.fx=[];o.att=0}if(c==='slots'){o.max=1;o.sp=0;o.types=[]}if(c==='feats'){o.cat='general';o.minLv=4;o.asi='';o.rep=0;o.pts=1;o.cap=20;o.fx=[]}if(c==='conditions'){o.icon='';o.color='';o.dur={u:'',n:0};o.rules=[];o.stack='no';o.maxLv=0;o.ends=[]}return o}
+const srcCol=n=>{const s=(CAT.sources||[]).find(x=>x.name===n);return s&&s.col?s.col:''};
+const srcBadge=n=>n?`<b class="srcb" ${srcCol(n)?`style="color:${esc(srcCol(n))}"`:''}>${esc(n)}</b>`:'<span class="muted">—</span>';
+const SRC_CATS=['spells','races','feats','backgrounds'];
+let dataSrc='';
 const cell=v=>{const s=String(v??'').replace(/\s+/g,' ').trim();return s?esc(s.length>60?s.slice(0,57)+'…':s):'<span class="muted">—</span>'};
 let dataPage=0;
 function renderData(){
   if(dedit)return renderDataEditor();
-  const sc=SCHEMA[dataTab],L=CAT[dataTab],ps=pageSize(),pages=Math.max(1,Math.ceil(L.length/ps));
+  if(!SRC_CATS.includes(dataTab))dataSrc='';
+  const srcL=SRC_CATS.includes(dataTab)?[...new Set(CAT[dataTab].map(x=>x.src).filter(Boolean))]:[],L0=CAT[dataTab],L=dataSrc?L0.filter(x=>x.src===dataSrc):L0,sc=SCHEMA[dataTab],ps=pageSize(),pages=Math.max(1,Math.ceil(L.length/ps));
   dataPage=Math.min(Math.max(0,dataPage),pages-1);const shown=L.slice(dataPage*ps,dataPage*ps+ps);
   const tabs=Object.keys(SCHEMA).map(k=>`<button role="tab" data-act="dtab" data-v="${k}" aria-selected="${k===dataTab}">${t(k)} <span class="cnt">${CAT[k].length}</span></button>`).join('');
   const body=L.length?`<div class="scroll"><table><thead><tr>${sc.cols.map(c=>`<th>${flFor(dataTab,c)}</th>`).join('')}<th></th></tr></thead><tbody>
-   ${shown.map(r=>{const n=usage(dataTab,r);return`<tr>${sc.cols.map(c=>c==='subs'?`<td>${r.subs.length?esc(r.subs.map(s=>s.name).join(', ')):'<span class="muted">'+t('noSub')+'</span>'}</td>`:c==='name'?`<td>${dataTab==='conditions'?condIcon(r,28):''}<b${dataTab==='conditions'&&r.color?` style="color:${esc(r.color)}"`:''}>${cell(r.name)}</b></td>`:c==='cat'?`<td>${esc(t('fc_'+r.cat))}</td>`:c==='sk'?`<td>${(r.sk||[]).length?esc(r.sk.map(skName).join(', ')):'<span class="muted">—</span>'}</td>`:`<td>${cell(r[c])}</td>`).join('')}
+   ${shown.map(r=>{const n=usage(dataTab,r);return`<tr>${sc.cols.map(c=>c==='subs'?`<td>${r.subs.length?esc(r.subs.map(s=>s.name).join(', ')):'<span class="muted">'+t('noSub')+'</span>'}</td>`:c==='name'?`<td>${dataTab==='conditions'?condIcon(r,28):''}<b${dataTab==='conditions'&&r.color?` style="color:${esc(r.color)}"`:''}>${cell(r.name)}</b></td>`:c==='cat'?`<td>${esc(fcName(r.cat))}</td>`:c==='src'?`<td>${srcBadge(r.src)}</td>`:c==='col'?`<td>${r.col?`<span class="srcdot" style="background:${esc(r.col)}"></span> ${esc(r.col)}`:'<span class="muted">—</span>'}</td>`:c==='sk'?`<td>${(r.sk||[]).length?esc(r.sk.map(skName).join(', ')):'<span class="muted">—</span>'}</td>`:`<td>${cell(r[c])}</td>`).join('')}
    <td><div class="acts"><button class="btn small" data-act="dedit" data-id="${r.id}">${t('edit')}</button><button class="btn small danger" data-act="ddel" data-id="${r.id}">${dataArm===r.id?(n?t('delInUse').replace('{n}',n):t('delSure')):t('del')}</button></div></td></tr>`}).join('')}
    </tbody></table></div>${pages>1?`<div class="pager"><button class="btn small" data-act="dpage" data-v="-1" ${dataPage?'':'disabled'}>‹ ${t('pgPrev')}</button><span class="note" role="status">${t('pgInfo').replace('{p}',dataPage+1).replace('{n}',pages).replace('{c}',L.length)}</span><button class="btn small" data-act="dpage" data-v="1" ${dataPage<pages-1?'':'disabled'}>${t('pgNext')} ›</button></div>`:''}`:`<div class="empty"><div>${t('noRows')}</div></div>`;
   return head(t('data'),t('dataSub'),`<button class="btn primary" data-act="dnew">+ ${t('addItem')}</button>`)
-   +`<div class="tabs2" role="tablist">${tabs}</div>${dataTab==='slots'?`<section class="panel"><div class="grid"><div class="field"><label for="eqmax">${t('eqMaxL')}</label><input id="eqmax" data-eqmax="1" type="number" min="1" max="99" value="${CAT.eqMax}"><span class="note">${t('eqMaxH')}</span></div></div></section>`:''}<section class="panel">${body}<div class="bar"><span class="note">${t('dataNote')}</span><button class="btn small" data-act="dreset">${dataArm==='reset'?t('resetSure'):t('resetDefaults')}</button></div></section>`;
+   +`<div class="tabs2" role="tablist">${tabs}</div>${srcL.length?`<div class="srcbar" role="group" aria-label="${t('spSrc')}"><button class="chip ${dataSrc?'':'on'}" data-act="dsrc" data-v="">${t('spAllSrc')}</button>${srcL.map(n=>`<button class="chip ${dataSrc===n?'on':''}" data-act="dsrc" data-v="${esc(n)}">${srcBadge(n)} <span class="cnt">${L0.filter(x=>x.src===n).length}</span></button>`).join('')}</div>`:''}${dataTab==='slots'?`<section class="panel"><div class="grid"><div class="field"><label for="eqmax">${t('eqMaxL')}</label><input id="eqmax" data-eqmax="1" type="number" min="1" max="99" value="${CAT.eqMax}"><span class="note">${t('eqMaxH')}</span></div></div></section>`:''}<section class="panel">${body}<div class="bar"><span class="note">${t('dataNote')}</span><button class="btn small" data-act="dreset">${dataArm==='reset'?t('resetSure'):t('resetDefaults')}</button></div></section>`;
 }
 function renderDataEditor(){
   const d=dedit.draft,c=dedit.cat,sc=SCHEMA[c];
@@ -58,10 +66,12 @@ function renderDataEditor(){
     if(c==='armor'&&k==='slot')return`<div class="field"><label for="${id}">${lab}</label><select id="${id}" data-cf="slot"><option value="">${t('gNoSlot')}</option>${CAT.slots.map(x=>`<option value="${esc(x.id)}" ${d.slot===x.id?'selected':''}>${esc(x.name)} (max ${x.max})</option>`).join('')}</select></div>`;
     if(c==='armor'&&k==='kind')return`<div class="field"><label for="${id}">${lab}</label><select id="${id}" data-cf="kind"><option value="">${t('gNoKind')}</option>${[...(sl0&&d.kind&&!(sl0.types||[]).some(x=>x.name===d.kind)?[{name:d.kind}]:[]),...((sl0&&sl0.types)||[])].map(x=>`<option value="${esc(x.name)}" ${d.kind===x.name?'selected':''}>${esc(x.name)}${x.min!==undefined?' ('+x.min+(x.max!==x.min?'–'+x.max:'')+')':''}</option>`).join('')}</select></div>`;
     if(c==='armor'&&k==='pts')return`<div class="field"><label for="${id}">${lab}</label><input id="${id}" data-cf="pts" type="number" min="${ty0?ty0.min:0}" max="${ty0?ty0.max:20}" value="${esc(d.pts)}"><span class="note">${ty0?fill(t('gRange'),{lo:ty0.min,hi:ty0.max})+' · ':''}${sl0&&sl0.sp?t('gSpecial'):''}</span></div>`;
-    if(c==='spells'&&k==='src')return`<div class="field"><label for="${id}">${lab}</label><select id="${id}" data-cf="src"><option value="">—</option>${SP_SRC.map(x=>`<option value="${esc(x)}" ${d.src===x?'selected':''}>${esc(x)}</option>`).join('')}</select></div>`;
+    if(k==='src'&&c!=='sources')return`<div class="field"><label for="${id}">${lab}</label><select id="${id}" data-cf="src"><option value="">—</option>${srcNames(d.src).map(x=>`<option value="${esc(x)}" ${d.src===x?'selected':''}>${esc(x)}</option>`).join('')}</select></div>`;
     if(c==='spells'&&k==='school')return`<div class="field"><label for="${id}">${lab}</label><select id="${id}" data-cf="school">${[...(SP_SCHOOLS.includes(d.school)||!d.school?[]:[d.school]),...SP_SCHOOLS].map(x=>`<option value="${esc(x)}" ${d.school===x?'selected':''}>${esc(x)}</option>`).join('')}</select></div>`;
     if(c==='spells'&&(k==='time'||k==='dur')){const kk=k==='time'?'timeK':'durK',nk=k==='time'?'timeN':'durN',xk=k==='time'?'timeX':'durX',L=k==='time'?SP_TIME:SP_DUR,need=(k==='time'?SP_NEED_T:SP_NEED_D).includes(d[kk]);return`<div class="field full"><label for="${id}">${lab}</label><div class="spcrow"><select id="${id}" data-cf="${kk}">${L.map(([v,l])=>`<option value="${v}" ${d[kk]===v?'selected':''}>${l}</option>`).join('')}</select><input type="number" min="1" max="999" data-cf="${nk}" value="${esc(d[nk])}" placeholder="${t('spN')}" aria-label="${t('spN')}" ${need?'':'hidden'}><input type="text" maxlength="60" data-cf="${xk}" value="${esc(d[xk])}" placeholder="${t('spX')}" aria-label="${t('spX')}"></div><div class="note">${esc(d[k]||'')}</div></div>`}
-    if(c==='feats'&&k==='cat')return`<div class="field"><label for="${id}">${lab}</label><select id="${id}" data-cf="${k}">${FEAT_CATS.map(x=>`<option value="${x}" ${d[k]===x?'selected':''}>${t('fc_'+x)}</option>`).join('')}</select></div>`;
+    if(c==='feats'&&k==='cat')return`<div class="field"><label for="${id}">${lab}</label><select id="${id}" data-cf="${k}">${fcats().map(x=>`<option value="${x}" ${d[k]===x?'selected':''}>${esc(fcName(x))}</option>`).join('')}</select></div>`;
+    if(c==='races'&&k==='size')return`<div class="field"><label for="${id}">${lab}</label><select id="${id}" data-cf="size">${['','Tiny','Small','Small/Medium','Medium','Large','Huge','Gargantuan'].concat(d.size&&!['','Tiny','Small','Small/Medium','Medium','Large','Huge','Gargantuan'].includes(d.size)?[d.size]:[]).map(x=>`<option value="${esc(x)}" ${d.size===x?'selected':''}>${x||'—'}</option>`).join('')}</select></div>`;
+    if(c==='sources'&&k==='col')return`<div class="field"><label for="${id}">${lab}</label><div class="colrow"><input id="${id}" data-cf="col" type="color" value="${/^#[0-9a-f]{6}$/i.test(d.col)?esc(d.col):'#888888'}"><button type="button" class="btn small" data-act="srcnocol">${t('srcNoCol')}</button></div></div>`;
     if(ty==='a')return`<div class="field full"><label for="${id}">${lab}</label><textarea id="${id}" data-cf="${k}">${esc(d[k])}</textarea></div>`;
     if(ty==='b')return`<div class="field"><label for="${id}">${lab}</label><select id="${id}" data-cf="${k}"><option value="0" ${d[k]?'':'selected'}>${t('no')}</option><option value="1" ${d[k]?'selected':''}>${t('yes')}</option></select></div>`;
     return`<div class="field"><label for="${id}">${lab}</label><input id="${id}" data-cf="${k}" type="${ty==='n'?'number':'text'}" ${/^n[A-Z]/.test(k)?'min="0" max="10" ':''}value="${esc(d[k])}"></div>`}).join('');
@@ -88,6 +98,8 @@ function renderDataEditor(){
    <div style="display:flex;gap:12px;align-items:center"><span class="err" role="alert">${esc(dataErr)}</span><button class="btn primary" data-act="dsave">${t('save')}</button></div></div>`;
 }
 function cascade(c,old,d){
+  if(c==='sources'){if(old.name!==d.name){SRC_CATS.forEach(k=>(CAT[k]||[]).forEach(x=>{if(x.src===old.name)x.src=d.name}))}return}
+  if(c==='featcats')return;
   if(c==='spells'){if(old.name!==d.name){[...pcs,...npcs].forEach(r=>{(r.spells||[]).forEach(s=>{if(s.n===old.name)s.n=d.name});if(r.conc===old.name)r.conc=d.name});commit('pc');commit('npc')}return}
   if(c==='feats'){if(old.name!==d.name){[...pcs,...npcs].forEach(r=>{Object.values(r.asi||{}).forEach(p=>{if(p&&p.f===old.name)p.f=d.name});(r.xf||[]).forEach(p=>{if(p.f===old.name)p.f=d.name})});CAT.backgrounds.forEach(b=>{if(b.originFeat===old.name)b.originFeat=d.name});commit('pc');commit('npc')}return}
   if(pickKey[c]){if(old.name!==d.name){let c2=false;[...pcs,...npcs].forEach(r=>{const a=r.pick&&r.pick[pickKey[c]];if(a)a.forEach((x,i)=>{if(x===old.name){a[i]=d.name;c2=true}})});if(c2){commit('pc');commit('npc')}}return}
@@ -117,3 +129,6 @@ function saveData(){
   put('dd_cat',CAT);dedit=null;dataErr='';render();
 }
 
+
+Object.assign(TX.th,{sources:'Source (แหล่งที่มา)',featcats:'หมวด Feats เพิ่มเติม',srcNoCol:'ไม่ใช้สี'});
+Object.assign(TX.en,{sources:'Sources',featcats:'Extra feat categories',srcNoCol:'No colour'});
