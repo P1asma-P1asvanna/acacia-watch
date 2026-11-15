@@ -1,7 +1,7 @@
 """Reading what the browser needs at start-up, and the small key/value store."""
 import json
 
-from . import games, live, media, profile, turns
+from . import games, live, media, mg, profile, turns
 from .numbers import clampi, num
 
 
@@ -143,6 +143,7 @@ def player_rooms(c, me):
                if isinstance(x, dict) and x.get("k") in ("turn_start", "turn_end", "round_start", "round_end", "expire") and str(x.get("eid")) in seen]
         out.append({"id": str(rm.get("id")), "name": str(rm.get("name") or "")[:80], "round": clampi(ini.get("round"), 1, 9999, 1), "evt": evt,
                     "cur": str(ini.get("cur") or ""), "list": entries, "feed": feed_pub(kv_get(c, "feed:" + str(rm.get("id")))),
+                    "mg": mg.pub(kv_get(c, "mg:" + str(rm.get("id")))),
                     "turn": turns.pub(turns.view(kv_get(c, "turn:" + str(rm.get("id"))), ini), seen),
                     "party": [{"name": pc_name.get(a, "—"), "mine": a in mine, "pc": a if a in mine else ""} for a in assign]})
     return out
@@ -178,6 +179,7 @@ def boot_state(c, me):
         out["media"] = media.all_items(kv_get(c, "media"))
         out["mediaOn"] = media.configured()
         out["games"] = games.clean_list(kv_get(c, "games"))
+        out["mgs"] = {str(r.get("id")): mg.pub(kv_get(c, "mg:" + str(r.get("id")))) for r in out["rooms"] if isinstance(r, dict)}
         out["feeds"] = {str(r.get("id")): feed_pub(kv_get(c, "feed:" + str(r.get("id")))) for r in out["rooms"] if isinstance(r, dict)}
     else:
         out["users"] = [user_pub(me)]

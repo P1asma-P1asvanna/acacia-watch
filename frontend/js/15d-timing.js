@@ -1,8 +1,9 @@
 /* ---------- rhythm minigames: game list + editor (GM) and the timing-bar engine ---------- */
-let GAMES=[],GD=null,mgMsg='',mgBusy=false;
+let MGS={},GAMES=[],GD=null,mgMsg='',mgBusy=false;
 const MG_COL=['bar','zone','perfect','marker'];
 function mgNew(){return{id:'g'+Math.random().toString(36).slice(2,10),name:'',type:'timing',media:'',bpm:100,offset:0,rounds:8,beats:2,zone:75,zw:16,key:'',lanes:4,dur:10,goal:30,tmo:4000,start:2,fall:1500,sub:1,pat:'',dir:'down',col:{bar:'#2a2a30',zone:'#3b82f6',perfect:'#facc15',marker:'#ffffff'},dmg:'1d6',dmgMode:'confirm',play:'all'}}
 function mgItem(id){return MEDIA.find(m=>m.id===id)}
+function mgMi(g){return g.mi||(g.media?mgItem(g.media):null)}
 function gamesPanel(){
   if(!isAdmin())return'';
   if(GD)return mgForm();
@@ -90,10 +91,10 @@ function mgChart(g){
     let l;if(hasP){l=pat[s%pat.length];if(l>0)l=((l-1)%L)+1}else l=1+Math.floor(rnd()*L);
     if(l>0)out.push({t:s*step,l:l-1});s++}
   return out}
-function mgPlay(g){
+function mgPlay(g,cb){
   if(!g||MGP)return;
-  if(g.type==='simon'||g.type==='tap')return mgPlay2(g);
-  const it=g.media?mgItem(g.media):null,isV=it&&it.type.startsWith('video'),isL=g.type==='lane';
+  if(g.type==='simon'||g.type==='tap')return mgPlay2(g,cb);
+  const it=mgMi(g),isV=it&&it.type.startsWith('video'),isL=g.type==='lane';
   const col=g.col,key=(g.key||'').trim(),keyLab=key||'●',keys=isL?mgKeys(g):[],notes=isL?mgChart(g):[];
   const total=isL?notes.length:g.rounds,D=isL?0:g.beats*60000/g.bpm,WIN=150,PERF=60;
   const el=document.createElement('div');el.id='mgPlay';el.className='mgplay';
@@ -125,9 +126,9 @@ function mgPlay(g){
   function finish(){
     if(S.phase==='done')return;S.phase='done';cancelAnimationFrame(S.raf);if(media)media.pause();
     for(let k=0;k<total;k++)if(S.res[k]==null)S.res[k]='m';
-    const c=counts(),dmg=mgRollDmg(g.dmg,c.m);S.out={perfect:c.p,hit:c.h,miss:c.m,dmg};
+    const c=counts(),dmg=mgRollDmg(g.dmg,c.m);S.out={perfect:c.p,hit:c.h,miss:c.m,dmg};if(cb)cb(S.out);
     const r=$q('.mgres');r.hidden=false;
-    r.innerHTML=`<h2>${t('mgDone')}</h2><p>✦ ${t('mgPerfect')} ${c.p} · ✔ ${t('mgHit')} ${c.h} · ✘ ${t('mgMiss')} ${c.m}</p>${g.dmg?`<p class="mgdmg">${c.m?t('mgDmgTaken').replace('{n}',dmg).replace('{d}',g.dmg):t('mgNoDmg')}</p>`:''}<div class="mgbtns"><button class="btn primary" data-r="again">${t('mgAgain')}</button><button class="btn" data-r="close">${t('close')}</button></div>`}
+    r.innerHTML=`<h2>${t('mgDone')}</h2><p>✦ ${t('mgPerfect')} ${c.p} · ✔ ${t('mgHit')} ${c.h} · ✘ ${t('mgMiss')} ${c.m}</p>${g.dmg?`<p class="mgdmg">${c.m?t('mgDmgTaken').replace('{n}',dmg).replace('{d}',g.dmg):t('mgNoDmg')}</p>`:''}<div class="mgbtns">${cb?'':`<button class="btn primary" data-r="again">${t('mgAgain')}</button>`}<button class="btn" data-r="close">${t('close')}</button></div>`}
   function loop(){
     if(S.phase!=='run')return;
     const T=clock()-offs(),cd=$q('.mgcount');

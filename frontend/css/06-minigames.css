@@ -56,3 +56,7 @@
 .mgsp{aspect-ratio:1;border-radius:18px;border:3px solid rgba(255,255,255,.5);background:var(--c);color:#fff;font-size:1.4rem;font-weight:800;touch-action:none;transition:background .06s,transform .06s}
 .mgsp.on{background:var(--lit);transform:scale(1.06);box-shadow:0 0 26px var(--lit)}
 .mgprog{width:min(92vw,520px);height:22px;border-radius:11px;overflow:hidden;box-shadow:0 0 0 2px rgba(255,255,255,.4)}.mgprog i{display:block;height:100%;width:0;transition:width .08s}
+.mgbox{padding:10px 16px 14px;display:flex;flex-direction:column;gap:6px}.mgbox.mgbtns{flex-direction:row;align-items:center}
+.mgres-list{list-style:none;margin:0;padding:0 16px 14px;display:grid;gap:6px}
+.mgres-list li{display:flex;justify-content:space-between;gap:10px;align-items:center;padding:6px 8px;border-radius:var(--r);background:rgba(128,128,128,.12)}
+.mgdmgn{color:#f87171}.mgnow{border-color:var(--brass)}

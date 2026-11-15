@@ -11,7 +11,7 @@ from .errors import Err
 from .numbers import clampi
 from .security import check_pw, hash_pw, new_user_row
 from .store import boot_state, clean_cat, clean_site, kv_get, kv_set, user_pub
-from . import dice, games, images, media, profile, turns
+from . import dice, games, images, media, mg, profile, turns
 from .config import IMG_SLOTS
 from .validation import ID_RE, clean_prefs, clean_record, ADMIN_ONLY
 
@@ -310,6 +310,56 @@ class Routes:
             lst = games.clean_list(b.get("games"))
             kv_set(c, "games", lst)
             return {"ok": True, "games": lst}
+
+        if path == "/api/mg" and me:
+            rid = str(b.get("room") or "")
+            op = str(b.get("op") or "")
+            if not ID_RE.match(rid):
+                raise Err(400, "bad_room")
+            room = next((r for r in (kv_get(c, "rooms") or []) if isinstance(r, dict) and str(r.get("id")) == rid), None)
+            if not room:
+                raise Err(404, "no_room")
+            assign = [str(a) for a in (room.get("assign") or []) if a]
+            st = kv_get(c, "mg:" + rid)
+            if op == "submit":
+                pc = str(b.get("pc") or "")
+                row = c.execute("SELECT data, owner FROM docs WHERE kind='pc' AND id=?", (pc,)).fetchone()
+                if not row or (not admin and row["owner"] != me["id"]):
+                    raise Err(403, "not_yours")
+                try:
+                    nm = str(json.loads(row["data"]).get("name") or "")
+                except Exception:
+                    nm = ""
+                mg.submit(st, pc, nm or "-", b)
+            else:
+                if not admin:
+                    raise Err(403, "admin_only")
+                if op == "open":
+                    g = next((x for x in games.clean_list(kv_get(c, "games")) if x["id"] == str(b.get("game") or "")), None)
+                    if not g:
+                        raise Err(404, "no_game")
+                    it = next((x for x in media.all_items(kv_get(c, "media")) if x["id"] == g["media"]), None) if g["media"] else None
+                    st = mg.new_state(g, {"type": it["type"], "url": it["url"]} if it else None, assign)
+                elif op == "close":
+                    if st:
+                        st["status"] = "closed"
+                elif op == "skip":
+                    if st:
+                        st["cur"] = int(st.get("cur") or 0) + 1
+                        res = st.get("res") or {}
+                        pend = [p for p in st["order"] if p not in res]
+                        if pend:
+                            res[pend[0]] = {"name": "-", "perfect": 0, "hit": 0, "miss": 0, "dmg": 0, "applied": True, "skipped": True}
+                            st["res"] = res
+                elif op == "applied":
+                    pc = str(b.get("pc") or "")
+                    if st and pc in (st.get("res") or {}):
+                        st["res"][pc]["applied"] = True
+                else:
+                    raise Err(400, "bad_op")
+            if st is not None:
+                kv_set(c, "mg:" + rid, st)
+            return {"ok": True, "mg": mg.pub(st)}
 
         if path == "/api/turn" and me:
             rid = str(b.get("room") or "")

@@ -53,3 +53,20 @@ def clean_list(v):
             seen.add(c["id"])
             out.append(c)
     return out
+
+
+def roll_dmg(s, n):
+    """Damage for n misses from a string like 3, 1d6 or 2d4+1 (each miss rolled on its own)."""
+    import secrets
+    m = re.match(r"^(\d+)(?:d(\d+))?([+-]\d+)?$", s or "")
+    if not m or n <= 0:
+        return 0
+    tot = 0
+    for _ in range(n):
+        v = int(m.group(3) or 0)
+        if m.group(2):
+            v += sum(secrets.randbelow(max(1, int(m.group(2)))) + 1 for _ in range(int(m.group(1))))
+        else:
+            v += int(m.group(1))
+        tot += max(0, v)
+    return tot

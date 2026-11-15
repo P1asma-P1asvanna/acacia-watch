@@ -3,9 +3,9 @@ function mgSeq(g,n){
   let seed=0;for(const ch of g.id)seed=(seed*31+ch.charCodeAt(0))>>>0;
   const rnd=()=>{seed=(seed*1664525+1013904223)>>>0;return seed/4294967296};
   return Array.from({length:n},()=>Math.floor(rnd()*g.lanes))}
-function mgPlay2(g){
+function mgPlay2(g,cb){
   if(!g||MGP)return;
-  const it=g.media?mgItem(g.media):null,isV=it&&it.type.startsWith('video'),isS=g.type==='simon';
+  const it=mgMi(g),isV=it&&it.type.startsWith('video'),isS=g.type==='simon';
   const col=g.col,key=(g.key||'').trim(),keys=isS?mgKeys(g):[],N=g.lanes;
   const total=isS?g.rounds:1,seq=isS?mgSeq(g,g.start+g.rounds):[];
   const hue=i=>Math.round(i*360/N+10);
@@ -29,9 +29,9 @@ function mgPlay2(g){
   function finish(){
     if(S.phase==='done')return;S.phase='done';S.timers.forEach(clearTimeout);cancelAnimationFrame(S.raf);if(media)media.pause();
     for(let k=0;k<total;k++)if(S.res[k]==null)S.res[k]='m';
-    const c=counts(),dmg=mgRollDmg(g.dmg,c.m);S.out={perfect:0,hit:c.h,miss:c.m,dmg};
+    const c=counts(),dmg=mgRollDmg(g.dmg,c.m);S.out={perfect:0,hit:c.h,miss:c.m,dmg};if(cb)cb(S.out);
     const r=$q('.mgres');r.hidden=false;
-    r.innerHTML=`<h2>${t('mgDone')}</h2><p>${isS?`✔ ${c.h} · ✘ ${c.m}`:`${S.taps} / ${g.goal} ${t('mgTaps')}`}</p>${g.dmg?`<p class="mgdmg">${c.m?t('mgDmgTaken').replace('{n}',dmg).replace('{d}',g.dmg):t('mgNoDmg')}</p>`:''}<div class="mgbtns"><button class="btn primary" data-r="again">${t('mgAgain')}</button><button class="btn" data-r="close">${t('close')}</button></div>`}
+    r.innerHTML=`<h2>${t('mgDone')}</h2><p>${isS?`✔ ${c.h} · ✘ ${c.m}`:`${S.taps} / ${g.goal} ${t('mgTaps')}`}</p>${g.dmg?`<p class="mgdmg">${c.m?t('mgDmgTaken').replace('{n}',dmg).replace('{d}',g.dmg):t('mgNoDmg')}</p>`:''}<div class="mgbtns">${cb?'':`<button class="btn primary" data-r="again">${t('mgAgain')}</button>`}<button class="btn" data-r="close">${t('close')}</button></div>`}
   const pads=()=>[...el.querySelectorAll('.mgsp')];
   function flash(l,ms){const p=pads()[l];if(!p)return;p.classList.add('on');later(()=>p.classList.remove('on'),ms)}
   function level(L){
