@@ -11,7 +11,7 @@ from .errors import Err
 from .numbers import clampi
 from .security import check_pw, hash_pw, new_user_row
 from .store import boot_state, clean_cat, clean_site, kv_get, kv_set, user_pub
-from . import dice, images, media, profile, turns
+from . import dice, games, images, media, profile, turns
 from .config import IMG_SLOTS
 from .validation import ID_RE, clean_prefs, clean_record, ADMIN_ONLY
 
@@ -303,6 +303,13 @@ class Routes:
                     kv_set(c, "media", [x for x in lib if x is not it])
                 return {"ok": True}
             raise Err(404, "not_found")
+
+        if path == "/api/games" and me:
+            if not admin:
+                raise Err(403, "admin_only")
+            lst = games.clean_list(b.get("games"))
+            kv_set(c, "games", lst)
+            return {"ok": True, "games": lst}
 
         if path == "/api/turn" and me:
             rid = str(b.get("room") or "")

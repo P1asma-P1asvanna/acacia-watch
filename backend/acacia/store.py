@@ -1,7 +1,7 @@
 """Reading what the browser needs at start-up, and the small key/value store."""
 import json
 
-from . import live, media, profile, turns
+from . import games, live, media, profile, turns
 from .numbers import clampi, num
 
 
@@ -177,6 +177,7 @@ def boot_state(c, me):
                         for r in out["rooms"] if isinstance(r, dict)}
         out["media"] = media.all_items(kv_get(c, "media"))
         out["mediaOn"] = media.configured()
+        out["games"] = games.clean_list(kv_get(c, "games"))
         out["feeds"] = {str(r.get("id")): feed_pub(kv_get(c, "feed:" + str(r.get("id")))) for r in out["rooms"] if isinstance(r, dict)}
     else:
         out["users"] = [user_pub(me)]

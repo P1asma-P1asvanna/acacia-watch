@@ -14,7 +14,7 @@ function dicePanel(){
   </section>`;
 }
 function renderGames(){
-  return head(t('games'),t('gamesSub'))+`<div class="games">${mediaPanel()}${dicePanel()}
+  return head(t('games'),t('gamesSub'))+`<div class="games">${gamesPanel()}${mediaPanel()}${dicePanel()}
   <section class="panel"><div class="ph"><h2>${t('ideasTitle')}</h2></div><ol class="plan">${t('ideas').map(i=>`<li>${esc(i)}</li>`).join('')}</ol></section></div>`;
 }
 function resultHtml(){
