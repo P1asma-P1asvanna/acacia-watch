@@ -60,3 +60,12 @@
 .mgres-list{list-style:none;margin:0;padding:0 16px 14px;display:grid;gap:6px}
 .mgres-list li{display:flex;justify-content:space-between;gap:10px;align-items:center;padding:6px 8px;border-radius:var(--r);background:rgba(128,128,128,.12)}
 .mgdmgn{color:#f87171}.mgnow{border-color:var(--brass)}
+.mgtl{margin:6px 16px 12px;padding:10px;border:1px solid var(--line);border-radius:var(--r)}
+.mgtlbar{display:flex;gap:2px;min-height:30px;border-radius:8px;overflow:hidden;background:rgba(128,128,128,.12);margin:6px 0}
+.mgseg{display:flex;align-items:center;justify-content:center;min-width:18px;color:#fff;font-size:.8rem;text-shadow:0 1px 2px #000}
+.mgseg.cut{background:repeating-linear-gradient(45deg,#555,#555 6px,#444 6px,#444 12px)}
+.mgrows{list-style:none;margin:8px 0 0;padding:0;display:grid;gap:8px}
+.mgrow{padding:8px;border-radius:var(--r);background:rgba(128,128,128,.12)}.mgrow.cut{opacity:.85}
+.mgrh{display:flex;justify-content:space-between;align-items:center;gap:8px}.mgrb{display:flex;gap:4px}
+.mgrf{display:flex;flex-wrap:wrap;gap:8px 12px;margin-top:6px}.mgrf label{display:flex;flex-direction:column;gap:2px;font-size:.78rem}
+.mgsn{box-sizing:border-box}

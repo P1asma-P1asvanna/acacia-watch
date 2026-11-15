@@ -12,6 +12,25 @@ MAX_GAMES = 50
 COLORS = {"bar": "#2a2a30", "zone": "#3b82f6", "perfect": "#facc15", "marker": "#ffffff"}
 
 
+def clean_seg(s):
+    """One stretch of the timeline: a play part (may override BPM, direction, zone, colours ...; 0 / empty = use the game's value)
+    or a cutscene (no notes, the clip just plays)."""
+    if not isinstance(s, dict):
+        return None
+    try:
+        ln = round(float(s.get("len")), 1)
+    except (TypeError, ValueError):
+        ln = 10.0
+    ln = max(0.5, min(600.0, ln if ln == ln else 10.0))
+    hexv = lambda v: str(v) if HEX.match(str(v or "")) else ""
+    zero_or = lambda v, lo, hi: 0 if not v or clampi(v, 0, 10 ** 6, 0) == 0 else clampi(v, lo, hi, 0)
+    return {"kind": "cut" if s.get("kind") == "cut" else "play", "len": ln,
+            "bpm": zero_or(s.get("bpm"), 30, 300), "beats": zero_or(s.get("beats"), 1, 8), "sub": zero_or(s.get("sub"), 1, 4),
+            "fall": zero_or(s.get("fall"), 400, 4000), "zone": zero_or(s.get("zone"), 10, 95), "zw": zero_or(s.get("zw"), 4, 50),
+            "dir": s.get("dir") if s.get("dir") in ("up", "down") else "", "key": str(s.get("key") or "").strip()[:12],
+            "cz": hexv(s.get("cz")), "cp": hexv(s.get("cp"))}
+
+
 def clean_game(g):
     if not isinstance(g, dict) or not ID_RE.match(str(g.get("id") or "")):
         return None
@@ -37,6 +56,7 @@ def clean_game(g):
         "goal": clampi(g.get("goal"), 1, 500, 30),
         "tmo": clampi(g.get("tmo"), 1000, 10000, 4000),
         "start": clampi(g.get("start"), 1, 8, 2),
+        "segs": [x for x in (clean_seg(s) for s in (g.get("segs") if isinstance(g.get("segs"), list) else [])[:40]) if x],
         "dir": "up" if g.get("dir") == "up" else "down",
         "col": {k: (str(col.get(k)) if HEX.match(str(col.get(k) or "")) else d) for k, d in COLORS.items()},
         "dmg": dmg if DMG.match(dmg) else "",
