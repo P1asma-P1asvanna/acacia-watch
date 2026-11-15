@@ -69,3 +69,17 @@
 .mgrh{display:flex;justify-content:space-between;align-items:center;gap:8px}.mgrb{display:flex;gap:4px}
 .mgrf{display:flex;flex-wrap:wrap;gap:8px 12px;margin-top:6px}.mgrf label{display:flex;flex-direction:column;gap:2px;font-size:.78rem}
 .mgsn{box-sizing:border-box}
+.mgedit{position:fixed;inset:0;z-index:9000;background:#0b0b0d;color:#eee;display:flex;flex-direction:column}
+.mgeh{display:flex;flex-wrap:wrap;gap:8px 12px;align-items:center;padding:8px 12px;background:#17171a;border-bottom:1px solid #333}
+.mgeh label{display:flex;gap:4px;align-items:center;font-size:.85rem}.mgeh input[type=number],.mgeh select{min-height:32px}
+.mgebtns{display:flex;gap:6px;flex-wrap:wrap;margin-left:auto}.mgehint{flex:1 0 100%;opacity:.7}
+.mgevid{width:84px;height:48px;object-fit:cover;border-radius:6px;background:#000}
+.mget{font-variant-numeric:tabular-nums;min-width:74px}
+.mgescroll{flex:1;overflow:auto;position:relative;-webkit-overflow-scrolling:touch}
+.mgeinner{position:relative;margin:0 auto}
+.mgeruler{position:absolute;left:0;top:0;bottom:0;width:60px;border-right:1px solid #333;cursor:pointer}
+.mgeruler span{position:absolute;right:6px;font-size:.7rem;opacity:.7;transform:translateY(-50%)}
+.mgegrid{position:absolute;top:0;background-color:#141416;cursor:crosshair}
+.mgenotes,.mgehead{position:absolute;left:0;right:0}.mgenotes{top:0}
+.mgen{position:absolute;border-radius:6px;box-shadow:0 0 0 2px rgba(255,255,255,.6);pointer-events:none}
+.mgehead{height:2px;background:#facc15;box-shadow:0 0 6px #facc15;pointer-events:none;z-index:2}

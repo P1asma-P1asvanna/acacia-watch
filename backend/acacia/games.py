@@ -31,9 +31,23 @@ def clean_seg(s):
             "cz": hexv(s.get("cz")), "cp": hexv(s.get("cp"))}
 
 
+def clean_chart(v, lanes):
+    """Hand-placed notes of a lane game: [{t: ms from the game's zero, l: lane index}], sorted, no duplicates."""
+    seen, out = set(), []
+    for n in (v if isinstance(v, list) else [])[:800]:
+        if not isinstance(n, dict):
+            continue
+        t, l = clampi(n.get("t"), 0, 3600000, 0), clampi(n.get("l"), 0, lanes - 1, 0)
+        if (t, l) not in seen:
+            seen.add((t, l))
+            out.append({"t": t, "l": l})
+    return sorted(out, key=lambda x: (x["t"], x["l"]))
+
+
 def clean_game(g):
     if not isinstance(g, dict) or not ID_RE.match(str(g.get("id") or "")):
         return None
+    nl = clampi(g.get("lanes"), 2, 8, 4)
     col = g.get("col") if isinstance(g.get("col"), dict) else {}
     dmg = str(g.get("dmg") or "").strip()[:12]
     return {
@@ -48,7 +62,8 @@ def clean_game(g):
         "zone": clampi(g.get("zone"), 10, 95, 75),
         "zw": clampi(g.get("zw"), 4, 50, 16),
         "key": str(g.get("key") or "").strip()[:40],
-        "lanes": clampi(g.get("lanes"), 2, 8, 4),
+        "lanes": nl,
+        "chart": clean_chart(g.get("chart"), nl),
         "fall": clampi(g.get("fall"), 400, 4000, 1500),
         "sub": clampi(g.get("sub"), 1, 4, 1),
         "pat": re.sub(r"[^0-9 ]", "", str(g.get("pat") or ""))[:80].strip(),
