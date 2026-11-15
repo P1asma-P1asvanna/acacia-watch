@@ -25,48 +25,43 @@ function mgTimeline(){
     ${lane?`<label>${t('mgSub')} ${nf(i,'sub','='+g.sub,x.sub,52)}</label><label>${t('mgFall')} ${nf(i,'fall','='+g.fall,x.fall,72)}</label><label>${t('mgDir')} <select data-mgs="${i}:dir"><option value="">=</option><option value="down" ${x.dir==='down'?'selected':''}>${t('mgDown')}</option><option value="up" ${x.dir==='up'?'selected':''}>${t('mgUp')}</option></select></label>`
     :`<label>${t('mgBeats')} ${nf(i,'beats','='+g.beats,x.beats,52)}</label><label>${t('mgZone')} ${nf(i,'zone','='+g.zone,x.zone,60)}</label><label>${t('mgZw')} ${nf(i,'zw','='+g.zw,x.zw,60)}</label><label>${t('mgKey')} <input class="mgsn" data-mgs="${i}:key" maxlength="12" style="width:60px" value="${esc(x.key)}" placeholder="="></label>`}
     <label>${t('mgc_zone')} <input type="color" data-mgs="${i}:cz" value="${x.cz||g.col.zone}">${x.cz?`<button class="btn small" data-mg="seg-clr" data-i="${i}" aria-label="clear">↺</button>`:''}</label>`:''}</div></li>`}).join('');
-  return`<div class="mgtl"><div class="ph" style="border:0;padding:0 0 6px"><h3 style="margin:0;font-size:1rem">${t('mgTimeline')}</h3><small class="muted">${t('mgTimelineH')}</small></div>
+  return`<div class="mgtl"><small class="muted">${t('mgTimelineH')}</small>
    <div class="mgtlbar">${bar||`<span class="muted" style="padding:6px">${t('mgNoSeg')}</span>`}</div><div class="muted mgtotal" style="font-size:.85rem">${S.length?`${t('mgTotal')}: ${tot.toFixed(1)} s`:''}</div>
    ${S.length?`<ul class="mgrows">${rows}</ul>`:''}
    <div class="mgbtns" style="margin-top:8px"><button class="btn small" data-mg="seg-add-play">+ ${t('mgPlaySeg')}</button><button class="btn small" data-mg="seg-add-cut">+ ${t('mgCutSeg')}</button></div></div>`}
 function mgForm(){
   const g=GD,f=(k,lab,inner,hint)=>`<div class="field"><label>${lab}</label>${inner}${hint?`<small class="muted">${hint}</small>`:''}</div>`;
   const num=(k,min,max,lab,hint)=>f(k,lab,`<input type="number" data-mgf="${k}" min="${min}" max="${max}" value="${g[k]}">`,hint);
+  const txt=(k,lab,max,ph,hint)=>f(k,lab,`<input data-mgf="${k}" maxlength="${max}" value="${esc(g[k])}" placeholder="${ph||''}">`,hint);
+  const sel=(k,lab,opts)=>f(k,lab,`<select data-mgf="${k}">${opts.map(([v,l])=>`<option value="${v}" ${g[k]===v?'selected':''}>${l}</option>`).join('')}</select>`);
+  const sec=(ico,title,inner,open)=>`<details class="mgsec" ${open?'open':''}><summary><span>${ico}</span> ${title}</summary>${inner}</details>`;
   const clips=MEDIA.filter(m=>m.type.startsWith('video')||m.type.startsWith('audio'));
+  const ty=g.type,L=ty==='lane',T=ty==='timing',S=ty==='simon',K=ty==='tap';
+  const basic=`<div class="mggrid">
+    ${sel('type',t('mgTypeL'),[['timing',t('mgType_timing')],['lane',t('mgType_lane')],['simon',t('mgType_simon')],['tap',t('mgType_tap')]])}
+    ${txt('name',t('mgName'),60)}
+    ${f('media',t('mgMedia'),`<select data-mgf="media"><option value="">${t('mgNoMedia')}</option>${clips.map(m=>`<option value="${esc(m.id)}" ${g.media===m.id?'selected':''}>${esc(m.name)}</option>`).join('')}</select>`)}</div>`;
+  const rhythm=`<div class="mggrid">
+    ${K?'':num('bpm',30,300,'BPM')}
+    ${S||K?'':num('offset',-5000,60000,t('mgOffset'),t('mgOffsetH'))}
+    ${K?`${num('dur',3,60,t('mgDur'))}${num('goal',1,500,t('mgGoal'),t('mgGoalH'))}${txt('key',t('mgKey'),12,t('mgKeyPh'),t('mgKeyH'))}`
+    :S?`${num('rounds',1,64,t('mgLevels'))}${num('lanes',2,8,t('mgPads'))}${num('start',1,8,t('mgStartLen'),t('mgStartLenH'))}${num('tmo',1000,10000,t('mgTmo'),t('mgTmoH'))}${txt('key',t('mgKeys'),40,'d f j k',t('mgKeysH'))}`
+    :L?`${num('lanes',2,8,t('mgLanes'))}${num('sub',1,4,t('mgSub'),t('mgSubH'))}${num('fall',400,4000,t('mgFall'),t('mgFallH'))}${sel('dir',t('mgDir'),[['down',t('mgDown')],['up',t('mgUp')]])}${txt('key',t('mgKeys'),40,'d f j k',t('mgKeysH'))}`
+    :`${num('rounds',1,64,t('mgRounds'))}${num('beats',1,8,t('mgBeats'),t('mgBeatsH'))}${num('zone',10,95,t('mgZone'),t('mgZoneH'))}${num('zw',4,50,t('mgZw'))}${txt('key',t('mgKey'),12,t('mgKeyPh'),t('mgKeyH'))}`}</div>`;
+  const n=(g.chart||[]).length;
+  const notes=L?`<div class="mgchartf"><button class="btn primary big" data-mg="chart-edit">🎼 ${t('mgChartEdit')}</button>${n?`<button class="btn small danger" data-mg="chart-clear">${t('mgChartClear')}</button>`:''}<small class="muted">${n?t('mgChartN').replace('{n}',n):t('mgChartNone')}</small></div>
+    <div class="mggrid">${num('rounds',1,64,t('mgNotes'))}${txt('pat',t('mgPat'),80,'1 2 3 4 3 2',t('mgPatH'))}</div>`:'';
+  const pen=`<div class="mggrid">${txt('dmg',t('mgDmg'),12,'1d6',t('mgDmgH'))}${sel('dmgMode',t('mgDmgMode'),[['confirm',t('mgConfirm')],['auto',t('mgAuto')]])}${sel('play',t('mgPlayMode'),[['all',t('mgAll')],['one',t('mgOne')]])}</div>`;
+  const cols=`<div class="mgcols" style="padding:10px 16px">${MG_COL.map(k=>`<label class="mgc"><input type="color" data-mgc="${k}" value="${g.col[k]}"><span>${t('mgc_'+k)}</span></label>`).join('')}</div>`;
   return`<section class="panel mgpanel mgform"><div class="ph"><h2>${t('mgEdit')}</h2></div>
-   <div class="mggrid">
-    ${f('type',t('mgTypeL'),`<select data-mgf="type"><option value="timing" ${g.type==='timing'?'selected':''}>${t('mgType_timing')}</option><option value="lane" ${g.type==='lane'?'selected':''}>${t('mgType_lane')}</option><option value="simon" ${g.type==='simon'?'selected':''}>${t('mgType_simon')}</option><option value="tap" ${g.type==='tap'?'selected':''}>${t('mgType_tap')}</option></select>`)}
-    ${f('name',t('mgName'),`<input data-mgf="name" maxlength="60" value="${esc(g.name)}">`)}
-    ${f('media',t('mgMedia'),`<select data-mgf="media"><option value="">${t('mgNoMedia')}</option>${clips.map(m=>`<option value="${esc(m.id)}" ${g.media===m.id?'selected':''}>${esc(m.name)}</option>`).join('')}</select>`)}
-    ${num('bpm',30,300,'BPM')}
-    ${g.type==='simon'||g.type==='tap'?'':num('offset',-5000,60000,t('mgOffset'),t('mgOffsetH'))}
-    ${g.type==='tap'?'':num('rounds',1,64,g.type==='lane'?t('mgNotes'):g.type==='simon'?t('mgLevels'):t('mgRounds'))}
-    ${g.type==='tap'?`${num('dur',3,60,t('mgDur'))}
-    ${num('goal',1,500,t('mgGoal'),t('mgGoalH'))}
-    ${f('key',t('mgKey'),`<input data-mgf="key" maxlength="12" value="${esc(g.key)}" placeholder="${t('mgKeyPh')}">`,t('mgKeyH'))}`
-    :g.type==='simon'?`${num('lanes',2,8,t('mgPads'))}
-    ${num('start',1,8,t('mgStartLen'),t('mgStartLenH'))}
-    ${num('tmo',1000,10000,t('mgTmo'),t('mgTmoH'))}
-    ${f('key',t('mgKeys'),`<input data-mgf="key" maxlength="40" value="${esc(g.key)}" placeholder="d f j k">`,t('mgKeysH'))}`
-    :g.type==='lane'?`${num('lanes',2,8,t('mgLanes'))}
-    ${num('sub',1,4,t('mgSub'),t('mgSubH'))}
-    ${num('fall',400,4000,t('mgFall'),t('mgFallH'))}
-    ${f('dir',t('mgDir'),`<select data-mgf="dir"><option value="down" ${g.dir==='down'?'selected':''}>${t('mgDown')}</option><option value="up" ${g.dir==='up'?'selected':''}>${t('mgUp')}</option></select>`)}
-    <div class="field mgchartf"><label>${t('mgChartL')}</label><div class="mgbtns"><button class="btn small primary" data-mg="chart-edit">${t('mgChartEdit')}</button>${(g.chart||[]).length?`<button class="btn small danger" data-mg="chart-clear">${t('mgChartClear')}</button>`:''}</div><small class="muted">${(g.chart||[]).length?t('mgChartN').replace('{n}',g.chart.length):t('mgChartNone')}</small></div>
-    ${f('pat',t('mgPat'),`<input data-mgf="pat" maxlength="80" value="${esc(g.pat)}" placeholder="1 2 3 4 3 2">`,t('mgPatH'))}
-    ${f('key',t('mgKeys'),`<input data-mgf="key" maxlength="40" value="${esc(g.key)}" placeholder="d f j k">`,t('mgKeysH'))}`
-    :`${num('beats',1,8,t('mgBeats'),t('mgBeatsH'))}
-    ${num('zone',10,95,t('mgZone'),t('mgZoneH'))}
-    ${num('zw',4,50,t('mgZw'))}
-    ${f('key',t('mgKey'),`<input data-mgf="key" maxlength="12" value="${esc(g.key)}" placeholder="${t('mgKeyPh')}">`,t('mgKeyH'))}`}
-    ${f('dmg',t('mgDmg'),`<input data-mgf="dmg" maxlength="12" value="${esc(g.dmg)}" placeholder="1d6">`,t('mgDmgH'))}
-    ${f('dmgMode',t('mgDmgMode'),`<select data-mgf="dmgMode"><option value="confirm" ${g.dmgMode==='confirm'?'selected':''}>${t('mgConfirm')}</option><option value="auto" ${g.dmgMode==='auto'?'selected':''}>${t('mgAuto')}</option></select>`)}
-    ${f('play',t('mgPlayMode'),`<select data-mgf="play"><option value="all" ${g.play==='all'?'selected':''}>${t('mgAll')}</option><option value="one" ${g.play==='one'?'selected':''}>${t('mgOne')}</option></select>`)}
-   </div>
-   ${g.type==='timing'||g.type==='lane'?mgTimeline():''}
-   <div class="mgcols">${MG_COL.map(k=>`<label class="mgc"><input type="color" data-mgc="${k}" value="${g.col[k]}"><span>${t('mgc_'+k)}</span></label>`).join('')}</div>
-   ${mgMsg?`<p class="err" role="alert">${esc(mgMsg)}</p>`:''}
-   <div class="mgbtns" style="padding:12px 16px 16px"><button class="btn primary" data-mg="save" ${mgBusy?'disabled':''}>${t('save')}</button><button class="btn" data-mg="play-draft">${t('mgTest')}</button><button class="btn" data-mg="cancel">${t('mgCancel')}</button></div>
+   ${basic}
+   ${sec('🎚',t('mgSecRhythm'),rhythm,true)}
+   ${L?sec('🎼',t('mgSecNotes'),notes,true):''}
+   ${T||L?sec('🎬',t('mgTimeline'),mgTimeline(),!!(g.segs&&g.segs.length)):''}
+   ${sec('💥',t('mgSecPen'),pen,true)}
+   ${sec('🎨',t('mgSecCol'),cols,false)}
+   ${mgMsg?`<p class="err" role="alert" style="padding:0 16px">${esc(mgMsg)}</p>`:''}
+   <div class="mgbtns mgsave"><button class="btn primary" data-mg="save" ${mgBusy?'disabled':''}>${t('save')}</button><button class="btn" data-mg="play-draft">▶ ${t('mgTest')}</button><button class="btn" data-mg="cancel">${t('mgCancel')}</button></div>
   </section>`;
 }
 async function mgSave(){
@@ -133,6 +128,10 @@ function mgTimingPlan(g){
   return out}
 function mgSegAt(g,t){let c=0;for(const x of g.segs||[]){const len=x.len*1000;if(t>=c&&t<c+len)return x;c+=len}return null}
 function mgLanePlan(g){
+  const out=mgLanePlan0(g).sort((a,b)=>a.t-b.t||a.l-b.l),next={};
+  for(let i=out.length-1;i>=0;i--){const n=out[i];n.gap=next[n.l]!=null?next[n.l]-n.t:1e9;next[n.l]=n.t}
+  return out}
+function mgLanePlan0(g){
   if(g.chart&&g.chart.length){const out=[];for(const n of g.chart){const x=mgSegAt(g,n.t);if(x&&x.kind==='cut')continue;out.push({t:n.t,l:Math.min(n.l,g.lanes-1),dir:(x&&x.dir)||g.dir,fall:(x&&x.fall)||g.fall,cz:(x&&x.cz)||''})}return out}
   if(!(g.segs&&g.segs.length))return mgChart(g).map(n=>({...n,dir:g.dir,fall:g.fall,cz:''}));
   const L=g.lanes,pat=(g.pat||'').replace(/\s+/g,'').split('').map(Number),hasP=pat.some(x=>x>0),out=[];
@@ -189,13 +188,13 @@ function mgPlay(g,cb){
     const T=clock()-offs(),cd=$q('.mgcount');
     cd.textContent=T<0?Math.ceil(-T/1000):'';
     if(isL){
-      const NH=Math.max(24,S.H*.08);let open=0;
+      const NHM=Math.max(24,S.H*.08);let open=0;
       for(let i=0;i<notes.length;i++){
         if(S.res[i]!=null)continue;open++;const n=notes[i],dt=n.t-T;
         if(-dt>WIN){resolve(i,'m');continue}
         const p=1-dt/n.fall,e=noteEls[i];
         if(p<0){e.style.display='none';continue}
-        e.style.display='block';e.style.height=NH+'px';
+        const NH=Math.max(10,Math.min(NHM,n.gap/n.fall*(S.H-NHM)-4));e.style.display='block';e.style.height=NH+'px';
         const y=n.dir==='up'?(1-p)*(S.H-NH):p*(S.H-NH);e.style.transform=`translateY(${y}px)`}
       if(!open&&(!notes.length||T>notes[notes.length-1].t+300)){finish();return}
       const nx=notes.find((n,i)=>S.res[i]==null),dr=nx?nx.dir:g.dir;
@@ -212,9 +211,10 @@ function mgPlay(g,cb){
     if(S.phase!=='run')return;const T=clock()-offs();
     if(isL){
       const pad=el.querySelector('.mgpad[data-l="'+l+'"]');if(pad){pad.classList.add('on');setTimeout(()=>pad.classList.remove('on'),110)}
-      let best=-1,bd=1e9;
-      for(let i=0;i<notes.length;i++){if(S.res[i]!=null||notes[i].l!==l)continue;const d=Math.abs(T-notes[i].t);if(d<bd){bd=d;best=i}}
-      if(best>=0&&bd<=WIN)resolve(best,bd<=PERF?'p':'h');
+      /* one press = one note, and the earliest note still waiting in that lane goes first (close notes are never taken together) */
+      for(let i=0;i<notes.length;i++){if(S.res[i]!=null||notes[i].l!==l)continue;const d=Math.abs(T-notes[i].t);
+        if(notes[i].t-T>WIN)break;
+        if(d<=WIN){resolve(i,d<=PERF?'p':'h');break}}
       return}
     const k=S.si,sw=sweeps[k];if(!sw||T<sw.t||S.res[k]!=null)return;
     const dist=Math.abs((T-sw.t)/sw.D*100-sw.zone),half=sw.zw/2;
@@ -239,5 +239,5 @@ function mgPlay(g,cb){
     const r=e.target.closest('[data-r]');if(!r)return;if(r.dataset.r==='close')close();else{S.phase='ready';start()}});
   if(media&&media.addEventListener)media.addEventListener('ended',()=>{if(S.phase==='run')finish()});
 }
-Object.assign(TX.th,{mgChartL:'โน้ตแบบวาดเอง',mgChartEdit:'เปิดตัวแก้โน้ต (กริด)',mgChartClear:'ล้างโน้ต',mgChartN:'วางไว้ {n} ตัว — ใช้แทนรูปแบบตัวเลข/สุ่ม',mgChartNone:'ยังไม่มี (ใช้รูปแบบตัวเลข/สุ่มด้านล่าง)',mgTimeline:'ไทม์ไลน์',mgTimelineH:'แบ่งเกมเป็นช่วง ๆ ตามลำดับ ช่วงเล่นปรับ BPM/ทิศทาง/สี/ปุ่มได้ ช่วงคัตซีนไม่มีโน้ต คลิปเล่นต่อ ช่องว่าง = ใช้ค่าของเกม',mgNoSeg:'ยังไม่มีช่วง (ใช้ค่าของเกมทั้งเกม)',mgTotal:'ความยาวรวม',mgPlaySeg:'ช่วงเล่น',mgCutSeg:'คัตซีน',mgLen:'ยาว',mgCancel:'ยกเลิก',mgTypeL:'ประเภทเกม',mgNotes:'จำนวนโน้ต',mgLanes:'จำนวนเลน',mgSub:'โน้ตต่อบีต',mgSubH:'1 = ทุกบีต 2 = ครึ่งบีต',mgFall:'เวลาตกถึงเส้น (ms)',mgFallH:'น้อย = โน้ตเร็ว',mgDir:'ทิศทางโน้ต',mgDown:'ตกลงมา',mgUp:'ขึ้นไป',mgPat:'รูปแบบโน้ต',mgPatH:'เลขเลน เช่น 1 2 3 4 3 2 (0 = เว้น) ว่าง = สุ่ม (คงที่ทุกครั้ง)',mgKeys:'ปุ่มแต่ละเลน',mgKeysH:'คั่นด้วยเว้นวรรค เช่น d f j k',mgTitle:'เกมจังหวะ',mgNew:'+ เกมใหม่',mgTest:'ทดลองเล่น',mgNone:'ยังไม่มีเกม กด "เกมใหม่" เพื่อสร้าง',mgType_timing:'แถบจังหวะ',mgType_lane:'เลนโน้ต',mgType_simon:'Simon',mgType_tap:'กดรัว',mgRounds:'รอบ',mgEdit:'ตั้งค่าเกม',mgName:'ชื่อเกม',mgMedia:'วิดีโอ/เสียงพื้นหลัง',mgNoMedia:'ไม่ใช้ (ใช้นับเวลาเอง)',mgOffset:'Offset (มิลลิวินาที)',mgOffsetH:'เวลาที่เกมเริ่มนับจังหวะแรก นับจากเริ่มคลิป',mgBeats:'จำนวนบีตต่อ 1 รอบ',mgBeatsH:'ยิ่งมาก แถบยิ่งวิ่งช้า',mgZone:'ตำแหน่งโซน (%)',mgZoneH:'0 = ซ้ายสุด 100 = ขวาสุด',mgZw:'ความกว้างโซน (%)',mgKey:'ปุ่มกด',mgKeyPh:'เว้นว่าง = Space',mgKeyH:'ปุ่มบนแป้นพิมพ์ ป้ายบนปุ่มจอสัมผัสด้วย',mgDmg:'ดาเมจต่อการพลาด 1 ครั้ง',mgDmgH:'เช่น 3 หรือ 1d6 หรือ 2d4+1 (ว่าง = ไม่มี)',mgDmgMode:'การหักเลือด',mgConfirm:'เสนอให้ GM ยืนยัน',mgAuto:'หักอัตโนมัติ',mgPlayMode:'วิธีเล่น',mgAll:'ทุกคนพร้อมกัน',mgOne:'ทีละคน',mgc_bar:'สีแถบ',mgc_zone:'สีโซน / โน้ต',mgc_perfect:'สีจุดเป๊ะ / เส้นตี',mgc_marker:'สีตัวชี้',mgNeedName:'ใส่ชื่อเกมก่อน',mgFail:'บันทึกไม่สำเร็จ',mgDelAsk:'ลบเกมนี้?',mgStart:'เริ่ม',mgCal:'ชดเชยหน่วงของเครื่อง',mgPerfect:'เป๊ะ!',mgHit:'โดน',mgMiss:'พลาด',mgDone:'จบเกม',mgAgain:'เล่นอีกครั้ง',mgDmgTaken:'ได้รับดาเมจ {n} ({d} ต่อครั้งที่พลาด)',mgNoDmg:'ไม่พลาดเลย ไม่เสียเลือด'});
-Object.assign(TX.en,{mgChartL:'Hand-placed notes',mgChartEdit:'Open note editor (grid)',mgChartClear:'Clear notes',mgChartN:'{n} notes placed — used instead of the number pattern / random',mgChartNone:'None yet (the number pattern / random below is used)',mgTimeline:'Timeline',mgTimelineH:'Split the game into stretches in order. A play stretch can change BPM / direction / colour / button; a cutscene has no notes and the clip just plays. Empty = the game value',mgNoSeg:'No stretches (the game settings apply to the whole game)',mgTotal:'Total length',mgPlaySeg:'Play',mgCutSeg:'Cutscene',mgLen:'Length',mgCancel:'Cancel',mgTypeL:'Game type',mgNotes:'Number of notes',mgLanes:'Lanes',mgSub:'Notes per beat',mgSubH:'1 = every beat, 2 = half beat',mgFall:'Fall time to line (ms)',mgFallH:'Lower = faster notes',mgDir:'Note direction',mgDown:'Falling',mgUp:'Rising',mgPat:'Note pattern',mgPatH:'Lane numbers, e.g. 1 2 3 4 3 2 (0 = rest). Empty = random (same every time)',mgKeys:'Key per lane',mgKeysH:'Separated by spaces, e.g. d f j k',mgTitle:'Rhythm games',mgNew:'+ New game',mgTest:'Test play',mgNone:'No games yet. Press "New game" to make one.',mgType_timing:'Timing bar',mgType_lane:'Note lanes',mgType_simon:'Simon',mgType_tap:'Rapid tap',mgRounds:'rounds',mgEdit:'Game settings',mgName:'Game name',mgMedia:'Background video / audio',mgNoMedia:'None (own timer)',mgOffset:'Offset (ms)',mgOffsetH:'When the first beat starts, counted from the clip start',mgBeats:'Beats per sweep',mgBeatsH:'More beats = slower bar',mgZone:'Zone position (%)',mgZoneH:'0 = far left, 100 = far right',mgZw:'Zone width (%)',mgKey:'Button',mgKeyPh:'empty = Space',mgKeyH:'Keyboard key; also the label on the touch button',mgDmg:'Damage per miss',mgDmgH:'e.g. 3 or 1d6 or 2d4+1 (empty = none)',mgDmgMode:'HP loss',mgConfirm:'Propose to GM to confirm',mgAuto:'Apply automatically',mgPlayMode:'Play mode',mgAll:'Everyone together',mgOne:'One at a time',mgc_bar:'Bar colour',mgc_zone:'Zone / note colour',mgc_perfect:'Perfect spot',mgc_marker:'Marker',mgNeedName:'Enter a game name first',mgFail:'Could not save',mgDelAsk:'Delete this game?',mgStart:'Start',mgCal:'Device delay offset',mgPerfect:'Perfect!',mgHit:'Hit',mgMiss:'Miss',mgDone:'Game over',mgAgain:'Play again',mgDmgTaken:'Took {n} damage ({d} per miss)',mgNoDmg:'No misses, no damage'});
+Object.assign(TX.th,{mgSecRhythm:'จังหวะและกติกา',mgSecNotes:'โน้ต',mgSecPen:'เมื่อพลาด / วิธีเล่น',mgSecCol:'สี',mgChartL:'โน้ตแบบวาดเอง',mgChartEdit:'เปิดตัวแก้โน้ต (กริด)',mgChartClear:'ล้างโน้ต',mgChartN:'วางไว้ {n} ตัว — ใช้แทนรูปแบบตัวเลข/สุ่ม',mgChartNone:'ยังไม่มี (ใช้รูปแบบตัวเลข/สุ่มด้านล่าง)',mgTimeline:'ไทม์ไลน์',mgTimelineH:'แบ่งเกมเป็นช่วง ๆ ตามลำดับ ช่วงเล่นปรับ BPM/ทิศทาง/สี/ปุ่มได้ ช่วงคัตซีนไม่มีโน้ต คลิปเล่นต่อ ช่องว่าง = ใช้ค่าของเกม',mgNoSeg:'ยังไม่มีช่วง (ใช้ค่าของเกมทั้งเกม)',mgTotal:'ความยาวรวม',mgPlaySeg:'ช่วงเล่น',mgCutSeg:'คัตซีน',mgLen:'ยาว',mgCancel:'ยกเลิก',mgTypeL:'ประเภทเกม',mgNotes:'จำนวนโน้ต',mgLanes:'จำนวนเลน',mgSub:'โน้ตต่อบีต',mgSubH:'1 = ทุกบีต 2 = ครึ่งบีต',mgFall:'เวลาตกถึงเส้น (ms)',mgFallH:'น้อย = โน้ตเร็ว',mgDir:'ทิศทางโน้ต',mgDown:'ตกลงมา',mgUp:'ขึ้นไป',mgPat:'รูปแบบโน้ต',mgPatH:'เลขเลน เช่น 1 2 3 4 3 2 (0 = เว้น) ว่าง = สุ่ม (คงที่ทุกครั้ง)',mgKeys:'ปุ่มแต่ละเลน',mgKeysH:'คั่นด้วยเว้นวรรค เช่น d f j k',mgTitle:'เกมจังหวะ',mgNew:'+ เกมใหม่',mgTest:'ทดลองเล่น',mgNone:'ยังไม่มีเกม กด "เกมใหม่" เพื่อสร้าง',mgType_timing:'แถบจังหวะ',mgType_lane:'เลนโน้ต',mgType_simon:'Simon',mgType_tap:'กดรัว',mgRounds:'รอบ',mgEdit:'ตั้งค่าเกม',mgName:'ชื่อเกม',mgMedia:'วิดีโอ/เสียงพื้นหลัง',mgNoMedia:'ไม่ใช้ (ใช้นับเวลาเอง)',mgOffset:'Offset (มิลลิวินาที)',mgOffsetH:'เวลาที่เกมเริ่มนับจังหวะแรก นับจากเริ่มคลิป',mgBeats:'จำนวนบีตต่อ 1 รอบ',mgBeatsH:'ยิ่งมาก แถบยิ่งวิ่งช้า',mgZone:'ตำแหน่งโซน (%)',mgZoneH:'0 = ซ้ายสุด 100 = ขวาสุด',mgZw:'ความกว้างโซน (%)',mgKey:'ปุ่มกด',mgKeyPh:'เว้นว่าง = Space',mgKeyH:'ปุ่มบนแป้นพิมพ์ ป้ายบนปุ่มจอสัมผัสด้วย',mgDmg:'ดาเมจต่อการพลาด 1 ครั้ง',mgDmgH:'เช่น 3 หรือ 1d6 หรือ 2d4+1 (ว่าง = ไม่มี)',mgDmgMode:'การหักเลือด',mgConfirm:'เสนอให้ GM ยืนยัน',mgAuto:'หักอัตโนมัติ',mgPlayMode:'วิธีเล่น',mgAll:'ทุกคนพร้อมกัน',mgOne:'ทีละคน',mgc_bar:'สีแถบ',mgc_zone:'สีโซน / โน้ต',mgc_perfect:'สีจุดเป๊ะ / เส้นตี',mgc_marker:'สีตัวชี้',mgNeedName:'ใส่ชื่อเกมก่อน',mgFail:'บันทึกไม่สำเร็จ',mgDelAsk:'ลบเกมนี้?',mgStart:'เริ่ม',mgCal:'ชดเชยหน่วงของเครื่อง',mgPerfect:'เป๊ะ!',mgHit:'โดน',mgMiss:'พลาด',mgDone:'จบเกม',mgAgain:'เล่นอีกครั้ง',mgDmgTaken:'ได้รับดาเมจ {n} ({d} ต่อครั้งที่พลาด)',mgNoDmg:'ไม่พลาดเลย ไม่เสียเลือด'});
+Object.assign(TX.en,{mgSecRhythm:'Rhythm and rules',mgSecNotes:'Notes',mgSecPen:'On a miss / play mode',mgSecCol:'Colours',mgChartL:'Hand-placed notes',mgChartEdit:'Open note editor (grid)',mgChartClear:'Clear notes',mgChartN:'{n} notes placed — used instead of the number pattern / random',mgChartNone:'None yet (the number pattern / random below is used)',mgTimeline:'Timeline',mgTimelineH:'Split the game into stretches in order. A play stretch can change BPM / direction / colour / button; a cutscene has no notes and the clip just plays. Empty = the game value',mgNoSeg:'No stretches (the game settings apply to the whole game)',mgTotal:'Total length',mgPlaySeg:'Play',mgCutSeg:'Cutscene',mgLen:'Length',mgCancel:'Cancel',mgTypeL:'Game type',mgNotes:'Number of notes',mgLanes:'Lanes',mgSub:'Notes per beat',mgSubH:'1 = every beat, 2 = half beat',mgFall:'Fall time to line (ms)',mgFallH:'Lower = faster notes',mgDir:'Note direction',mgDown:'Falling',mgUp:'Rising',mgPat:'Note pattern',mgPatH:'Lane numbers, e.g. 1 2 3 4 3 2 (0 = rest). Empty = random (same every time)',mgKeys:'Key per lane',mgKeysH:'Separated by spaces, e.g. d f j k',mgTitle:'Rhythm games',mgNew:'+ New game',mgTest:'Test play',mgNone:'No games yet. Press "New game" to make one.',mgType_timing:'Timing bar',mgType_lane:'Note lanes',mgType_simon:'Simon',mgType_tap:'Rapid tap',mgRounds:'rounds',mgEdit:'Game settings',mgName:'Game name',mgMedia:'Background video / audio',mgNoMedia:'None (own timer)',mgOffset:'Offset (ms)',mgOffsetH:'When the first beat starts, counted from the clip start',mgBeats:'Beats per sweep',mgBeatsH:'More beats = slower bar',mgZone:'Zone position (%)',mgZoneH:'0 = far left, 100 = far right',mgZw:'Zone width (%)',mgKey:'Button',mgKeyPh:'empty = Space',mgKeyH:'Keyboard key; also the label on the touch button',mgDmg:'Damage per miss',mgDmgH:'e.g. 3 or 1d6 or 2d4+1 (empty = none)',mgDmgMode:'HP loss',mgConfirm:'Propose to GM to confirm',mgAuto:'Apply automatically',mgPlayMode:'Play mode',mgAll:'Everyone together',mgOne:'One at a time',mgc_bar:'Bar colour',mgc_zone:'Zone / note colour',mgc_perfect:'Perfect spot',mgc_marker:'Marker',mgNeedName:'Enter a game name first',mgFail:'Could not save',mgDelAsk:'Delete this game?',mgStart:'Start',mgCal:'Device delay offset',mgPerfect:'Perfect!',mgHit:'Hit',mgMiss:'Miss',mgDone:'Game over',mgAgain:'Play again',mgDmgTaken:'Took {n} damage ({d} per miss)',mgNoDmg:'No misses, no damage'});
