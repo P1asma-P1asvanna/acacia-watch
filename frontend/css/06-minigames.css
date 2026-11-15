@@ -98,3 +98,8 @@
 .mgefoot{display:flex;gap:8px;flex-wrap:wrap;justify-content:center;padding:8px 12px max(8px,env(safe-area-inset-bottom));background:#17171a;border-top:1px solid #333}
 .mgefoot .btn{min-height:44px}
 .mgeinner{margin:0 auto}
+.mgewave{position:absolute;left:0;top:0;pointer-events:none;display:none}
+.mgenotes{z-index:1}.mgehead{z-index:2}.mgewst{flex:1 0 100%}
+.mgeh{position:relative}.mgeset{flex:0 0 auto!important}.mgeset[open]{display:block}
+.mgesetbox{position:absolute;left:8px;right:8px;top:100%;margin-top:2px;padding:12px;background:#1d1d21;border:1px solid #555;border-radius:10px;display:flex;flex-wrap:wrap;gap:10px 16px;align-items:center;z-index:20;box-shadow:0 8px 24px rgba(0,0,0,.6)}
+.mgeset summary{min-height:36px;display:flex;align-items:center;padding:0 6px}
