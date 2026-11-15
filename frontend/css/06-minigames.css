@@ -44,3 +44,11 @@
 .mgstart[hidden],.mgres[hidden]{display:none}
 .mgstart .big{min-height:64px;padding:0 48px;font-size:1.4rem}
 .mgdmg{font-size:1.3rem;color:#fca5a5}
+.mglanes{position:relative;display:grid;grid-template-columns:repeat(var(--n),1fr);gap:4px;width:min(92vw,440px);flex:0 0 min(48vh,420px);height:min(48vh,420px);margin-top:auto}
+.mglane{position:relative;overflow:hidden;border-radius:8px;opacity:.9}
+.mgnote{position:absolute;left:8%;width:84%;top:0;border-radius:8px;box-shadow:0 0 0 2px rgba(255,255,255,.55);will-change:transform}
+.mgline{position:absolute;left:0;right:0;height:5px;border-radius:3px;box-shadow:0 0 8px currentColor;pointer-events:none}
+.mgpads{display:grid;grid-template-columns:repeat(var(--n),1fr);gap:6px;width:min(92vw,440px);margin-bottom:max(12px,env(safe-area-inset-bottom))}
+.mgpad{height:84px;border-radius:14px;border:3px solid rgba(255,255,255,.7);color:#fff;font-size:1.3rem;font-weight:800;touch-action:none}
+.mgpad.on{filter:brightness(1.6);transform:scale(.95)}
+.mgplay:has(.mglanes) .mgmid{position:absolute;inset:0;pointer-events:none}
