@@ -50,3 +50,4 @@ label.btn:focus-within{outline:2px solid var(--accent);outline-offset:2px}
 .srcbar .chip{display:inline-flex;gap:6px;align-items:center;min-height:36px;padding:4px 12px;border-radius:18px;border:1px solid var(--line,#444);background:transparent;color:inherit;font:inherit;cursor:pointer}
 .srcbar .chip.on{background:rgba(128,128,128,.25);border-color:currentColor}
 .colrow{display:flex;gap:8px;align-items:center}.colrow input[type=color]{width:56px;height:40px;padding:2px}
+td.tick{text-align:center;font-weight:800;font-size:1.1rem}td.tick .yes{color:#5fcf80}td.tick .no{color:#d96c6c;opacity:.8}
