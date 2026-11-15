@@ -12,6 +12,7 @@ from http.server import BaseHTTPRequestHandler
 from urllib.parse import parse_qs, unquote, urlparse
 
 from . import images, live
+from .media import EXT_TYPES
 from .config import COOKIE, FRONTEND_DIR, LOCK, MAX_BODY, POLL_SECONDS, SESSION_DAYS
 from .database import run
 from .errors import Err
@@ -156,6 +157,48 @@ class H(Routes, BaseHTTPRequestHandler):
                 pass  # fall back to the plain answer; the browser then asks for the state itself
         return self.send(200, {"v": cur})
 
+    def media(self, full, ctype):
+        """Videos / audio are streamed from disk in pieces and honour Range requests (phones need that to play and to seek)."""
+        size = os.path.getsize(full)
+        start, end, code = 0, size - 1, 200
+        m = re.match(r"^bytes=(\d*)-(\d*)$", self.headers.get("Range") or "")
+        if m and (m.group(1) or m.group(2)):
+            if m.group(1):
+                start = int(m.group(1))
+                end = min(int(m.group(2)), size - 1) if m.group(2) else size - 1
+            else:
+                start = max(0, size - int(m.group(2)))
+            if start > end or start >= size:
+                self.send_response(416)
+                self.send_header("Content-Range", "bytes */%d" % size)
+                self.send_header("Content-Length", "0")
+                self.end_headers()
+                return
+            code = 206
+        try:
+            self.send_response(code)
+            self.send_header("Content-Type", ctype)
+            self.send_header("Accept-Ranges", "bytes")
+            self.send_header("Content-Length", str(end - start + 1))
+            if code == 206:
+                self.send_header("Content-Range", "bytes %d-%d/%d" % (start, end, size))
+            self.send_header("Cache-Control", "public, max-age=3600")
+            self.send_header("X-Content-Type-Options", "nosniff")
+            self.end_headers()
+            if self.command == "HEAD":
+                return
+            left = end - start + 1
+            with open(full, "rb") as f:
+                f.seek(start)
+                while left > 0:
+                    chunk = f.read(min(256 * 1024, left))
+                    if not chunk:
+                        break
+                    self.wfile.write(chunk)
+                    left -= len(chunk)
+        except (BrokenPipeError, ConnectionResetError):
+            pass
+
     def static(self, path):
         """Serve a file from frontend/. index.html gets the marker that tells the page it has a server."""
         rel = "index.html" if path in ("/", "") else unquote(path).lstrip("/")
@@ -164,6 +207,8 @@ class H(Routes, BaseHTTPRequestHandler):
         if (full != root and not full.startswith(root + os.sep)) or not os.path.isfile(full):
             return self.send(404, {"error": "not_found"})
         ext = os.path.splitext(full)[1].lower()
+        if rel.startswith("media/") and ext in EXT_TYPES:
+            return self.media(full, EXT_TYPES[ext])
         ctype = MIME.get(ext)
         if not ctype:
             return self.send(404, {"error": "not_found"})

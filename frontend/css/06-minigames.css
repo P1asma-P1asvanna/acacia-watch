@@ -12,3 +12,10 @@
 .hist li{display:flex;justify-content:space-between;gap:10px;font-family:var(--mono);font-size:.85rem;border-bottom:1px solid var(--line);padding-bottom:6px}
 .plan{margin:0;padding:12px 16px 16px 34px;display:flex;flex-direction:column;gap:6px}
 
+
+.medialist{list-style:none;margin:0;padding:0 16px 16px;display:grid;gap:10px}
+.medialist li{display:flex;gap:10px;align-items:flex-start;justify-content:space-between;padding:10px;border-radius:var(--r);background:rgba(128,128,128,.12)}
+.medialist .mm{display:flex;flex-direction:column;gap:4px;min-width:0;flex:1}.medialist small{opacity:.75}
+.medialist video{width:100%;max-width:360px;border-radius:var(--r);background:#000}.medialist audio{width:100%;max-width:360px}
+.mediabar{padding:0 16px 10px}.mediaup{display:flex;gap:10px;align-items:center;padding:0 16px 10px}.mediaup progress{flex:1}
+.mediahow{margin:0 16px 12px;padding:10px 12px;border-radius:var(--r);background:rgba(128,128,128,.12);font-size:.92rem}.mediahow ol{margin:6px 0 0;padding-left:20px}

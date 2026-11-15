@@ -8,9 +8,10 @@ from http import cookies
 
 from .config import COOKIE, FAILS
 from .errors import Err
+from .numbers import clampi
 from .security import check_pw, hash_pw, new_user_row
 from .store import boot_state, clean_cat, clean_site, kv_get, kv_set, user_pub
-from . import dice, images, profile, turns
+from . import dice, images, media, profile, turns
 from .config import IMG_SLOTS
 from .validation import ID_RE, clean_prefs, clean_record, ADMIN_ONLY
 
@@ -272,6 +273,36 @@ class Routes:
             entry["mine"] = me["id"]
             kv_set(c, "feed:" + rid, dice.push(kv_get(c, "feed:" + rid), entry))
             return {"ok": True, "entry": entry}
+
+        if path.startswith("/api/media/") and me:
+            if not admin:
+                raise Err(403, "admin_only")
+            lib = media.clean_list(kv_get(c, "media"))
+            if path == "/api/media/sign":
+                if len(lib) >= media.MAX_COUNT:
+                    raise Err(400, "media_full")
+                s = media.sign_upload(str(b.get("type") or ""), clampi(b.get("size"), 0, 1 << 40, 0), str(b.get("name") or ""))
+                return {"ok": True, **s}
+            if path == "/api/media/done":
+                objkey = str(b.get("key") or "")
+                if not objkey.startswith("media/") or any(x["key"] == objkey for x in lib):
+                    raise Err(400, "bad_key")
+                ok, size = media.head(objkey)
+                if not ok:
+                    raise Err(404, "not_uploaded")
+                item = {"id": objkey[6:30], "key": objkey, "name": str(b.get("name") or "")[:80], "size": size,
+                        "type": next((m for m, e in media.TYPES.items() if objkey.endswith(e)), "video/mp4"),
+                        "url": media.env()["pub"] + "/" + objkey}
+                lib.append(item)
+                kv_set(c, "media", lib)
+                return {"ok": True, "item": item}
+            if path == "/api/media/del":
+                it = next((x for x in lib if x["id"] == str(b.get("id") or "")), None)
+                if it:
+                    media.delete(it["key"])
+                    kv_set(c, "media", [x for x in lib if x is not it])
+                return {"ok": True}
+            raise Err(404, "not_found")
 
         if path == "/api/turn" and me:
             rid = str(b.get("room") or "")

@@ -23,6 +23,7 @@ document.addEventListener('click',e=>{
   if(a==='arrange'||a.startsWith('w-')){layAction(a,b.dataset.page,id);return}
   if(['nav','back','edit','new','save','del-edit','open','ropen','rclose'].includes(a))arrangePage=null;
   if(a.startsWith('bk-')){bkAction(a);return}
+  if(a==='media-del'){mediaDel(b.dataset.id);return}
   if(a.startsWith('ta-')){taClick(a,b);return}
   if(a.startsWith('ini-')){iniAction(a,id);return}
   if(a.startsWith('cb-')||a.startsWith('fx-')||a.startsWith('q-')){cbAction(a,b);return}
@@ -116,6 +117,7 @@ document.addEventListener('input',e=>{
   if(el.dataset.featq!==undefined){featFilter();return}
   if(el.dataset.spq!==undefined){spellFilter();return}
   if(el.dataset.td!==undefined){tdSet(el);return}
+  if(el.dataset.media!==undefined){const f=el.files&&el.files[0];el.value='';mediaUpload(f);return}
   if(el.dataset.ta!==undefined){taSet(el);return}
   if(el.dataset.pf!==undefined){pfInput(el);return}
   if(el.dataset.bk){if(el.dataset.bk==='text')bkText=el.value;return}

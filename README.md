@@ -355,3 +355,9 @@ tools/build_single.py      รวมหน้าเว็บเป็นไฟ�
 - ตารางข้อมูลเกมมีแถบกรองตาม Source; หน้าเวทของผู้เล่นกรองตาม Source ได้
 - คอลัมน์ใหม่: เวท = Casting time, Range · เผ่า = Size, Source · Feats = Prerequisite, Source · Backgrounds = Ability, Source
 - หมวด Feats เพิ่มเองได้ที่ ข้อมูลเกม → หมวด Feats เพิ่มเติม (เช่น Dragonmark) นอกเหนือจาก Origin / General / Fighting Style / Epic Boon
+
+## คลังวิดีโอ / เสียง สำหรับ Minigame (ไฟล์อยู่ในโปรเจกต์)
+- วางไฟล์ MP4 / WebM / MP3 / OGG / M4A ในโฟลเดอร์ `frontend/media/` (ไฟล์ละไม่เกิน 100 MB ตามข้อจำกัดของ GitHub) แล้ว `git add .` → commit → push รอ Render deploy เสร็จ ไฟล์จะขึ้นในหน้า Minigame (เฉพาะ GM) เอง
+- เซิร์ฟเวอร์ส่งวิดีโอแบบ HTTP Range (เล่น/กรอบนมือถือได้)
+- เคล็ดลับ: `ffmpeg -i in.mp4 -movflags +faststart -vcodec libx264 -crf 28 -vf scale=-2:720 out.mp4` ให้ไฟล์เล็กและเริ่มเล่นไว
+- (สำรอง) ถ้าตั้ง env `R2_*` จะมีปุ่มอัปโหลดไป Cloudflare R2 เพิ่ม: `R2_ACCOUNT_ID`, `R2_ACCESS_KEY_ID`, `R2_SECRET_ACCESS_KEY`, `R2_BUCKET`, `R2_PUBLIC_URL` — ไม่ตั้งก็ไม่มีผลอะไร
