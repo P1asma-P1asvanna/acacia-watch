@@ -2,8 +2,8 @@
 let CE=null;
 function mgChartEdit(){
   const g=GD;if(!g||CE)return;
-  const mi=mgMi(g),isV=mi&&mi.type.startsWith('video'),L=g.lanes,RW=56;let rowH=26;const laneW=Math.max(34,Math.min(64,Math.floor((Math.min(window.innerWidth,900)-RW-6)/L)));const keysL=mgKeys(g);
-  const E=CE={notes:(g.chart||[]).map(n=>({t:n.t,l:n.l,len:n.len||0})),tool:'tap',held:{},snap:1,T:0,playing:false,undo:[],hit:true,pk:null,wave:true,metro:false,rate:1,raf:0,last:0,dur:60000,ac:null};
+  const mi=mgMi(g),isV=mi&&mi.type.startsWith('video'),L=g.lanes,RW=56;let rowH=26;const EC=3,laneW=Math.max(34,Math.min(64,Math.floor((Math.min(window.innerWidth,900)-RW-6)/(L+EC))));const keysL=mgKeys(g);
+  const E=CE={notes:(g.chart||[]).map(n=>({t:n.t,l:n.l,len:n.len||0})),events:(g.events||[]).map(e=>({...e})),ev:{type:'shake',l:0,v:3,beats:4},tool:'tap',held:{},snap:1,T:0,playing:false,undo:[],hit:true,pk:null,wave:true,metro:false,rate:1,raf:0,last:0,dur:60000,ac:null};
   const hue=i=>Math.round(i*360/L+10);
   const el=document.createElement('div');el.className='mgedit';
   el.innerHTML=`<div class="mgeh">
@@ -21,10 +21,15 @@ function mgChartEdit(){
      <label class="mgechk"><input type="checkbox" data-e="metro"> ${t('mgMetro')}</label>
      <label class="mgechk"><input type="checkbox" data-e="wave" checked> ${t('mgWave')}</label>
      <label>${t('mgRate')} <select data-e="rate">${[.5,.75,1,1.25,1.5].map(r=>`<option value="${r}" ${r===1?'selected':''}>×${r}</option>`).join('')}</select></label></div></details>
+    <span class="mgeev"><b>✨ ${t('mgEv')}</b>
+     <select data-e="evtype">${MG_EVT.map(([k,ic])=>`<option value="${k}">${ic} ${t('mgEv_'+k)}</option>`).join('')}</select>
+     <label class="mgevl" hidden>${t('mgLaneNo')} <select data-e="evlane">${keysL.map((k,i)=>`<option value="${i}">${i+1} (${esc(k.toUpperCase())})</option>`).join('')}</select></label>
+     <label class="mgevs">${t('mgEvStr')} <input type="number" min="1" max="5" value="3" data-e="evv" style="width:48px"></label>
+     <label>${t('mgEvLen')} <input type="number" min="0.25" max="64" step="0.25" value="4" data-e="evbeats" style="width:58px"></label></span>
     <small class="mgewst muted"></small>
     <small class="muted mgehint" hidden>${t('mgEditHint').replace('{k}','1-'+L)}</small></div>
-   <div class="mgelanes" style="width:${RW+L*laneW}px;padding-left:${RW}px">${keysL.map((k,i)=>`<button data-e="lane" data-l="${i}" style="width:${laneW}px;background:hsl(${hue(i)} 70% 42%)"><b>${i+1}</b><small>${esc(k.toUpperCase())}</small></button>`).join('')}</div>
-   <div class="mgescroll"><div class="mgeinner"><div class="mgeruler"></div><div class="mgegrid"><canvas class="mgewave"></canvas><div class="mgenotes"></div><div class="mgehead"></div></div></div></div>
+   <div class="mgelanes" style="width:${RW+(L+EC)*laneW}px;padding-left:${RW}px">${keysL.map((k,i)=>`<button data-e="lane" data-l="${i}" style="width:${laneW}px;background:hsl(${hue(i)} 70% 42%)"><b>${i+1}</b><small>${esc(k.toUpperCase())}</small></button>`).join('')}${[0,1,2].map(c=>`<span class="mgeevh" style="width:${laneW}px"><b>✨</b><small>E${c+1}</small></span>`).join('')}</div>
+   <div class="mgescroll"><div class="mgeinner"><div class="mgeruler"></div><div class="mgegrid"><div class="mgeevbg"></div><canvas class="mgewave"></canvas><div class="mgenotes"></div><div class="mgehead"></div></div></div></div>
    <div class="mgefoot"><button class="btn small" data-e="undo">↶ ${t('mgUndo')}</button><button class="btn small" data-e="clear">${t('mgChartClear')}</button><button class="btn" data-e="test">▶ ${t('mgTest')}</button><button class="btn primary" data-e="save">${t('save')}</button><button class="btn" data-e="cancel">${t('mgCancel')}</button></div>`;
   document.body.appendChild(el);
   const media=isV?el.querySelector('video'):(mi?new Audio(mi.url):null);
@@ -32,18 +37,21 @@ function mgChartEdit(){
   const stepMs=()=>60000/g.bpm/E.snap,yOf=t=>t/stepMs()*rowH;
   function layout(){
     const sm=stepMs(),rows=Math.ceil(E.dur/sm),H=rows*rowH,beat=rowH*E.snap;
-    const inner=$q('.mgeinner');inner.style.height=H+'px';inner.style.width=(RW+L*laneW)+'px';
-    grid.style.cssText=`left:${RW}px;width:${L*laneW}px;height:${H}px;background-image:linear-gradient(to bottom,rgba(255,255,255,.55) 1px,transparent 1px),linear-gradient(to bottom,rgba(255,255,255,.28) 1px,transparent 1px),repeating-linear-gradient(to right,rgba(255,255,255,.3) 0 1px,transparent 1px ${laneW}px);background-size:100% ${beat*4}px,100% ${beat}px,100% 100%`;
+    const inner=$q('.mgeinner');inner.style.height=H+'px';inner.style.width=(RW+(L+EC)*laneW)+'px';
+    $q('.mgeevbg').style.cssText=`left:${L*laneW}px;width:${EC*laneW}px`;
+    grid.style.cssText=`left:${RW}px;width:${(L+EC)*laneW}px;height:${H}px;background-image:linear-gradient(to bottom,rgba(255,255,255,.55) 1px,transparent 1px),linear-gradient(to bottom,rgba(255,255,255,.28) 1px,transparent 1px),repeating-linear-gradient(to right,rgba(255,255,255,.3) 0 1px,transparent 1px ${laneW}px);background-size:100% ${beat*4}px,100% ${beat}px,100% 100%`;
     const nb=Math.ceil(E.dur/(60000/g.bpm));let lab='';
     for(let b=0;b<nb;b++){const ms=b*60000/g.bpm;lab+=`<span style="top:${ms/sm*rowH}px">${(ms/1000).toFixed(b%4?1:1)}s</span>`}
     $q('.mgeruler').innerHTML=lab;drawNotes();head();drawWave()}
   function drawNotes(){
     const sm=stepMs();
     $q('.mgenotes').innerHTML=E.notes.map(n=>{const hh=Math.max(8,rowH-3),len=n.len>0?n.len/sm*rowH:0,c=hue(n.l);
-      return`<div class="mgen${len?' hold':''}" style="left:${n.l*laneW+3}px;top:${yOf(n.t)}px;width:${laneW-6}px;height:${hh+len}px;background:${len?`linear-gradient(to bottom,hsl(${c} 75% 58%) 0 ${hh}px,hsl(${c} 60% 36%) ${hh}px)`:`hsl(${c} 70% 50%)`}"></div>`}).join('');cnt()}
-  function cnt(){$q('.mgecount').textContent=E.notes.length+' '+t('mgNotesUnit')}
+      return`<div class="mgen${len?' hold':''}" style="left:${n.l*laneW+3}px;top:${yOf(n.t)}px;width:${laneW-6}px;height:${hh+len}px;background:${len?`linear-gradient(to bottom,hsl(${c} 75% 58%) 0 ${hh}px,hsl(${c} 60% 36%) ${hh}px)`:`hsl(${c} 70% 50%)`}"></div>`}).join('')+
+      E.events.map(e=>{const d=MG_EVT_OF[e.type],h=Math.max(rowH-3,e.len/sm*rowH);
+        return`<div class="mgen mgee" title="${esc(t('mgEv_'+e.type))}" style="left:${(L+e.c)*laneW+3}px;top:${yOf(e.t)}px;width:${laneW-6}px;height:${h}px;background:${d[1]}"><span>${d[0]}${e.type==='hide'||e.type==='show'?`<small>${e.l+1}</small>`:''}</span></div>`}).join('');cnt()}
+  function cnt(){$q('.mgecount').textContent=E.notes.length+' '+t('mgNotesUnit')+(E.events.length?' · '+E.events.length+' '+t('mgEvUnit'):'')}
   function head(){const y=yOf(Math.max(0,E.T));$q('.mgehead').style.top=y+'px';$q('.mget').textContent=(E.T/1000).toFixed(2)+' s';return y}
-  function push(){E.undo.push(JSON.stringify(E.notes));if(E.undo.length>60)E.undo.shift()}
+  function push(){E.undo.push(JSON.stringify({n:E.notes,e:E.events}));if(E.undo.length>60)E.undo.shift()}
   function toggle(l,t){
     const sm=stepMs(),i=E.notes.findIndex(n=>n.l===l&&t>=n.t-sm/2&&t<=n.t+(n.len||0)+sm/2);push();
     if(i>=0)E.notes.splice(i,1);else E.notes.push({t:Math.max(0,Math.round(t)),l,len:0});
@@ -57,19 +65,25 @@ function mgChartEdit(){
   let dr=null;
   const rowOf=e=>Math.floor((e.clientY-grid.getBoundingClientRect().top)/rowH);
   function prev(){let p=$q('.mgen.prev');if(!p){p=document.createElement('div');p.className='mgen prev';$q('.mgenotes').appendChild(p)}
-    p.style.cssText=`left:${dr.l*laneW+3}px;top:${dr.row0*rowH}px;width:${laneW-6}px;height:${(dr.row1-dr.row0+1)*rowH-3}px;background:hsl(${hue(dr.l)} 70% 50%);opacity:.6`}
+    p.style.cssText=`left:${(dr.ev?L+dr.c:dr.l)*laneW+3}px;top:${dr.row0*rowH}px;width:${laneW-6}px;height:${(dr.row1-dr.row0+1)*rowH-3}px;background:${dr.ev?'#a78bfa':`hsl(${hue(dr.l)} 70% 50%)`};opacity:.6`}
   function dragEnd(){
     if(!dr)return;const d=dr;dr=null;const p=$q('.mgen.prev');if(p)p.remove();const sm=stepMs();
+    if(d.ev){const t=Math.round(d.row0*sm),i=E.events.findIndex(e=>e.c===d.c&&t>=e.t-sm/2&&t<=e.t+Math.max(e.len,0)+sm/2);push();
+      if(d.row1>d.row0)E.events=E.events.filter(e=>!(e.c===d.c&&Math.abs(e.t-t)<sm/2));
+      if(d.row1===d.row0&&i>=0)E.events.splice(i,1);
+      else{const ev=E.ev,len=d.row1>d.row0?Math.round((d.row1-d.row0)*sm):Math.round(ev.beats*60000/g.bpm);E.events.push({t,type:ev.type,len,c:d.c,l:ev.l,v:ev.v})}
+      drawNotes();return}
     if(d.row1>d.row0){push();const t=Math.round(d.row0*sm);E.notes=E.notes.filter(n=>!(n.l===d.l&&Math.abs(n.t-t)<sm/2));E.notes.push({t,l:d.l,len:Math.round((d.row1-d.row0)*sm)});drawNotes()}
     else toggle(d.l,d.row0*sm)}
-  grid.addEventListener('pointerdown',e=>{if(E.tool!=='hold')return;const l=Math.floor((e.clientX-grid.getBoundingClientRect().left)/laneW),row=rowOf(e);if(l<0||l>=L||row<0)return;
-    dr={l,row0:row,row1:row};try{grid.setPointerCapture(e.pointerId)}catch(x){}e.preventDefault();prev()});
+  grid.addEventListener('pointerdown',e=>{const l=Math.floor((e.clientX-grid.getBoundingClientRect().left)/laneW),row=rowOf(e);if(row<0||l<0)return;
+    if(l>=L){if(l>=L+EC)return;dr={ev:true,c:l-L,row0:row,row1:row}}
+    else{if(E.tool!=='hold'||l>=L)return;dr={l,row0:row,row1:row}}try{grid.setPointerCapture(e.pointerId)}catch(x){}e.preventDefault();prev()});
   grid.addEventListener('pointermove',e=>{if(!dr)return;const row=Math.max(dr.row0,rowOf(e));if(row!==dr.row1){dr.row1=row;prev()}});
   grid.addEventListener('pointerup',dragEnd);grid.addEventListener('pointercancel',()=>{dr=null;const p=$q('.mgen.prev');if(p)p.remove()});
   const lanesBar=$q('.mgelanes');
   lanesBar.addEventListener('pointerdown',e=>{const b=e.target.closest('[data-l]');if(b){e.preventDefault();try{b.setPointerCapture(e.pointerId)}catch(x){}holdStart(Number(b.dataset.l))}});
   ['pointerup','pointercancel'].forEach(ev=>lanesBar.addEventListener(ev,e=>{const b=e.target.closest('[data-l]');if(b)holdEnd(Number(b.dataset.l))}));
-  grid.addEventListener('click',e=>{if(E.tool==='hold')return;const r=grid.getBoundingClientRect(),l=Math.floor((e.clientX-r.left)/laneW),row=Math.floor((e.clientY-r.top)/rowH);if(l<0||l>=L||row<0)return;toggle(l,row*stepMs())});
+  grid.addEventListener('click',e=>{if(E.tool==='hold')return;if(Math.floor((e.clientX-grid.getBoundingClientRect().left)/laneW)>=L)return;const r=grid.getBoundingClientRect(),l=Math.floor((e.clientX-r.left)/laneW),row=Math.floor((e.clientY-r.top)/rowH);if(l<0||l>=L||row<0)return;toggle(l,row*stepMs())});
   $q('.mgeruler').addEventListener('click',e=>{const r=$q('.mgeruler').getBoundingClientRect();seek(Math.max(0,(e.clientY-r.top)/rowH*stepMs()))});
   /* ---- waveform of the clip's sound, drawn behind the lanes (only the visible window is painted) ---- */
   const wst=m=>{const e=$q('.mgewst');if(e)e.textContent=m||''};
@@ -116,21 +130,21 @@ function mgChartEdit(){
   function play(){if(!media)return;try{E.ac=E.ac||new (window.AudioContext||window.webkitAudioContext)()}catch(x){}
     media.currentTime=Math.max(0,(g.offset+E.T)/1000);media.playbackRate=E.rate;const p=media.play();if(p&&p.catch)p.catch(()=>{});E.playing=true;$q('[data-e=play]').textContent='⏸';E.raf=requestAnimationFrame(tick)}
   function pause(){E.playing=false;cancelAnimationFrame(E.raf);if(media)media.pause();$q('[data-e=play]').textContent='▶'}
-  function apply(){g.chart=E.notes.slice().sort((a,b)=>a.t-b.t||a.l-b.l)}
+  function apply(){g.chart=E.notes.slice().sort((a,b)=>a.t-b.t||a.l-b.l);g.events=E.events.slice().sort((a,b)=>a.t-b.t||a.c-b.c)}
   function close(){pause();document.removeEventListener('keydown',kd);document.removeEventListener('keyup',ku);el.remove();CE=null;render()}
-  const kd=e=>{
+  const kd=e=>{if(e.target.matches&&e.target.matches('select'))return;
     if(e.target.matches&&e.target.matches('input[type=number]'))return;
     if(e.key==='Escape'){close();return}
     if(e.key===' '){e.preventDefault();E.playing?pause():play();return}
     if((e.ctrlKey||e.metaKey)&&e.key==='z'){e.preventDefault();undo();return}
     const n=Number(e.key);if(n>=1&&n<=L&&!e.repeat){e.preventDefault();holdStart(n-1)}};
   const ku=e=>{const n=Number(e.key);if(n>=1&&n<=L)holdEnd(n-1)};document.addEventListener('keyup',ku);
-  function undo(){const s=E.undo.pop();if(s){E.notes=JSON.parse(s);drawNotes()}}
+  function undo(){const s=E.undo.pop();if(s){const o=JSON.parse(s);E.notes=o.n;E.events=o.e;drawNotes()}}
   document.addEventListener('keydown',kd);
   el.addEventListener('click',e=>{const b=e.target.closest('[data-e]');if(!b||b.tagName==='SELECT'||b.tagName==='INPUT'||b.tagName==='SUMMARY')return;const a=b.dataset.e;
     if(a==='play')E.playing?pause():play();
     else if(a==='undo')undo();
-    else if(a==='clear'){push();E.notes=[];drawNotes()}
+    else if(a==='clear'){push();E.notes=[];E.events=[];drawNotes()}
     else if(a==='cancel')close();
     else if(a==='zin'){rowH=Math.min(80,Math.round(rowH*1.25));layout()}
     else if(a==='zout'){rowH=Math.max(8,Math.round(rowH*.8));layout()}
@@ -144,11 +158,17 @@ function mgChartEdit(){
     else if(a==='metro')E.metro=x.checked;
     else if(a==='wave'){E.wave=x.checked;drawWave()}
     else if(a==='rate'){E.rate=Number(x.value);if(media)media.playbackRate=E.rate}
+    else if(a==='evtype'){E.ev.type=x.value;const k=x.value;$q('.mgevl').hidden=!(k==='hide'||k==='show');$q('.mgevs').hidden=!['shake','pulse','sway'].includes(k)}
+    else if(a==='evlane')E.ev.l=Number(x.value);
+    else if(a==='evv')E.ev.v=Math.max(1,Math.min(5,Math.round(Number(x.value)||3)));
+    else if(a==='evbeats')E.ev.beats=Math.max(.25,Math.min(64,Number(x.value)||4));
     else if(a==='bpm'){g.bpm=Math.max(30,Math.min(300,Number(x.value)||100));layout()}
     else if(a==='off'){g.offset=Math.round(Number(x.value)||0);layout()}});
   function dur(){const d=media&&isFinite(media.duration)?media.duration*1000-g.offset:60000;E.dur=Math.max(10000,Math.min(600000,d));layout()}
   if(media&&media.addEventListener){media.addEventListener('loadedmetadata',dur);media.addEventListener('ended',pause)}
   layout();loadWave();
 }
-Object.assign(TX.th,{mgToolHold:'โน้ตยาว',mgSet:'ตั้งค่า',mgMetro:'เสียงเมโทรนอม (ทุกบีต)',mgWave:'คลื่นเสียงจากคลิป',mgRate:'ความเร็วเล่น',mgWaveLoad:'กำลังวิเคราะห์เสียงจากคลิป…',mgWaveFail:'อ่านเสียงจากไฟล์นี้ไม่ได้ (ยังวางโน้ตและเล่นได้ตามปกติ)',mgWaveBig:'ไฟล์ใหญ่เกินไปสำหรับแสดงคลื่นเสียง (เกิน 60 MB)',mgUndo:'ย้อน',mgNotesUnit:'โน้ต',mgSnap:'ความละเอียด',mgHitSnd:'เสียงตอนผ่านโน้ต',mgEditHint:'แตะช่องเพื่อวาง/ลบโน้ต · แตะปุ่มเลนด้านบนหรือกดเลข {k} เพื่อวางที่เส้นเล่น (ขณะเล่น กดค้างเพื่ออัดโน้ตยาว) · ปุ่ม ▮ โน้ตยาว = ลากลงบนช่องเพื่อสร้างโน้ตยาว · Space เล่น/หยุด · คลิกไม้บรรทัดซ้ายเพื่อข้ามไป'});
-Object.assign(TX.en,{mgToolHold:'Long notes',mgSet:'Settings',mgMetro:'Metronome (every beat)',mgWave:'Waveform of the clip',mgRate:'Playback speed',mgWaveLoad:'Reading the clip sound…',mgWaveFail:'Could not read the sound of this file (you can still place notes and play)',mgWaveBig:'File too large to draw a waveform (over 60 MB)',mgUndo:'Undo',mgNotesUnit:'notes',mgSnap:'Snap',mgHitSnd:'Hit sound',mgEditHint:'Tap a cell to place/remove a note · tap a lane button above or press {k} to place at the playhead (hold it while the clip plays to record a long note) · the ▮ Long notes tool = drag down over the cells to make a long note · Space play/pause · click the left ruler to seek'});
+const MG_EVT=[['shake','〰'],['hide','◌'],['show','◉'],['flip','⇅'],['pulse','♥'],['sway','⇋'],['flash','✦']],
+ MG_EVT_OF={shake:['〰','#f97316'],hide:['◌','#64748b'],show:['◉','#22c55e'],flip:['⇅','#06b6d4'],pulse:['♥','#ec4899'],sway:['⇋','#a855f7'],flash:['✦','#eab308']};
+Object.assign(TX.th,{mgEv:'Event',mgEv_shake:'โน้ตสั่น',mgEv_hide:'เลนค่อยๆ หายไป',mgEv_show:'เลนค่อยๆ กลับมา',mgEv_flip:'โน้ตกลับทิศ (ตกขึ้นไป)',mgEv_pulse:'เลนเต้นตามจังหวะ',mgEv_sway:'เลนโยกตามจังหวะ',mgEv_flash:'แฟลชตามจังหวะ',mgLaneNo:'เลนที่',mgEvStr:'แรง (1-5)',mgEvLen:'นาน (บีต)',mgEvUnit:'event',mgToolHold:'โน้ตยาว',mgSet:'ตั้งค่า',mgMetro:'เสียงเมโทรนอม (ทุกบีต)',mgWave:'คลื่นเสียงจากคลิป',mgRate:'ความเร็วเล่น',mgWaveLoad:'กำลังวิเคราะห์เสียงจากคลิป…',mgWaveFail:'อ่านเสียงจากไฟล์นี้ไม่ได้ (ยังวางโน้ตและเล่นได้ตามปกติ)',mgWaveBig:'ไฟล์ใหญ่เกินไปสำหรับแสดงคลื่นเสียง (เกิน 60 MB)',mgUndo:'ย้อน',mgNotesUnit:'โน้ต',mgSnap:'ความละเอียด',mgHitSnd:'เสียงตอนผ่านโน้ต',mgEditHint:'แตะช่องเพื่อวาง/ลบโน้ต · แตะปุ่มเลนด้านบนหรือกดเลข {k} เพื่อวางที่เส้นเล่น (ขณะเล่น กดค้างเพื่ออัดโน้ตยาว) · ปุ่ม ▮ โน้ตยาว = ลากลงบนช่องเพื่อสร้างโน้ตยาว · Space เล่น/หยุด · คลิกไม้บรรทัดซ้ายเพื่อข้ามไป'});
+Object.assign(TX.en,{mgEv:'Event',mgEv_shake:'Notes shake',mgEv_hide:'Lane fades away',mgEv_show:'Lane fades back',mgEv_flip:'Flip direction (notes rise)',mgEv_pulse:'Lanes pulse to the beat',mgEv_sway:'Lanes sway to the beat',mgEv_flash:'Flash to the beat',mgLaneNo:'Lane',mgEvStr:'Strength (1-5)',mgEvLen:'Length (beats)',mgEvUnit:'events',mgToolHold:'Long notes',mgSet:'Settings',mgMetro:'Metronome (every beat)',mgWave:'Waveform of the clip',mgRate:'Playback speed',mgWaveLoad:'Reading the clip sound…',mgWaveFail:'Could not read the sound of this file (you can still place notes and play)',mgWaveBig:'File too large to draw a waveform (over 60 MB)',mgUndo:'Undo',mgNotesUnit:'notes',mgSnap:'Snap',mgHitSnd:'Hit sound',mgEditHint:'Tap a cell to place/remove a note · tap a lane button above or press {k} to place at the playhead (hold it while the clip plays to record a long note) · the ▮ Long notes tool = drag down over the cells to make a long note · Space play/pause · click the left ruler to seek'});

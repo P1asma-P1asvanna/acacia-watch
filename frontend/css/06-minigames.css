@@ -127,3 +127,13 @@
   .mgrot{top:8px}
 }
 .mgplay>.mgx,.mgplay>.mghud{z-index:5}
+
+.mgeevbg{position:absolute;top:0;bottom:0;background:rgba(167,139,250,.08);border-left:2px solid #a78bfa}
+.mgeevh{display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:44px;background:#3b2a66;color:#fff;border-right:1px solid rgba(0,0,0,.4)}
+.mgeevh small{opacity:.85;font-size:.7rem}
+.mgeev{display:flex;flex-wrap:wrap;gap:6px 10px;align-items:center;flex:1 0 100%}
+.mgee{display:flex;align-items:flex-start;justify-content:center;color:#fff;font-size:1rem;overflow:hidden;box-shadow:0 0 0 2px rgba(255,255,255,.7)}
+.mgee span{display:flex;flex-direction:column;align-items:center;line-height:1;margin-top:2px}.mgee small{font-size:.62rem}
+.mgnh{transform:scaleY(var(--hf,1))}
+.mgflash{position:absolute;inset:0;background:#fff;opacity:0;pointer-events:none;border-radius:8px;z-index:3}
+.mgeev [hidden]{display:none!important}

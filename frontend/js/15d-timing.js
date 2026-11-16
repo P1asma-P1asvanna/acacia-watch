@@ -173,6 +173,31 @@ function mgLandscape(on){/* phones: full screen + try to lock sideways (the layo
     if(on){const d=document.documentElement,p=d.requestFullscreen?d.requestFullscreen():null;Promise.resolve(p).then(()=>screen.orientation&&screen.orientation.lock&&screen.orientation.lock('landscape')).catch(()=>{})}
     else{if(screen.orientation&&screen.orientation.unlock)screen.orientation.unlock();if(document.fullscreenElement)document.exitFullscreen().catch(()=>{})}}catch(e){}}
 function mgRotCheck(el){const b=el.querySelector('.mgrot');if(!b)return;b.hidden=!(window.matchMedia&&matchMedia('(pointer:coarse)').matches&&innerHeight>innerWidth)}
+/* stage events of a lane game (shake, lane fades, flip, pulse, sway, flash) — a pure function of the song time */
+function mgFxMake(el,g){
+  const EV=(g.events||[]).slice().sort((a,b)=>a.t-b.t),lanes=el.querySelector('.mglanes'),laneEls=[...el.querySelectorAll('.mglane')],beat=60000/(g.bpm||100);
+  if(!EV.length||!lanes)return{tick(){},reset(){}};
+  const HL=laneEls.map((_,l)=>EV.filter(e=>(e.type==='hide'||e.type==='show')&&e.l===l));
+  let fl=lanes.querySelector('.mgflash');if(!fl){fl=document.createElement('div');fl.className='mgflash';lanes.appendChild(fl)}
+  const lastO=[],cl=(v)=>v<0?0:v>1?1:v;let lastTf='',lastHf=1,lastFl=-1;
+  const reset=()=>{lanes.style.transform='';lanes.style.setProperty('--hf',1);fl.style.opacity=0;laneEls.forEach(e=>e.style.opacity='');lastO.length=0;lastTf='';lastHf=1;lastFl=-1};
+  function tick(T){
+    let sx=0,sy=0,sc=1,f=0,fa=0;
+    for(const e of EV){if(e.t>T)break;const dt=T-e.t;if(dt>=Math.max(e.len,1))continue;const v=e.v||3;
+      if(e.type==='shake'){sx+=(Math.random()-.5)*3*v;sy+=(Math.random()-.5)*3*v}
+      else if(e.type==='flip'){const r=Math.min(1,dt/400,(e.len-dt)/400);f=Math.max(f,cl(r))}
+      else if(e.type==='pulse'){const ph=(dt/beat)%1;sc=Math.max(sc,1+.02*v*Math.pow(1-ph,3))}
+      else if(e.type==='sway')sx+=Math.sin(dt/beat*Math.PI)*v*5;
+      else if(e.type==='flash'){const ph=(dt/beat)%1;fa=Math.max(fa,.12*v/3*Math.pow(1-ph,2))}}
+    const tf=`translate(${sx.toFixed(1)}px,${sy.toFixed(1)}px) scale(${sc.toFixed(3)}) scaleY(${(1-2*f).toFixed(3)})`;
+    if(tf!==lastTf){lanes.style.transform=tf;lastTf=tf}
+    const hf=f>.5?-1:1;if(hf!==lastHf){lanes.style.setProperty('--hf',hf);lastHf=hf}
+    fl.style.opacity=fa.toFixed(3);
+    for(let l=0;l<laneEls.length;l++){const list=HL[l];if(!list.length)continue;
+      let v0=1,t0=-1e9,tg=1,len=1;
+      for(const e of list){if(e.t>T)break;v0=v0+(tg-v0)*cl((e.t-t0)/len);t0=e.t;tg=e.type==='hide'?0:1;len=Math.max(200,e.len)}
+      const o=v0+(tg-v0)*cl((T-t0)/len),q=Math.round(o*50);if(lastO[l]!==q){lastO[l]=q;laneEls[l].style.opacity=(o*.9).toFixed(2)}}}
+  return{tick,reset}}
 function mgCountdown(el,secs,S,done,goTxt){
   const c=el.querySelector('.mgcount');let n=secs;
   const step=()=>{
@@ -211,6 +236,7 @@ function mgPlay(g,cb){
     d.innerHTML=`<div class="mgnh ${mgShapeOf(g,n.l)}">${mgHeadInner(g,n.l)}</div>${n.len>0?'<div class="mgnt"></div>':''}`;
     lanes[n.l].appendChild(d);return d})}
   const clock=()=>media&&!media.paused?media.currentTime*1000:performance.now()-S.t0;
+  const FX=isL?mgFxMake(el,g):{tick(){},reset(){}};
   const lead=g.cd>0?(isL?g.fall+200:600):3000;
   const offs=()=>(media?g.offset:Math.max(g.offset,lead))+mgCal();
   function say(txt,c){const f=$q('.mgfb');f.textContent=txt;f.style.color=c;f.classList.remove('pop');void f.offsetWidth;f.classList.add('pop')}
@@ -227,7 +253,7 @@ function mgPlay(g,cb){
     if(S.phase!=='run')return;
     const T=clock()-offs(),cd=$q('.mgcount');
     cd.textContent=g.cd===0&&T<0?Math.ceil(-T/1000):'';
-    if(isL){
+    if(isL){FX.tick(T);
       const sq=g.ns!=='bar',NHM=sq?S.NHS:Math.max(24,S.H*.08);let open=0;
       for(let i=0;i<notes.length;i++){
         const n=notes[i],e=noteEls[i],ppm=(S.H-NHM)/n.fall;
@@ -273,7 +299,7 @@ function mgPlay(g,cb){
     const dist=Math.abs((T-sw.t)/sw.D*100-sw.zone),half=sw.zw/2;
     resolve(k,dist<=half*.3?'p':dist<=half?'h':'m')}
   function start(){
-    S.res=[];S.si=0;S.zi=-1;S.dir=null;S.key='';S.holds.clear();S.holdL={};hud();$q('.mgstart').hidden=true;$q('.mgres').hidden=true;
+    FX.reset();S.res=[];S.si=0;S.zi=-1;S.dir=null;S.key='';S.holds.clear();S.holdL={};hud();$q('.mgstart').hidden=true;$q('.mgres').hidden=true;
     if(isL){S.H=$q('.mglanes').clientHeight;S.LW=$q('.mglane').clientWidth;S.NHS=Math.max(24,Math.min(S.LW*.84,S.H*.2))}
     mgLandscape(true);S.phase='count';mgCountdown(el,g.cd,S,begin)}
   function begin(){

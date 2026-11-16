@@ -7,6 +7,7 @@ from .images import URL_RE as IMG_URL
 from .numbers import clampi
 
 TYPES = ("timing", "lane", "simon", "tap")
+EVENTS = ("shake", "hide", "show", "flip", "pulse", "sway", "flash")
 SHAPES = ("bar", "arrow", "circle", "diamond", "star", "img")
 HEX = re.compile(r"^#[0-9a-fA-F]{6}$")
 DMG = re.compile(r"^\d{1,3}(d\d{1,3})?([+-]\d{1,3})?$")
@@ -48,6 +49,21 @@ def clean_chart(v, lanes):
     return sorted(out, key=lambda x: (x["t"], x["l"]))
 
 
+def clean_events(v, lanes):
+    """Stage effects of a lane game: [{t, type, len ms, c: event column 0-2, l: lane (hide/show), v: strength 1-5}]."""
+    seen, out = set(), []
+    for e in (v if isinstance(v, list) else [])[:300]:
+        if not isinstance(e, dict) or e.get("type") not in EVENTS:
+            continue
+        t, c = clampi(e.get("t"), 0, 3600000, 0), clampi(e.get("c"), 0, 2, 0)
+        if (t, c) in seen:
+            continue
+        seen.add((t, c))
+        out.append({"t": t, "type": e["type"], "len": clampi(e.get("len"), 0, 120000, 2000),
+                    "c": c, "l": clampi(e.get("l"), 0, lanes - 1, 0), "v": clampi(e.get("v"), 1, 5, 3)})
+    return sorted(out, key=lambda x: (x["t"], x["c"]))
+
+
 def clean_game(g):
     if not isinstance(g, dict) or not ID_RE.match(str(g.get("id") or "")):
         return None
@@ -68,6 +84,7 @@ def clean_game(g):
         "key": str(g.get("key") or "").strip()[:40],
         "lanes": nl,
         "chart": clean_chart(g.get("chart"), nl),
+        "events": clean_events(g.get("events"), nl),
         "fall": clampi(g.get("fall"), 400, 4000, 1500),
         "sub": clampi(g.get("sub"), 1, 4, 1),
         "pat": re.sub(r"[^0-9 ]", "", str(g.get("pat") or ""))[:80].strip(),
