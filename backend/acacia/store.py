@@ -1,7 +1,7 @@
 """Reading what the browser needs at start-up, and the small key/value store."""
 import json
 
-from . import games, live, media, mg, profile, turns
+from . import feedback, games, live, media, mg, profile, turns
 from .numbers import clampi, num
 
 
@@ -168,6 +168,7 @@ def boot_state(c, me):
     out["me"] = user_pub(me)
     out["cat"] = kv_get(c, "cat")
     out["prefs"] = kv_get(c, "prefs:" + me["id"]) or {}
+    out["fb"] = feedback.view(kv_get(c, "fb"), me, me["role"] == "admin")
     out["members"] = members(c)
     if me["role"] == "admin":
         out["users"] = [user_pub(r) for r in c.execute("SELECT * FROM users ORDER BY created")]

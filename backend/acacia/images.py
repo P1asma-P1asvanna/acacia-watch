@@ -9,7 +9,7 @@ import re
 import struct
 import time
 
-from .config import (IMG_GRACE, IMG_SITE_MAX_BYTES, IMG_SITE_MAX_COUNT, IMG_SLOTS, IMG_USER_MAX_BYTES,
+from .config import (IMG_FB_MAX_BYTES, IMG_FB_MAX_COUNT, IMG_GRACE, IMG_SITE_MAX_BYTES, IMG_SITE_MAX_COUNT, IMG_SLOTS, IMG_USER_MAX_BYTES,
                      IMG_USER_MAX_COUNT)
 from .errors import Err
 
@@ -87,7 +87,10 @@ def check(slot, raw):
 def referenced(c, owner):
     """Picture ids the owner currently uses (so they are never purged)."""
     from .store import kv_get
-    if owner == "site":
+    if owner == "fb":
+        from . import feedback
+        vals = feedback.shot_ids(kv_get(c, "fb"))
+    elif owner == "site":
         vals = [(kv_get(c, "site") or {}).get(k) for k in ("logo", "cover")]
         vals += [x.get("icon") for x in ((kv_get(c, "cat") or {}).get("conditions") or []) if isinstance(x, dict)]
         for gm in (kv_get(c, "games") or []):  # picture notes of the rhythm games
@@ -127,7 +130,7 @@ def store(c, slot, owner, b64):
         raise Err(400, "img_type")
     mime, w, h = check(slot, raw)
     purge(c, owner)
-    mx_n, mx_b = (IMG_SITE_MAX_COUNT, IMG_SITE_MAX_BYTES) if owner == "site" else (IMG_USER_MAX_COUNT, IMG_USER_MAX_BYTES)
+    mx_n, mx_b = {"site": (IMG_SITE_MAX_COUNT, IMG_SITE_MAX_BYTES), "fb": (IMG_FB_MAX_COUNT, IMG_FB_MAX_BYTES)}.get(owner, (IMG_USER_MAX_COUNT, IMG_USER_MAX_BYTES))
     row = c.execute("SELECT COUNT(*) AS n, COALESCE(SUM(size),0) AS s FROM images WHERE owner=?", (owner,)).fetchone()
     if row["n"] + 1 > mx_n or row["s"] + len(raw) > mx_b:
         raise Err(409, "img_quota")

@@ -23,6 +23,8 @@ POLL_SECONDS = float(os.environ.get("DD_POLL_SECONDS", "25"))  # how long a live
 # min_short/min_long: smallest allowed short/long side in px. out: longest side of a stored still picture.
 # in_bytes: biggest file the person may pick. out_bytes: biggest stored still picture. gif_bytes/gif_side: limits for animated GIFs.
 IMG_SLOTS = {
+    # screenshots attached to feedback (owner "fb": a shared folder with its own limits, see IMG_FB_*)
+    "fbshot": {"scope": "fb", "min_short": 100, "min_long": 100, "out": 1600, "in_bytes": 8 << 20, "out_bytes": 350 * 1024, "gif_bytes": 1 << 20, "gif_side": 800},
     "logo":  {"scope": "site", "min_short": 64,  "min_long": 64,  "out": 512,  "in_bytes": 1 << 20, "out_bytes": 200 * 1024, "gif_bytes": 1 << 20, "gif_side": 512},
     "cover": {"scope": "site", "min_short": 480, "min_long": 800, "out": 1920, "in_bytes": 5 << 20, "out_bytes": 450 * 1024, "gif_bytes": 2 << 20, "gif_side": 1280},
     "bg":    {"scope": "user", "min_short": 480, "min_long": 800, "out": 1920, "in_bytes": 5 << 20, "out_bytes": 450 * 1024, "gif_bytes": 2 << 20, "gif_side": 1280},
@@ -41,4 +43,6 @@ IMG_USER_MAX_COUNT = 10         # pictures one person can keep
 IMG_USER_MAX_BYTES = 8 * 1024 * 1024  # total size one person can keep
 IMG_SITE_MAX_COUNT = 60         # logo + cover + condition icons
 IMG_SITE_MAX_BYTES = 10 * 1024 * 1024
+IMG_FB_MAX_COUNT = 80
+IMG_FB_MAX_BYTES = 28 * 1024 * 1024
 IMG_GRACE = 600                 # seconds an uploaded but not yet saved picture is kept

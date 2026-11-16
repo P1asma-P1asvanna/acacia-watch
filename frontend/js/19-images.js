@@ -13,6 +13,7 @@ const IMG_SLOTS={
   pbg:{key:'bg',minShort:200,minLong:600,out:1600,inBytes:5*MB,outBytes:400*KB,gifBytes:2*MB,gifSide:1280},
   cpic:{key:'pic',minShort:96,minLong:96,out:512,inBytes:3*MB,outBytes:200*KB,gifBytes:1*MB,gifSide:512},
   pcard:{key:'cardimg',minShort:96,minLong:96,out:512,inBytes:2*MB,outBytes:250*KB,gifBytes:1536*KB,gifSide:512,square:true},
+  fbshot:{key:'',minShort:100,minLong:100,out:1600,inBytes:8*MB,outBytes:350*KB,gifBytes:1*MB,gifSide:800},
   pframe:{key:'frameimg',minShort:160,minLong:160,out:640,inBytes:2*MB,outBytes:250*KB,gifBytes:1536*KB,gifSide:640,square:true}};
 const SITE_SLOTS=['logo','cover','cond','note'];
 const IMG_MAXPX=16000,IMG_STILL_IN=40*MB,IMG_MINBYTES=1*KB,IMG_TYPES=['image/jpeg','image/png','image/webp','image/gif'];

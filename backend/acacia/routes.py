@@ -11,7 +11,7 @@ from .errors import Err
 from .numbers import clampi
 from .security import check_pw, hash_pw, new_user_row
 from .store import boot_state, clean_cat, clean_site, kv_get, kv_set, user_pub
-from . import dice, games, images, media, mg, profile, turns
+from . import dice, feedback, games, images, media, mg, profile, turns
 from .config import IMG_SLOTS
 from .validation import ID_RE, clean_prefs, clean_record, ADMIN_ONLY
 
@@ -104,7 +104,7 @@ class Routes:
                 raise Err(400, "bad_slot")
             if IMG_SLOTS[slot]["scope"] == "site" and not admin:
                 raise Err(403, "forbidden")
-            owner = "site" if IMG_SLOTS[slot]["scope"] == "site" else me["id"]
+            owner = {"site": "site", "fb": "fb"}.get(IMG_SLOTS[slot]["scope"], me["id"])
             return images.store(c, slot, owner, b.get("data"))
 
         if path == "/api/sync":
@@ -303,6 +303,13 @@ class Routes:
                     kv_set(c, "media", [x for x in lib if x is not it])
                 return {"ok": True}
             raise Err(404, "not_found")
+
+        if path == "/api/fb" and me:  # feedback for the GM (and Claude): everyone writes, the GM reads, sorts and exports
+            admin_ = me["role"] == "admin"
+            lst = feedback.apply(kv_get(c, "fb"), me, admin_, b, images.owned_ids(c, "fb"))
+            kv_set(c, "fb", lst)
+            images.purge(c, "fb")
+            return {"ok": True, "fb": feedback.view(lst, me, admin_)}
 
         if path == "/api/games" and me:
             if not admin:
