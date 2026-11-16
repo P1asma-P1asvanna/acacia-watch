@@ -137,3 +137,7 @@
 .mgnh{transform:scaleY(var(--hf,1))}
 .mgflash{position:absolute;inset:0;background:#fff;opacity:0;pointer-events:none;border-radius:8px;z-index:3}
 .mgeev [hidden]{display:none!important}
+
+.mgbar,.mgprog,.mgtap,.mgsimon{opacity:var(--fo,1)}.mgbar.wait{opacity:calc(.35*var(--fo,1))}
+.mgfog{position:absolute;inset:0;pointer-events:none;opacity:0;z-index:3;background:linear-gradient(to bottom,#000 0,rgba(0,0,0,.9) var(--fp,50%),rgba(0,0,0,0) calc(var(--fp,50%) + 28%));border-radius:inherit}
+.mgflash{border-radius:inherit}

@@ -49,15 +49,15 @@ function mgForm(){
     :L?`${num('lanes',2,8,t('mgLanes'))}${num('sub',1,4,t('mgSub'),t('mgSubH'))}${num('fall',400,4000,t('mgFall'),t('mgFallH'))}${sel('dir',t('mgDir'),[['down',t('mgDown')],['up',t('mgUp')]])}${sel('ns',t('mgShape'),[['bar',t('mgSh_bar')],['arrow',t('mgSh_arrow')],['circle',t('mgSh_circle')],['diamond',t('mgSh_diamond')],['star',t('mgSh_star')],['img',t('mgSh_img')]])}${txt('key',t('mgKeys'),40,'d f j k',t('mgKeysH'))}`
     :`${num('rounds',1,64,t('mgRounds'))}${num('beats',1,8,t('mgBeats'),t('mgBeatsH'))}${num('zone',10,95,t('mgZone'),t('mgZoneH'))}${num('zw',4,50,t('mgZw'))}${txt('key',t('mgKey'),12,t('mgKeyPh'),t('mgKeyH'))}`}</div>`;
   const n=(g.chart||[]).length;
-  const notes=L?`<div class="mgchartf"><button class="btn primary big" data-mg="chart-edit">🎼 ${t('mgChartEdit')}</button>${n?`<button class="btn small danger" data-mg="chart-clear">${t('mgChartClear')}</button>`:''}<small class="muted">${n?t('mgChartN').replace('{n}',n):t('mgChartNone')}</small></div>
-    <div class="mggrid">${num('rounds',1,64,t('mgNotes'))}${txt('pat',t('mgPat'),80,'1 2 3 4 3 2',t('mgPatH'))}</div>`:'';
+  const ND=(g.events||[]).length,notes0=`<div class="mgchartf"><button class="btn primary big" data-mg="chart-edit">🎼 ${t('mgChartEdit')}</button>${n?`<button class="btn small danger" data-mg="chart-clear">${t('mgChartClear')}</button>`:''}<small class="muted">${n?t('mgChartN').replace('{n}',n):t('mgChartNone')}${ND?' · '+ND+' '+t('mgEvUnit'):''}</small></div>`,
+    notes=L?notes0+`<div class="mggrid">${num('rounds',1,64,t('mgNotes'))}${txt('pat',t('mgPat'),80,'1 2 3 4 3 2',t('mgPatH'))}</div>`:notes0+`<p class="muted small">${t('mgChartHint_'+ty)}</p>`;
   const pen=`<div class="mggrid">${txt('dmg',t('mgDmg'),12,'1d6',t('mgDmgH'))}${sel('dmgMode',t('mgDmgMode'),[['confirm',t('mgConfirm')],['auto',t('mgAuto')]])}${sel('play',t('mgPlayMode'),[['all',t('mgAll')],['one',t('mgOne')]])}</div>`;
   const cols=`<div class="mgcols" style="padding:10px 16px">${MG_COL.map(k=>`<label class="mgc"><input type="color" data-mgc="${k}" value="${g.col[k]}"><span>${t('mgc_'+k)}</span></label>`).join('')}</div>`;
   return`<section class="panel mgpanel mgform"><div class="ph"><h2>${t('mgEdit')}</h2></div>
    ${basic}
    ${sec('🎚',t('mgSecRhythm'),rhythm,true)}
    ${L&&g.ns==='img'?sec('🖼',t('mgImgs'),mgImgForm(g),true):''}
-   ${L?sec('🎼',t('mgSecNotes'),notes,true):''}
+   ${sec('🎼',t(L?'mgSecNotes':'mgSecChart'),notes,true)}
    ${T||L?sec('🎬',t('mgTimeline'),mgTimeline(),!!(g.segs&&g.segs.length)):''}
    ${sec('💥',t('mgSecPen'),pen,true)}
    ${sec('🎨',t('mgSecCol'),cols,false)}
@@ -133,6 +133,12 @@ function mgChart(g){
   return out}
 function mgTimingPlan(g){
   const out=[];
+  if(g.chart&&g.chart.length){/* hand-placed beats: the marker reaches the zone centre exactly at each t */
+    const ch=[];let last=-1e9;for(const n of g.chart.slice().sort((a,b)=>a.t-b.t)){if(n.t-last<200)continue;const x=mgSegAt(g,n.t);if(x&&x.kind==='cut')continue;ch.push(n);last=n.t}
+    const Dm=g.beats*60000/g.bpm;
+    ch.forEach((n,i)=>{const x=mgSegAt(g,n.t)||{},zone=x.zone||g.zone,gp=i?n.t-ch[i-1].t:1e9,gn=i<ch.length-1?ch[i+1].t-n.t:1e9,D=Math.max(200,Math.min(Dm,gp,gn));
+      out.push({t:n.t-zone/100*D,D,zone,zw:x.zw||g.zw,key:x.key||'',cz:x.cz||'',cp:x.cp||''})});
+    return out}
   if(!(g.segs&&g.segs.length)){const D=g.beats*60000/g.bpm;for(let i=0;i<g.rounds;i++)out.push({t:i*D,D,zone:g.zone,zw:g.zw,key:'',cz:'',cp:''});return out}
   let t=0;for(const x of g.segs){const len=x.len*1000;
     if(x.kind==='play'){const D=(x.beats||g.beats)*60000/(x.bpm||g.bpm);for(let k=0;(k+1)*D<=len+1;k++)out.push({t:t+k*D,D,zone:x.zone||g.zone,zw:x.zw||g.zw,key:x.key||'',cz:x.cz||'',cp:x.cp||''})}
@@ -173,30 +179,38 @@ function mgLandscape(on){/* phones: full screen + try to lock sideways (the layo
     if(on){const d=document.documentElement,p=d.requestFullscreen?d.requestFullscreen():null;Promise.resolve(p).then(()=>screen.orientation&&screen.orientation.lock&&screen.orientation.lock('landscape')).catch(()=>{})}
     else{if(screen.orientation&&screen.orientation.unlock)screen.orientation.unlock();if(document.fullscreenElement)document.exitFullscreen().catch(()=>{})}}catch(e){}}
 function mgRotCheck(el){const b=el.querySelector('.mgrot');if(!b)return;b.hidden=!(window.matchMedia&&matchMedia('(pointer:coarse)').matches&&innerHeight>innerWidth)}
-/* stage events of a lane game (shake, lane fades, flip, pulse, sway, flash) — a pure function of the song time */
+/* stage events (shake, lane fades, flip, pulse, sway, flash, spin, tilt, fog) for every game type — a pure function of the game time */
 function mgFxMake(el,g){
-  const EV=(g.events||[]).slice().sort((a,b)=>a.t-b.t),lanes=el.querySelector('.mglanes'),laneEls=[...el.querySelectorAll('.mglane')],beat=60000/(g.bpm||100);
-  if(!EV.length||!lanes)return{tick(){},reset(){}};
-  const HL=laneEls.map((_,l)=>EV.filter(e=>(e.type==='hide'||e.type==='show')&&e.l===l));
-  let fl=lanes.querySelector('.mgflash');if(!fl){fl=document.createElement('div');fl.className='mgflash';lanes.appendChild(fl)}
-  const lastO=[],cl=(v)=>v<0?0:v>1?1:v;let lastTf='',lastHf=1,lastFl=-1;
-  const reset=()=>{lanes.style.transform='';lanes.style.setProperty('--hf',1);fl.style.opacity=0;laneEls.forEach(e=>e.style.opacity='');lastO.length=0;lastTf='';lastHf=1;lastFl=-1};
+  const EV=(g.events||[]).slice().sort((a,b)=>a.t-b.t),ty=g.type,q=s=>el.querySelector(s);
+  const tg=(ty==='lane'?[q('.mglanes')]:ty==='timing'?[q('.mgbar')]:ty==='simon'?[q('.mgsimon')]:[q('.mgprog'),q('.mgtap')]).filter(Boolean);
+  if(!EV.length||!tg.length)return{tick(){},reset(){}};
+  const units=ty==='lane'?[...el.querySelectorAll('.mglane')]:ty==='simon'?[...el.querySelectorAll('.mgsp')]:null,base=ty==='lane'?.9:1,beat=60000/(g.bpm||100);
+  const HL=units?units.map((_,l)=>EV.filter(e=>(e.type==='hide'||e.type==='show')&&e.l===l)):[EV.filter(e=>e.type==='hide'||e.type==='show')];
+  const host=tg[0];if(getComputedStyle(host).position==='static')host.style.position='relative';
+  const mk=c=>{let d=host.querySelector('.'+c);if(!d){d=document.createElement('div');d.className=c;host.appendChild(d)}return d},fl=mk('mgflash'),fg=mk('mgfog');
+  const lastO=[],cl=v=>v<0?0:v>1?1:v;let lastTf='',lastHf=1;
+  const reset=()=>{tg.forEach(e=>{e.style.transform='';e.style.removeProperty('--fo')});tg[0].style.setProperty('--hf',1);fl.style.opacity=0;fg.style.opacity=0;(units||[]).forEach(e=>e.style.opacity='');lastO.length=0;lastTf='';lastHf=1};
+  const opac=(list,T)=>{let v0=1,t0=-1e9,tgt=1,len=1;
+    for(const e of list){if(e.t>T)break;v0=v0+(tgt-v0)*cl((e.t-t0)/len);t0=e.t;tgt=e.type==='hide'?0:1;len=Math.max(200,e.len)}
+    return v0+(tgt-v0)*cl((T-t0)/len)};
   function tick(T){
-    let sx=0,sy=0,sc=1,f=0,fa=0;
+    let sx=0,sy=0,sc=1,f=0,fa=0,rot=0,fog=0,fp=.5;
     for(const e of EV){if(e.t>T)break;const dt=T-e.t;if(dt>=Math.max(e.len,1))continue;const v=e.v||3;
       if(e.type==='shake'){sx+=(Math.random()-.5)*3*v;sy+=(Math.random()-.5)*3*v}
-      else if(e.type==='flip'){const r=Math.min(1,dt/400,(e.len-dt)/400);f=Math.max(f,cl(r))}
+      else if(e.type==='flip'){f=Math.max(f,cl(Math.min(dt/400,(e.len-dt)/400)))}
       else if(e.type==='pulse'){const ph=(dt/beat)%1;sc=Math.max(sc,1+.02*v*Math.pow(1-ph,3))}
       else if(e.type==='sway')sx+=Math.sin(dt/beat*Math.PI)*v*5;
-      else if(e.type==='flash'){const ph=(dt/beat)%1;fa=Math.max(fa,.12*v/3*Math.pow(1-ph,2))}}
-    const tf=`translate(${sx.toFixed(1)}px,${sy.toFixed(1)}px) scale(${sc.toFixed(3)}) scaleY(${(1-2*f).toFixed(3)})`;
-    if(tf!==lastTf){lanes.style.transform=tf;lastTf=tf}
-    const hf=f>.5?-1:1;if(hf!==lastHf){lanes.style.setProperty('--hf',hf);lastHf=hf}
-    fl.style.opacity=fa.toFixed(3);
-    for(let l=0;l<laneEls.length;l++){const list=HL[l];if(!list.length)continue;
-      let v0=1,t0=-1e9,tg=1,len=1;
-      for(const e of list){if(e.t>T)break;v0=v0+(tg-v0)*cl((e.t-t0)/len);t0=e.t;tg=e.type==='hide'?0:1;len=Math.max(200,e.len)}
-      const o=v0+(tg-v0)*cl((T-t0)/len),q=Math.round(o*50);if(lastO[l]!==q){lastO[l]=q;laneEls[l].style.opacity=(o*.9).toFixed(2)}}}
+      else if(e.type==='flash'){const ph=(dt/beat)%1;fa=Math.max(fa,.12*v/3*Math.pow(1-ph,2))}
+      else if(e.type==='spin'){const x=cl(dt/Math.max(e.len,1));rot+=360*x*x*(3-2*x)*(v>3?-1:1)}
+      else if(e.type==='tilt')rot+=Math.sin(dt/beat*Math.PI)*v*2;
+      else if(e.type==='fog'){const r=cl(Math.min(dt/500,(e.len-dt)/500));if(r>fog){fog=r;fp=.2+v*.1}}}
+    const tf=`translate(${sx.toFixed(1)}px,${sy.toFixed(1)}px) rotate(${rot.toFixed(1)}deg) scale(${sc.toFixed(3)}) scaleY(${(1-2*f).toFixed(3)})`;
+    if(tf!==lastTf){tg.forEach(e=>{e.style.transform=tf});lastTf=tf}
+    const hf=f>.5?-1:1;if(hf!==lastHf){tg[0].style.setProperty('--hf',hf);lastHf=hf}
+    fl.style.opacity=fa.toFixed(3);fg.style.opacity=fog.toFixed(2);if(fog>0)fg.style.setProperty('--fp',(fp*100)+'%');
+    if(units){for(let l=0;l<units.length;l++){const list=HL[l];if(!list.length)continue;
+      const o=opac(list,T),k=Math.round(o*50);if(lastO[l]!==k){lastO[l]=k;units[l].style.opacity=(o*base).toFixed(2)}}}
+    else if(HL[0].length){const o=opac(HL[0],T),k=Math.round(o*50);if(lastO[0]!==k){lastO[0]=k;tg.forEach(e=>e.style.setProperty('--fo',o.toFixed(2)))}}}
   return{tick,reset}}
 function mgCountdown(el,secs,S,done,goTxt){
   const c=el.querySelector('.mgcount');let n=secs;
@@ -236,7 +250,7 @@ function mgPlay(g,cb){
     d.innerHTML=`<div class="mgnh ${mgShapeOf(g,n.l)}">${mgHeadInner(g,n.l)}</div>${n.len>0?'<div class="mgnt"></div>':''}`;
     lanes[n.l].appendChild(d);return d})}
   const clock=()=>media&&!media.paused?media.currentTime*1000:performance.now()-S.t0;
-  const FX=isL?mgFxMake(el,g):{tick(){},reset(){}};
+  const FX=mgFxMake(el,g);
   const lead=g.cd>0?(isL?g.fall+200:600):3000;
   const offs=()=>(media?g.offset:Math.max(g.offset,lead))+mgCal();
   function say(txt,c){const f=$q('.mgfb');f.textContent=txt;f.style.color=c;f.classList.remove('pop');void f.offsetWidth;f.classList.add('pop')}
@@ -253,7 +267,8 @@ function mgPlay(g,cb){
     if(S.phase!=='run')return;
     const T=clock()-offs(),cd=$q('.mgcount');
     cd.textContent=g.cd===0&&T<0?Math.ceil(-T/1000):'';
-    if(isL){FX.tick(T);
+    FX.tick(T);
+    if(isL){
       const sq=g.ns!=='bar',NHM=sq?S.NHS:Math.max(24,S.H*.08);let open=0;
       for(let i=0;i<notes.length;i++){
         const n=notes[i],e=noteEls[i],ppm=(S.H-NHM)/n.fall;
@@ -274,7 +289,7 @@ function mgPlay(g,cb){
       if(S.si>=sweeps.length){finish();return}
       const sw=sweeps[S.si],mk=$q('.mgmark'),bar=$q('.mgbar');
       if(S.zi!==S.si){S.zi=S.si;const z=$q('.mgzone');z.style.left=(sw.zone-sw.zw/2)+'%';z.style.width=sw.zw+'%';z.style.background=sw.cz||col.zone;z.firstChild.style.background=sw.cp||col.perfect;S.key=sw.key;$q('.mgtap').textContent=sw.key||keyLab;$q('.mgtap').style.background=sw.cz||col.zone}
-      if(T<sw.t){bar.style.opacity='.35';mk.style.left='0%'}else{bar.style.opacity='1';mk.style.left=((T-sw.t)/sw.D*100)+'%'}
+      if(T<sw.t){bar.classList.add('wait');mk.style.left='0%'}else{bar.classList.remove('wait');mk.style.left=((T-sw.t)/sw.D*100)+'%'}
     }
     S.raf=requestAnimationFrame(loop)}
   const lastEnd=notes.reduce((a,n)=>Math.max(a,n.t+n.len),0);
@@ -323,5 +338,5 @@ function mgPlay(g,cb){
     const r=e.target.closest('[data-r]');if(!r)return;if(r.dataset.r==='close')close();else{S.phase='ready';start()}});
   if(media&&media.addEventListener)media.addEventListener('ended',()=>{if(S.phase==='run')finish()});
 }
-Object.assign(TX.th,{mgRotate:'หมุนมือถือเป็นแนวนอนเพื่อเล่น',mgShape:'รูปแบบโน้ต',mgSh_bar:'แท่ง',mgSh_arrow:'ลูกศร',mgSh_circle:'วงกลม',mgSh_diamond:'เพชร',mgSh_star:'ดาว',mgSh_img:'ภาพของฉัน',mgCd:'นับถอยหลังก่อนเริ่ม (วินาที)',mgCdH:'0 = ไม่นับ',mgImgs:'ภาพโน้ตแต่ละเลน',mgImgsH:'เลือกภาพให้แต่ละเลน (เลนที่ไม่มีภาพจะใช้ภาพของเลนแรก; ไม่มีเลยจะใช้ลูกศร) — ภาพจะถูกย่อให้อัตโนมัติ',mgImgPick:'เลือกภาพ',mgSecRhythm:'จังหวะและกติกา',mgSecNotes:'โน้ต',mgSecPen:'เมื่อพลาด / วิธีเล่น',mgSecCol:'สี',mgChartL:'โน้ตแบบวาดเอง',mgChartEdit:'เปิดตัวแก้โน้ต (กริด)',mgChartClear:'ล้างโน้ต',mgChartN:'วางไว้ {n} ตัว — ใช้แทนรูปแบบตัวเลข/สุ่ม',mgChartNone:'ยังไม่มี (ใช้รูปแบบตัวเลข/สุ่มด้านล่าง)',mgTimeline:'ไทม์ไลน์',mgTimelineH:'แบ่งเกมเป็นช่วง ๆ ตามลำดับ ช่วงเล่นปรับ BPM/ทิศทาง/สี/ปุ่มได้ ช่วงคัตซีนไม่มีโน้ต คลิปเล่นต่อ ช่องว่าง = ใช้ค่าของเกม',mgNoSeg:'ยังไม่มีช่วง (ใช้ค่าของเกมทั้งเกม)',mgTotal:'ความยาวรวม',mgPlaySeg:'ช่วงเล่น',mgCutSeg:'คัตซีน',mgLen:'ยาว',mgCancel:'ยกเลิก',mgTypeL:'ประเภทเกม',mgNotes:'จำนวนโน้ต',mgLanes:'จำนวนเลน',mgSub:'โน้ตต่อบีต',mgSubH:'1 = ทุกบีต 2 = ครึ่งบีต',mgFall:'เวลาตกถึงเส้น (ms)',mgFallH:'น้อย = โน้ตเร็ว',mgDir:'ทิศทางโน้ต',mgDown:'ตกลงมา',mgUp:'ขึ้นไป',mgPat:'รูปแบบโน้ต',mgPatH:'เลขเลน เช่น 1 2 3 4 3 2 (0 = เว้น) ว่าง = สุ่ม (คงที่ทุกครั้ง)',mgKeys:'ปุ่มแต่ละเลน',mgKeysH:'คั่นด้วยเว้นวรรค เช่น d f j k',mgTitle:'เกมจังหวะ',mgNew:'+ เกมใหม่',mgTest:'ทดลองเล่น',mgNone:'ยังไม่มีเกม กด "เกมใหม่" เพื่อสร้าง',mgType_timing:'แถบจังหวะ',mgType_lane:'เลนโน้ต',mgType_simon:'Simon',mgType_tap:'กดรัว',mgRounds:'รอบ',mgEdit:'ตั้งค่าเกม',mgName:'ชื่อเกม',mgMedia:'วิดีโอ/เสียงพื้นหลัง',mgNoMedia:'ไม่ใช้ (ใช้นับเวลาเอง)',mgOffset:'Offset (มิลลิวินาที)',mgOffsetH:'เวลาที่เกมเริ่มนับจังหวะแรก นับจากเริ่มคลิป',mgBeats:'จำนวนบีตต่อ 1 รอบ',mgBeatsH:'ยิ่งมาก แถบยิ่งวิ่งช้า',mgZone:'ตำแหน่งโซน (%)',mgZoneH:'0 = ซ้ายสุด 100 = ขวาสุด',mgZw:'ความกว้างโซน (%)',mgKey:'ปุ่มกด',mgKeyPh:'เว้นว่าง = Space',mgKeyH:'ปุ่มบนแป้นพิมพ์ ป้ายบนปุ่มจอสัมผัสด้วย',mgDmg:'ดาเมจต่อการพลาด 1 ครั้ง',mgDmgH:'เช่น 3 หรือ 1d6 หรือ 2d4+1 (ว่าง = ไม่มี)',mgDmgMode:'การหักเลือด',mgConfirm:'เสนอให้ GM ยืนยัน',mgAuto:'หักอัตโนมัติ',mgPlayMode:'วิธีเล่น',mgAll:'ทุกคนพร้อมกัน',mgOne:'ทีละคน',mgc_bar:'สีแถบ',mgc_zone:'สีโซน / โน้ต',mgc_perfect:'สีจุดเป๊ะ / เส้นตี',mgc_marker:'สีตัวชี้',mgNeedName:'ใส่ชื่อเกมก่อน',mgFail:'บันทึกไม่สำเร็จ',mgDelAsk:'ลบเกมนี้?',mgStart:'เริ่ม',mgCal:'ชดเชยหน่วงของเครื่อง',mgPerfect:'เป๊ะ!',mgHit:'โดน',mgMiss:'พลาด',mgDone:'จบเกม',mgAgain:'เล่นอีกครั้ง',mgDmgTaken:'ได้รับดาเมจ {n} ({d} ต่อครั้งที่พลาด)',mgNoDmg:'ไม่พลาดเลย ไม่เสียเลือด'});
-Object.assign(TX.en,{mgRotate:'Rotate your phone to landscape to play',mgShape:'Note style',mgSh_bar:'Bar',mgSh_arrow:'Arrow',mgSh_circle:'Circle',mgSh_diamond:'Diamond',mgSh_star:'Star',mgSh_img:'My pictures',mgCd:'Countdown before start (s)',mgCdH:'0 = none',mgImgs:'Note picture per lane',mgImgsH:'Pick a picture per lane (a lane without one uses lane 1\'s; none at all falls back to arrows). Pictures are resized automatically.',mgImgPick:'Choose picture',mgSecRhythm:'Rhythm and rules',mgSecNotes:'Notes',mgSecPen:'On a miss / play mode',mgSecCol:'Colours',mgChartL:'Hand-placed notes',mgChartEdit:'Open note editor (grid)',mgChartClear:'Clear notes',mgChartN:'{n} notes placed — used instead of the number pattern / random',mgChartNone:'None yet (the number pattern / random below is used)',mgTimeline:'Timeline',mgTimelineH:'Split the game into stretches in order. A play stretch can change BPM / direction / colour / button; a cutscene has no notes and the clip just plays. Empty = the game value',mgNoSeg:'No stretches (the game settings apply to the whole game)',mgTotal:'Total length',mgPlaySeg:'Play',mgCutSeg:'Cutscene',mgLen:'Length',mgCancel:'Cancel',mgTypeL:'Game type',mgNotes:'Number of notes',mgLanes:'Lanes',mgSub:'Notes per beat',mgSubH:'1 = every beat, 2 = half beat',mgFall:'Fall time to line (ms)',mgFallH:'Lower = faster notes',mgDir:'Note direction',mgDown:'Falling',mgUp:'Rising',mgPat:'Note pattern',mgPatH:'Lane numbers, e.g. 1 2 3 4 3 2 (0 = rest). Empty = random (same every time)',mgKeys:'Key per lane',mgKeysH:'Separated by spaces, e.g. d f j k',mgTitle:'Rhythm games',mgNew:'+ New game',mgTest:'Test play',mgNone:'No games yet. Press "New game" to make one.',mgType_timing:'Timing bar',mgType_lane:'Note lanes',mgType_simon:'Simon',mgType_tap:'Rapid tap',mgRounds:'rounds',mgEdit:'Game settings',mgName:'Game name',mgMedia:'Background video / audio',mgNoMedia:'None (own timer)',mgOffset:'Offset (ms)',mgOffsetH:'When the first beat starts, counted from the clip start',mgBeats:'Beats per sweep',mgBeatsH:'More beats = slower bar',mgZone:'Zone position (%)',mgZoneH:'0 = far left, 100 = far right',mgZw:'Zone width (%)',mgKey:'Button',mgKeyPh:'empty = Space',mgKeyH:'Keyboard key; also the label on the touch button',mgDmg:'Damage per miss',mgDmgH:'e.g. 3 or 1d6 or 2d4+1 (empty = none)',mgDmgMode:'HP loss',mgConfirm:'Propose to GM to confirm',mgAuto:'Apply automatically',mgPlayMode:'Play mode',mgAll:'Everyone together',mgOne:'One at a time',mgc_bar:'Bar colour',mgc_zone:'Zone / note colour',mgc_perfect:'Perfect spot',mgc_marker:'Marker',mgNeedName:'Enter a game name first',mgFail:'Could not save',mgDelAsk:'Delete this game?',mgStart:'Start',mgCal:'Device delay offset',mgPerfect:'Perfect!',mgHit:'Hit',mgMiss:'Miss',mgDone:'Game over',mgAgain:'Play again',mgDmgTaken:'Took {n} damage ({d} per miss)',mgNoDmg:'No misses, no damage'});
+Object.assign(TX.th,{mgSecChart:'โน้ต / Event ที่วางเอง',mgChartHint_timing:'วางจุดที่ผู้เล่นต้องกดให้ตรงโซน (ถ้าไม่วางเลย จะใช้ BPM กับจำนวนรอบอัตโนมัติ) และแถวแรกควรเริ่มหลัง 1.5 วินาที',mgChartHint_simon:'วางลำดับปุ่มตามเวลาจากบนลงล่าง: ด่านที่ 1 ใช้ตัวแรกตามความยาวเริ่มต้น แล้วเพิ่มทีละตัว (ถ้าไม่วาง จะสุ่มลำดับ)',mgChartHint_tap:'วางช่วงรัวกดเป็นแท่งยาว: ต้องกดให้ถึงเป้าหมายภายในช่วงนั้น (ถ้าไม่วาง จะใช้เวลา/เป้าหมายด้านบน)',mgRotate:'หมุนมือถือเป็นแนวนอนเพื่อเล่น',mgShape:'รูปแบบโน้ต',mgSh_bar:'แท่ง',mgSh_arrow:'ลูกศร',mgSh_circle:'วงกลม',mgSh_diamond:'เพชร',mgSh_star:'ดาว',mgSh_img:'ภาพของฉัน',mgCd:'นับถอยหลังก่อนเริ่ม (วินาที)',mgCdH:'0 = ไม่นับ',mgImgs:'ภาพโน้ตแต่ละเลน',mgImgsH:'เลือกภาพให้แต่ละเลน (เลนที่ไม่มีภาพจะใช้ภาพของเลนแรก; ไม่มีเลยจะใช้ลูกศร) — ภาพจะถูกย่อให้อัตโนมัติ',mgImgPick:'เลือกภาพ',mgSecRhythm:'จังหวะและกติกา',mgSecNotes:'โน้ต',mgSecPen:'เมื่อพลาด / วิธีเล่น',mgSecCol:'สี',mgChartL:'โน้ตแบบวาดเอง',mgChartEdit:'เปิดตัวแก้โน้ต (กริด)',mgChartClear:'ล้างโน้ต',mgChartN:'วางไว้ {n} ตัว — ใช้แทนรูปแบบตัวเลข/สุ่ม',mgChartNone:'ยังไม่มี (ใช้รูปแบบตัวเลข/สุ่มด้านล่าง)',mgTimeline:'ไทม์ไลน์',mgTimelineH:'แบ่งเกมเป็นช่วง ๆ ตามลำดับ ช่วงเล่นปรับ BPM/ทิศทาง/สี/ปุ่มได้ ช่วงคัตซีนไม่มีโน้ต คลิปเล่นต่อ ช่องว่าง = ใช้ค่าของเกม',mgNoSeg:'ยังไม่มีช่วง (ใช้ค่าของเกมทั้งเกม)',mgTotal:'ความยาวรวม',mgPlaySeg:'ช่วงเล่น',mgCutSeg:'คัตซีน',mgLen:'ยาว',mgCancel:'ยกเลิก',mgTypeL:'ประเภทเกม',mgNotes:'จำนวนโน้ต',mgLanes:'จำนวนเลน',mgSub:'โน้ตต่อบีต',mgSubH:'1 = ทุกบีต 2 = ครึ่งบีต',mgFall:'เวลาตกถึงเส้น (ms)',mgFallH:'น้อย = โน้ตเร็ว',mgDir:'ทิศทางโน้ต',mgDown:'ตกลงมา',mgUp:'ขึ้นไป',mgPat:'รูปแบบโน้ต',mgPatH:'เลขเลน เช่น 1 2 3 4 3 2 (0 = เว้น) ว่าง = สุ่ม (คงที่ทุกครั้ง)',mgKeys:'ปุ่มแต่ละเลน',mgKeysH:'คั่นด้วยเว้นวรรค เช่น d f j k',mgTitle:'เกมจังหวะ',mgNew:'+ เกมใหม่',mgTest:'ทดลองเล่น',mgNone:'ยังไม่มีเกม กด "เกมใหม่" เพื่อสร้าง',mgType_timing:'แถบจังหวะ',mgType_lane:'เลนโน้ต',mgType_simon:'Simon',mgType_tap:'กดรัว',mgRounds:'รอบ',mgEdit:'ตั้งค่าเกม',mgName:'ชื่อเกม',mgMedia:'วิดีโอ/เสียงพื้นหลัง',mgNoMedia:'ไม่ใช้ (ใช้นับเวลาเอง)',mgOffset:'Offset (มิลลิวินาที)',mgOffsetH:'เวลาที่เกมเริ่มนับจังหวะแรก นับจากเริ่มคลิป',mgBeats:'จำนวนบีตต่อ 1 รอบ',mgBeatsH:'ยิ่งมาก แถบยิ่งวิ่งช้า',mgZone:'ตำแหน่งโซน (%)',mgZoneH:'0 = ซ้ายสุด 100 = ขวาสุด',mgZw:'ความกว้างโซน (%)',mgKey:'ปุ่มกด',mgKeyPh:'เว้นว่าง = Space',mgKeyH:'ปุ่มบนแป้นพิมพ์ ป้ายบนปุ่มจอสัมผัสด้วย',mgDmg:'ดาเมจต่อการพลาด 1 ครั้ง',mgDmgH:'เช่น 3 หรือ 1d6 หรือ 2d4+1 (ว่าง = ไม่มี)',mgDmgMode:'การหักเลือด',mgConfirm:'เสนอให้ GM ยืนยัน',mgAuto:'หักอัตโนมัติ',mgPlayMode:'วิธีเล่น',mgAll:'ทุกคนพร้อมกัน',mgOne:'ทีละคน',mgc_bar:'สีแถบ',mgc_zone:'สีโซน / โน้ต',mgc_perfect:'สีจุดเป๊ะ / เส้นตี',mgc_marker:'สีตัวชี้',mgNeedName:'ใส่ชื่อเกมก่อน',mgFail:'บันทึกไม่สำเร็จ',mgDelAsk:'ลบเกมนี้?',mgStart:'เริ่ม',mgCal:'ชดเชยหน่วงของเครื่อง',mgPerfect:'เป๊ะ!',mgHit:'โดน',mgMiss:'พลาด',mgDone:'จบเกม',mgAgain:'เล่นอีกครั้ง',mgDmgTaken:'ได้รับดาเมจ {n} ({d} ต่อครั้งที่พลาด)',mgNoDmg:'ไม่พลาดเลย ไม่เสียเลือด'});
+Object.assign(TX.en,{mgSecChart:'Hand-placed notes / events',mgChartHint_timing:'Place the moments the player must hit in the zone (none placed = automatic from BPM and rounds). Keep the first one after 1.5 s.',mgChartHint_simon:'Place the pad order by time, top to bottom: level 1 uses the first notes (starting length), each level adds one (none placed = random).',mgChartHint_tap:'Place mash windows as long bars: reach the target taps inside each window (none placed = use the time/target above).',mgRotate:'Rotate your phone to landscape to play',mgShape:'Note style',mgSh_bar:'Bar',mgSh_arrow:'Arrow',mgSh_circle:'Circle',mgSh_diamond:'Diamond',mgSh_star:'Star',mgSh_img:'My pictures',mgCd:'Countdown before start (s)',mgCdH:'0 = none',mgImgs:'Note picture per lane',mgImgsH:'Pick a picture per lane (a lane without one uses lane 1\'s; none at all falls back to arrows). Pictures are resized automatically.',mgImgPick:'Choose picture',mgSecRhythm:'Rhythm and rules',mgSecNotes:'Notes',mgSecPen:'On a miss / play mode',mgSecCol:'Colours',mgChartL:'Hand-placed notes',mgChartEdit:'Open note editor (grid)',mgChartClear:'Clear notes',mgChartN:'{n} notes placed — used instead of the number pattern / random',mgChartNone:'None yet (the number pattern / random below is used)',mgTimeline:'Timeline',mgTimelineH:'Split the game into stretches in order. A play stretch can change BPM / direction / colour / button; a cutscene has no notes and the clip just plays. Empty = the game value',mgNoSeg:'No stretches (the game settings apply to the whole game)',mgTotal:'Total length',mgPlaySeg:'Play',mgCutSeg:'Cutscene',mgLen:'Length',mgCancel:'Cancel',mgTypeL:'Game type',mgNotes:'Number of notes',mgLanes:'Lanes',mgSub:'Notes per beat',mgSubH:'1 = every beat, 2 = half beat',mgFall:'Fall time to line (ms)',mgFallH:'Lower = faster notes',mgDir:'Note direction',mgDown:'Falling',mgUp:'Rising',mgPat:'Note pattern',mgPatH:'Lane numbers, e.g. 1 2 3 4 3 2 (0 = rest). Empty = random (same every time)',mgKeys:'Key per lane',mgKeysH:'Separated by spaces, e.g. d f j k',mgTitle:'Rhythm games',mgNew:'+ New game',mgTest:'Test play',mgNone:'No games yet. Press "New game" to make one.',mgType_timing:'Timing bar',mgType_lane:'Note lanes',mgType_simon:'Simon',mgType_tap:'Rapid tap',mgRounds:'rounds',mgEdit:'Game settings',mgName:'Game name',mgMedia:'Background video / audio',mgNoMedia:'None (own timer)',mgOffset:'Offset (ms)',mgOffsetH:'When the first beat starts, counted from the clip start',mgBeats:'Beats per sweep',mgBeatsH:'More beats = slower bar',mgZone:'Zone position (%)',mgZoneH:'0 = far left, 100 = far right',mgZw:'Zone width (%)',mgKey:'Button',mgKeyPh:'empty = Space',mgKeyH:'Keyboard key; also the label on the touch button',mgDmg:'Damage per miss',mgDmgH:'e.g. 3 or 1d6 or 2d4+1 (empty = none)',mgDmgMode:'HP loss',mgConfirm:'Propose to GM to confirm',mgAuto:'Apply automatically',mgPlayMode:'Play mode',mgAll:'Everyone together',mgOne:'One at a time',mgc_bar:'Bar colour',mgc_zone:'Zone / note colour',mgc_perfect:'Perfect spot',mgc_marker:'Marker',mgNeedName:'Enter a game name first',mgFail:'Could not save',mgDelAsk:'Delete this game?',mgStart:'Start',mgCal:'Device delay offset',mgPerfect:'Perfect!',mgHit:'Hit',mgMiss:'Miss',mgDone:'Game over',mgAgain:'Play again',mgDmgTaken:'Took {n} damage ({d} per miss)',mgNoDmg:'No misses, no damage'});

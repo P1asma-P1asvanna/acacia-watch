@@ -7,7 +7,7 @@ from .images import URL_RE as IMG_URL
 from .numbers import clampi
 
 TYPES = ("timing", "lane", "simon", "tap")
-EVENTS = ("shake", "hide", "show", "flip", "pulse", "sway", "flash")
+EVENTS = ("shake", "hide", "show", "flip", "pulse", "sway", "flash", "spin", "tilt", "fog")
 SHAPES = ("bar", "arrow", "circle", "diamond", "star", "img")
 HEX = re.compile(r"^#[0-9a-fA-F]{6}$")
 DMG = re.compile(r"^\d{1,3}(d\d{1,3})?([+-]\d{1,3})?$")

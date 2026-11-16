@@ -7,7 +7,10 @@ function mgPlay2(g,cb){
   if(!g||MGP)return;
   const it=mgMi(g),isV=it&&it.type.startsWith('video'),isS=g.type==='simon';
   const col=g.col,key=(g.key||'').trim(),keys=isS?mgKeys(g):[],N=g.lanes;
-  const total=isS?g.rounds:1,seq=isS?mgSeq(g,g.start+g.rounds):[];
+  const CH=(g.chart||[]).slice().sort((a,b)=>a.t-b.t||a.l-b.l),useCh=isS&&CH.length>0;
+  const ST=useCh?Math.min(g.start,CH.length):g.start;
+  const WINS=!isS?CH.map(n=>({t:n.t,len:n.len>0?n.len:Math.round(4*60000/g.bpm)})):[],tw=WINS.length>0;
+  const total=isS?(useCh?CH.length-ST+1:g.rounds):(tw?WINS.length:1),seq=isS?(useCh?CH.map(n=>Math.min(n.l,N-1)):mgSeq(g,g.start+g.rounds)):[];
   const hue=i=>Math.round(i*360/N+10);
   const el=document.createElement('div');el.id='mgPlay';el.className='mgplay';
   const field=isS?`<div class="mgsimon" style="--n:${Math.min(N,4)}">${keys.map((k,i)=>`<button class="mgsp" data-l="${i}" style="--c:hsl(${hue(i)} 70% 42%);--lit:hsl(${hue(i)} 95% 68%)">${esc(k.toUpperCase())}</button>`).join('')}</div>`
@@ -26,9 +29,10 @@ function mgPlay2(g,cb){
   const later=(fn,ms)=>{const h=setTimeout(fn,ms);S.timers.push(h);return h};
   const say=(txt,c)=>{const f=$q('.mgfb');f.textContent=txt;f.style.color=c;f.classList.remove('pop');void f.offsetWidth;f.classList.add('pop')};
   const counts=()=>({h:S.res.filter(x=>x==='h').length,m:S.res.filter(x=>x==='m').length});
-  const hud=()=>{const c=counts();$q('.mgsc').textContent=isS?`✔${c.h}  ✘${c.m}  /${total}`:`${S.taps} / ${g.goal}`};
+  const FX=mgFxMake(el,g);
+  const hud=()=>{const c=counts();$q('.mgsc').textContent=isS?`✔${c.h}  ✘${c.m}  /${total}`:tw?`${S.taps} / ${g.goal} · ${Math.min(S.wi||0,total-1)+1}/${total}`:`${S.taps} / ${g.goal}`};
   function finish(){
-    if(S.phase==='done')return;S.phase='done';S.timers.forEach(clearTimeout);cancelAnimationFrame(S.raf);if(media)media.pause();
+    if(S.phase==='done')return;S.phase='done';S.timers.forEach(clearTimeout);cancelAnimationFrame(S.raf);cancelAnimationFrame(S.fxr);if(media)media.pause();
     for(let k=0;k<total;k++)if(S.res[k]==null)S.res[k]='m';
     const c=counts(),dmg=mgRollDmg(g.dmg,c.m);S.out={perfect:0,hit:c.h,miss:c.m,dmg};if(cb)cb(S.out);
     const r=$q('.mgres');r.hidden=false;
@@ -37,7 +41,7 @@ function mgPlay2(g,cb){
   function flash(l,ms){const p=pads()[l];if(!p)return;p.classList.add('on');later(()=>p.classList.remove('on'),ms)}
   function level(L){
     if(L>=total){finish();return}
-    S.L=L;S.cur=seq.slice(0,g.start+L);S.idx=0;S.mode='show';hud();
+    S.L=L;S.cur=seq.slice(0,ST+L);S.idx=0;S.mode='show';hud();
     const step=60000/g.bpm;say(`${t('mgLevel')} ${L+1}`,'#fff');
     S.cur.forEach((l,i)=>later(()=>flash(l,step*.6),700+i*step));
     later(()=>{S.mode='input';S.idx=0;say(t('mgYou'),'#fff');arm()},700+S.cur.length*step)}
@@ -52,17 +56,26 @@ function mgPlay2(g,cb){
     if(S.phase!=='run'||S.mode!=='go')return;S.taps++;hud();
     $q('.mgprog i').style.width=Math.min(100,S.taps/g.goal*100)+'%'}
   function start(){
-    S.res=[];S.taps=0;hud();$q('.mgstart').hidden=true;$q('.mgres').hidden=true;
+    FX.reset();S.res=[];S.taps=0;S.wi=0;hud();$q('.mgstart').hidden=true;$q('.mgres').hidden=true;
     mgLandscape(true);S.phase='count';mgCountdown(el,g.cd,S,begin)}
   function begin(){
-    S.phase='run';
+    S.phase='run';S.t0=performance.now();
     if(media){try{media.currentTime=0;const p=media.play();if(p&&p.catch)p.catch(()=>{})}catch(e){}}
+    const clk=()=>(media&&media.currentTime>0?media.currentTime*1000-g.offset:performance.now()-S.t0);
+    const fxl=()=>{if(S.phase!=='run')return;FX.tick(clk());S.fxr=requestAnimationFrame(fxl)};fxl();
     if(isS)later(()=>level(0),400);
+    else if(tw){
+      S.mode='wait';S.wi=0;$q('.mgprog i').style.width='0%';
+      const tick=()=>{if(S.phase!=='run')return;const T=clk(),w=WINS[S.wi];
+        if(!w){finish();return}
+        if(T>=w.t+w.len){const okk=S.taps>=g.goal;S.res[S.wi]=okk?'h':'m';say(okk?t('mgHit'):t('mgMiss'),okk?col.zone:'#ef4444');S.wi++;S.taps=0;S.mode='wait';$q('.mgprog i').style.width='0%';hud();if(S.wi>=WINS.length){later(finish,500);return}}
+        else if(T>=w.t&&S.mode!=='go'){S.mode='go';say(t('mgGo'),col.perfect)}
+        S.raf=requestAnimationFrame(tick)};tick()}
     else{
       S.mode='go';$q('.mgprog i').style.width='0%';S.endAt=performance.now()+g.dur*1000;say(t('mgGo'),col.perfect);
       const tick=()=>{if(S.phase!=='run')return;const left=S.endAt-performance.now();$q('.mgsc').textContent=`${S.taps} / ${g.goal} · ${Math.max(0,left/1000).toFixed(1)}s`;
         if(left<=0){S.mode='end';S.res=[S.taps>=g.goal?'h':'m'];finish();return}S.raf=requestAnimationFrame(tick)};tick()}}
-  function close(){clearTimeout(S.cdT);mgLandscape(false);window.removeEventListener('resize',rc);S.timers.forEach(clearTimeout);cancelAnimationFrame(S.raf);if(media)media.pause();document.removeEventListener('keydown',kd);el.remove();MGP=null}
+  function close(){clearTimeout(S.cdT);mgLandscape(false);window.removeEventListener('resize',rc);S.timers.forEach(clearTimeout);cancelAnimationFrame(S.raf);cancelAnimationFrame(S.fxr);if(media)media.pause();document.removeEventListener('keydown',kd);el.remove();MGP=null}
   const kd=e=>{if(e.key==='Escape'){close();return}const k=e.key.toLowerCase();
     if(isS){if(e.repeat)return;const l=keys.indexOf(k);if(l>=0){e.preventDefault();pressS(l)}return}
     if(k===(key?key.toLowerCase():' ')){e.preventDefault();pressT()}};
