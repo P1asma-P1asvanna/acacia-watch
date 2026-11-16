@@ -168,7 +168,7 @@ function mgHeadInner(g,l){
   if(sh==='img')return`<img src="${esc(mgImgOf(g,l))}" alt="" draggable="false">`;
   const rot=sh==='arrow'?` style="transform:rotate(${MG_ARROW_DEG[l%4]}deg)"`:'';
   return`<svg viewBox="0 0 100 100"${rot} fill="currentColor" stroke="#fff" stroke-width="4" stroke-linejoin="round" aria-hidden="true">${MG_SHAPES[sh]}</svg>`}
-function mgLandscape(on){
+function mgLandscape(on){/* phones: full screen + try to lock sideways (the layout is the same, pads stay at the bottom) */
   try{if(!(window.matchMedia&&matchMedia('(pointer:coarse)').matches))return;
     if(on){const d=document.documentElement,p=d.requestFullscreen?d.requestFullscreen():null;Promise.resolve(p).then(()=>screen.orientation&&screen.orientation.lock&&screen.orientation.lock('landscape')).catch(()=>{})}
     else{if(screen.orientation&&screen.orientation.unlock)screen.orientation.unlock();if(document.fullscreenElement)document.exitFullscreen().catch(()=>{})}}catch(e){}}
