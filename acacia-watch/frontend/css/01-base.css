@@ -1,0 +1,24 @@
+
+/* Layout: split screen. Dark ink sidebar on the left, working area on the right; on phones the sidebar becomes a scrolling top bar.
+   Palette: verdigris accent on cool stone, brass kept for dice and highlights only. */
+:root{
+  --bg:#eceff0; --surface:#fafbfb; --ink:#1b2422; --muted:#5a6a66; --line:#d2d9d7;
+  --accent:#1d6b64; --accent-ink:#ffffff; --brass:#8f6212; --gold:#c8901a; --temp:#2f6aa8; --turn-now:#c8901a; --turn-next:#4f86b3; --turn-done:#8b9590; --danger:#a3322a;
+  --side:#16201e; --side-ink:#e4ebe8; --side-muted:#8fa19c; --side-line:#2a3935; --side-active:#24342f;
+  --r:8px; --display:'Alegreya','Sarabun',Georgia,serif; --body:'Sarabun','Segoe UI',system-ui,sans-serif; --mono:'IBM Plex Mono',ui-monospace,monospace;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#101614; --surface:#18211e; --ink:#e5ece9; --muted:#94a5a0; --line:#2b3935;
+  --accent:#4fb3a9; --accent-ink:#09130f; --brass:#d6a54b; --gold:#e3b449; --temp:#6aa6e6; --turn-now:#e3b449; --turn-next:#6aa6d4; --turn-done:#6c7873; --danger:#e57d72;
+  --side:#0b100f; --side-ink:#e4ebe8; --side-muted:#8fa19c; --side-line:#22302c; --side-active:#1b2926; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#101614; --surface:#18211e; --ink:#e5ece9; --muted:#94a5a0; --line:#2b3935;
+  --accent:#4fb3a9; --accent-ink:#09130f; --brass:#d6a54b; --gold:#e3b449; --temp:#6aa6e6; --turn-now:#e3b449; --turn-next:#6aa6d4; --turn-done:#6c7873; --danger:#e57d72;
+  --side:#0b100f; --side-ink:#e4ebe8; --side-muted:#8fa19c; --side-line:#22302c; --side-active:#1b2926; color-scheme:dark}
+*{box-sizing:border-box}
+html,body{min-height:100%}
+body{background:var(--bg);color:var(--ink);font-family:var(--body);font-size:15px;line-height:1.5}
+h1,h2,h3{font-family:var(--display);line-height:1.2;margin:0;text-wrap:balance}
+button,input,select,textarea{font:inherit;color:inherit}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+

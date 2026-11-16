@@ -46,7 +46,25 @@
 .mgdmg{font-size:1.3rem;color:#fca5a5}
 .mglanes{position:relative;display:grid;grid-template-columns:repeat(var(--n),1fr);gap:4px;width:min(92vw,440px);flex:0 0 min(48vh,420px);height:min(48vh,420px);margin-top:auto}
 .mglane{position:relative;overflow:hidden;border-radius:8px;opacity:.9}
-.mgnote{position:absolute;left:8%;width:84%;top:0;border-radius:8px;box-shadow:0 0 0 2px rgba(255,255,255,.55);will-change:transform}
+.mgnote{position:absolute;left:8%;width:84%;top:0;display:flex;will-change:transform}
+.mgnh{flex:0 0 var(--nh,24px);height:var(--nh,24px);display:flex;align-items:center;justify-content:center;color:inherit}
+.mgnh.bar{background:currentColor;border-radius:8px;box-shadow:0 0 0 2px rgba(255,255,255,.55)}
+.mgnh svg,.mgnh img{height:100%;width:auto;max-width:100%;object-fit:contain;filter:drop-shadow(0 0 3px rgba(0,0,0,.6))}
+.mgnh svg{aspect-ratio:1}
+.mgnt{flex:1 1 auto;width:46%;margin:0 auto;background:currentColor;opacity:.55;border-radius:6px;box-shadow:0 0 0 2px rgba(255,255,255,.4)}
+.mgrot{position:absolute;z-index:6;top:62px;left:50%;transform:translateX(-50%);background:#000c;color:#fff;border:1px solid #fff6;border-radius:999px;padding:6px 14px;font-size:.85rem;white-space:nowrap}
+.mgrot[hidden]{display:none}
+.mgcount.pop{animation:mgcd .9s ease-out}
+@keyframes mgcd{0%{transform:scale(1.8);opacity:0}25%{transform:scale(1);opacity:1}100%{transform:scale(.9);opacity:.35}}
+.mgimgrow{display:flex;align-items:center;gap:10px;margin:6px 0}.mgimgrow img{width:44px;height:44px;object-fit:contain;background:#0004;border-radius:8px}
+.mgimgph{width:44px;text-align:center}
+@media (orientation:landscape) and (max-height:520px){
+  .mgplay:has(.mglanes){flex-direction:row;align-items:stretch;justify-content:center;gap:10px;padding:6px 10px}
+  .mgplay .mglanes{flex:0 0 auto;height:calc(100dvh - 16px);width:min(52vw,420px);margin:0}
+  .mgplay .mgpads{width:min(34vw,260px);align-self:center;grid-template-columns:repeat(2,1fr);margin:0}
+  .mgplay .mgpad{height:64px}
+  .mgcount{font-size:3.5rem;top:20%}
+}
 .mgline{position:absolute;left:0;right:0;height:5px;border-radius:3px;box-shadow:0 0 8px currentColor;pointer-events:none}
 .mgpads{display:grid;grid-template-columns:repeat(var(--n),1fr);gap:6px;width:min(92vw,440px);margin-bottom:max(12px,env(safe-area-inset-bottom))}
 .mgpad{height:84px;border-radius:14px;border:3px solid rgba(255,255,255,.7);color:#fff;font-size:1.3rem;font-weight:800;touch-action:none}

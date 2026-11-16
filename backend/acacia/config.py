@@ -27,6 +27,7 @@ IMG_SLOTS = {
     "cover": {"scope": "site", "min_short": 480, "min_long": 800, "out": 1920, "in_bytes": 5 << 20, "out_bytes": 450 * 1024, "gif_bytes": 2 << 20, "gif_side": 1280},
     "bg":    {"scope": "user", "min_short": 480, "min_long": 800, "out": 1920, "in_bytes": 5 << 20, "out_bytes": 450 * 1024, "gif_bytes": 2 << 20, "gif_side": 1280},
     "panel": {"scope": "user", "min_short": 256, "min_long": 256, "out": 1024, "in_bytes": 3 << 20, "out_bytes": 300 * 1024, "gif_bytes": 1 << 20, "gif_side": 800},
+    "note":  {"scope": "site", "min_short": 16,  "min_long": 16,  "out": 256,  "in_bytes": 1 << 20, "out_bytes": 100 * 1024, "gif_bytes": 512 * 1024, "gif_side": 256},
     "cond":  {"scope": "site", "min_short": 128, "min_long": 128, "out": 512,  "in_bytes": 2 << 20, "out_bytes": 150 * 1024, "gif_bytes": 1 << 20, "gif_side": 512},
     "deco":  {"scope": "user", "min_short": 64,  "min_long": 64,  "out": 512,  "in_bytes": 1 << 20, "out_bytes": 200 * 1024, "gif_bytes": 1 << 20, "gif_side": 512},
     # profile page: avatar, background and avatar frame (the frame must be square: it is drawn over the avatar, 160 px on screen, 320 px is ideal)

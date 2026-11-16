@@ -15,6 +15,7 @@ function mgPlay2(g,cb){
   el.innerHTML=`${isV?`<video class="mgvid" playsinline loop preload="auto" src="${esc(it.url)}"></video>`:''}
    <button class="mgx" aria-label="${t('close')}">✕</button>
    <div class="mghud"><b>${esc(g.name)}</b><span class="mgsc"></span></div>
+   <div class="mgrot" hidden>↻ ${t('mgRotate')}</div>
    <div class="mgmid"><div class="mgfb" aria-live="polite"></div></div>
    <div class="mgcount"></div>${field}
    <div class="mgstart"><button class="btn primary big">${t('mgStart')}</button></div>
@@ -51,24 +52,26 @@ function mgPlay2(g,cb){
     if(S.phase!=='run'||S.mode!=='go')return;S.taps++;hud();
     $q('.mgprog i').style.width=Math.min(100,S.taps/g.goal*100)+'%'}
   function start(){
-    S.phase='run';S.res=[];S.taps=0;hud();$q('.mgstart').hidden=true;$q('.mgres').hidden=true;
+    S.res=[];S.taps=0;hud();$q('.mgstart').hidden=true;$q('.mgres').hidden=true;
+    mgLandscape(true);S.phase='count';mgCountdown(el,g.cd,S,begin)}
+  function begin(){
+    S.phase='run';
     if(media){try{media.currentTime=0;const p=media.play();if(p&&p.catch)p.catch(()=>{})}catch(e){}}
     if(isS)later(()=>level(0),400);
     else{
-      S.mode='wait';const pr=$q('.mgprog i');pr.style.width='0%';
-      [3,2,1].forEach((n,i)=>later(()=>{$q('.mgcount').textContent=n},i*1000));
-      later(()=>{$q('.mgcount').textContent='';S.mode='go';S.endAt=performance.now()+g.dur*1000;say(t('mgGo'),col.perfect);
-        const tick=()=>{if(S.phase!=='run')return;const left=S.endAt-performance.now();$q('.mgsc').textContent=`${S.taps} / ${g.goal} · ${Math.max(0,left/1000).toFixed(1)}s`;
-          if(left<=0){S.mode='end';S.res=[S.taps>=g.goal?'h':'m'];finish();return}S.raf=requestAnimationFrame(tick)};tick()},3000)}}
-  function close(){S.timers.forEach(clearTimeout);cancelAnimationFrame(S.raf);if(media)media.pause();document.removeEventListener('keydown',kd);el.remove();MGP=null}
+      S.mode='go';$q('.mgprog i').style.width='0%';S.endAt=performance.now()+g.dur*1000;say(t('mgGo'),col.perfect);
+      const tick=()=>{if(S.phase!=='run')return;const left=S.endAt-performance.now();$q('.mgsc').textContent=`${S.taps} / ${g.goal} · ${Math.max(0,left/1000).toFixed(1)}s`;
+        if(left<=0){S.mode='end';S.res=[S.taps>=g.goal?'h':'m'];finish();return}S.raf=requestAnimationFrame(tick)};tick()}}
+  function close(){clearTimeout(S.cdT);mgLandscape(false);window.removeEventListener('resize',rc);S.timers.forEach(clearTimeout);cancelAnimationFrame(S.raf);if(media)media.pause();document.removeEventListener('keydown',kd);el.remove();MGP=null}
   const kd=e=>{if(e.key==='Escape'){close();return}const k=e.key.toLowerCase();
     if(isS){if(e.repeat)return;const l=keys.indexOf(k);if(l>=0){e.preventDefault();pressS(l)}return}
     if(k===(key?key.toLowerCase():' ')){e.preventDefault();pressT()}};
   document.addEventListener('keydown',kd);
+  const rc=()=>mgRotCheck(el);window.addEventListener('resize',rc);rc();
   $q('.mgx').onclick=close;$q('.mgstart .big').onclick=start;
   if(isS)pads().forEach(b=>b.addEventListener('pointerdown',e=>{e.preventDefault();pressS(Number(b.dataset.l))}));
   else $q('.mgtap').addEventListener('pointerdown',e=>{e.preventDefault();pressT()});
-  el.addEventListener('click',e=>{const r=e.target.closest('[data-r]');if(!r)return;if(r.dataset.r==='close')close();else{S.timers.forEach(clearTimeout);S.phase='ready';start()}});
+  el.addEventListener('click',e=>{const r=e.target.closest('[data-r]');if(!r)return;if(r.dataset.r==='close')close();else{S.timers.forEach(clearTimeout);clearTimeout(S.cdT);S.phase='ready';start()}});
 }
 Object.assign(TX.th,{mgLevels:'จำนวนด่าน',mgPads:'จำนวนปุ่ม',mgStartLen:'ความยาวลำดับเริ่มต้น',mgStartLenH:'ด่านถัดไปยาวขึ้นทีละ 1',mgTmo:'เวลารอกดแต่ละครั้ง (ms)',mgTmoH:'เกินนี้ถือว่าพลาด',mgDur:'เวลา (วินาที)',mgGoal:'เป้าหมายจำนวนครั้ง',mgGoalH:'กดไม่ถึง = พลาด 1 ครั้ง',mgLevel:'ด่าน',mgYou:'ตาคุณ!',mgGo:'กด!',mgTaps:'ครั้ง'});
 Object.assign(TX.en,{mgLevels:'Levels',mgPads:'Pads',mgStartLen:'Starting sequence length',mgStartLenH:'Each level adds 1',mgTmo:'Time to press each step (ms)',mgTmoH:'Slower counts as a miss',mgDur:'Time (seconds)',mgGoal:'Target taps',mgGoalH:'Falling short = 1 miss',mgLevel:'Level',mgYou:'Your turn!',mgGo:'Tap!',mgTaps:'taps'});

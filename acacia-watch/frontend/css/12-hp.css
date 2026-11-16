@@ -1,0 +1,20 @@
+/* hp */
+.hpwrap{padding:16px;display:flex;flex-direction:column;gap:14px}
+.hpmax{display:flex;justify-content:space-between;align-items:flex-start;gap:12px}
+.hpmax b{font-family:var(--display);font-size:2.6rem;line-height:1;font-variant-numeric:tabular-nums}
+.hpbar{height:14px;border-radius:999px;background:color-mix(in srgb,var(--ink) 10%,var(--surface));display:flex;overflow:hidden;border:1px solid var(--line)}
+.hpbar i{display:block;height:100%}
+.hpbar .cur{background:var(--accent)}.hpbar .cur.low{background:var(--danger)}.hpbar .tmp{background:var(--temp)}
+.hpnums{display:flex;gap:12px;margin-top:4px;font-family:var(--mono);font-size:.85rem;color:var(--muted)}
+.tt{color:var(--temp);font-family:var(--mono);font-size:.85em}
+.hpgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;align-items:end}
+.hpbtns{display:flex;gap:8px;flex-wrap:wrap}
+.hpsub{display:flex;gap:12px 32px;flex-wrap:wrap;align-items:flex-end}
+.stepper{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.mono{font-family:var(--mono);font-size:.85rem}
+.dots{display:flex;gap:6px}
+.dot{width:20px;height:20px;border-radius:50%;border:2px solid var(--muted);background:transparent;padding:0;cursor:pointer}
+.dot.on.ok{background:var(--accent);border-color:var(--accent)}
+.dot.on.bad{background:var(--danger);border-color:var(--danger)}
+details.how summary{cursor:pointer;color:var(--muted);font-weight:500}
+details.how ul{margin:8px 0 0;padding-left:20px;display:flex;flex-direction:column;gap:4px;font-size:.9rem}

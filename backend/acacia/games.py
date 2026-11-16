@@ -2,9 +2,12 @@
 Every field is clamped here so a game can never carry odd values to the players' browsers."""
 import re
 
+from .images import URL_RE as IMG_URL
+
 from .numbers import clampi
 
 TYPES = ("timing", "lane", "simon", "tap")
+SHAPES = ("bar", "arrow", "circle", "diamond", "star", "img")
 HEX = re.compile(r"^#[0-9a-fA-F]{6}$")
 DMG = re.compile(r"^\d{1,3}(d\d{1,3})?([+-]\d{1,3})?$")
 ID_RE = re.compile(r"^[A-Za-z0-9_-]{3,40}$")
@@ -68,6 +71,9 @@ def clean_game(g):
         "fall": clampi(g.get("fall"), 400, 4000, 1500),
         "sub": clampi(g.get("sub"), 1, 4, 1),
         "pat": re.sub(r"[^0-9 ]", "", str(g.get("pat") or ""))[:80].strip(),
+        "ns": g.get("ns") if g.get("ns") in SHAPES else "bar",
+        "nimgs": [(str(u) if isinstance(u, str) and IMG_URL.match(u) else "") for u in (g.get("nimgs") if isinstance(g.get("nimgs"), list) else [])[:8]],
+        "cd": clampi(g.get("cd"), 0, 10, 3),
         "dur": clampi(g.get("dur"), 3, 60, 10),
         "goal": clampi(g.get("goal"), 1, 500, 30),
         "tmo": clampi(g.get("tmo"), 1000, 10000, 4000),

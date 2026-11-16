@@ -6,6 +6,7 @@ const IMG_SLOTS={
   cover:{key:'cover',minShort:480,minLong:800,out:1920,inBytes:5*MB,outBytes:450*KB,gifBytes:2*MB,gifSide:1280},
   bg:{key:'imgBg',minShort:480,minLong:800,out:1920,inBytes:5*MB,outBytes:450*KB,gifBytes:2*MB,gifSide:1280},
   panel:{key:'imgPanel',minShort:256,minLong:256,out:1024,inBytes:3*MB,outBytes:300*KB,gifBytes:1*MB,gifSide:800},
+  note:{key:'note',minShort:16,minLong:16,out:256,inBytes:1*MB,outBytes:100*KB,gifBytes:512*KB,gifSide:256},
   cond:{key:'icon',minShort:128,minLong:128,out:512,inBytes:2*MB,outBytes:150*KB,gifBytes:1*MB,gifSide:512},
   deco:{key:'imgDeco',minShort:64,minLong:64,out:512,inBytes:1*MB,outBytes:200*KB,gifBytes:1*MB,gifSide:512},
   pavatar:{key:'avatar',minShort:96,minLong:96,out:512,inBytes:2*MB,outBytes:200*KB,gifBytes:1*MB,gifSide:512},
@@ -13,7 +14,7 @@ const IMG_SLOTS={
   cpic:{key:'pic',minShort:96,minLong:96,out:512,inBytes:3*MB,outBytes:200*KB,gifBytes:1*MB,gifSide:512},
   pcard:{key:'cardimg',minShort:96,minLong:96,out:512,inBytes:2*MB,outBytes:250*KB,gifBytes:1536*KB,gifSide:512,square:true},
   pframe:{key:'frameimg',minShort:160,minLong:160,out:640,inBytes:2*MB,outBytes:250*KB,gifBytes:1536*KB,gifSide:640,square:true}};
-const SITE_SLOTS=['logo','cover','cond'];
+const SITE_SLOTS=['logo','cover','cond','note'];
 const IMG_MAXPX=16000,IMG_STILL_IN=40*MB,IMG_MINBYTES=1*KB,IMG_TYPES=['image/jpeg','image/png','image/webp','image/gif'];
 let imgMsg='',imgBusy=false;
 const fmtB=n=>n>=MB?(n/MB).toFixed(n%MB?1:0)+' MB':Math.round(n/KB)+' KB';

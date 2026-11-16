@@ -1,0 +1,8 @@
+/* ---------- pictures: page background, panel texture, corner picture ---------- */
+#fxbg,#fxdim{position:fixed;inset:0;z-index:-2;pointer-events:none;display:none;contain:strict}
+#fxbg{background-size:cover;background-position:center;background-repeat:no-repeat}
+#fxdim{z-index:-1;background:var(--bg)}
+#fxdeco{position:fixed;z-index:5;pointer-events:none;display:none;background-size:contain;background-position:center;background-repeat:no-repeat;max-width:28vw;max-height:28vw}
+.has-panelimg .panel{background-image:linear-gradient(color-mix(in srgb,var(--surface) var(--pdim,80%),transparent),color-mix(in srgb,var(--surface) var(--pdim,80%),transparent)),var(--panel-img);background-size:cover;background-position:center}
+.rules{margin:4px 0 0;font-size:.78rem;line-height:1.5;color:var(--muted)}
+.imgmsg{padding:0 16px 8px;font-size:.88rem}
