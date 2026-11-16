@@ -103,3 +103,4 @@
 .mgeh{position:relative}.mgeset{flex:0 0 auto!important}.mgeset[open]{display:block}
 .mgesetbox{position:absolute;left:8px;right:8px;top:100%;margin-top:2px;padding:12px;background:#1d1d21;border:1px solid #555;border-radius:10px;display:flex;flex-wrap:wrap;gap:10px 16px;align-items:center;z-index:20;box-shadow:0 8px 24px rgba(0,0,0,.6)}
 .mgeset summary{min-height:36px;display:flex;align-items:center;padding:0 6px}
+.mgegrid.holdtool{touch-action:none}.mgen.hold{box-shadow:0 0 0 2px rgba(255,255,255,.6)}.mgeh [aria-pressed=true]{outline:2px solid #facc15}

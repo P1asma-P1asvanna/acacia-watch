@@ -38,9 +38,10 @@ def clean_chart(v, lanes):
         if not isinstance(n, dict):
             continue
         t, l = clampi(n.get("t"), 0, 3600000, 0), clampi(n.get("l"), 0, lanes - 1, 0)
+        ln = clampi(n.get("len"), 0, 120000, 0)
         if (t, l) not in seen:
             seen.add((t, l))
-            out.append({"t": t, "l": l})
+            out.append({"t": t, "l": l, "len": ln if ln >= 40 else 0})
     return sorted(out, key=lambda x: (x["t"], x["l"]))
 
 

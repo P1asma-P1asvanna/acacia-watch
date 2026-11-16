@@ -3,13 +3,14 @@ let CE=null;
 function mgChartEdit(){
   const g=GD;if(!g||CE)return;
   const mi=mgMi(g),isV=mi&&mi.type.startsWith('video'),L=g.lanes,RW=56;let rowH=26;const laneW=Math.max(34,Math.min(64,Math.floor((Math.min(window.innerWidth,900)-RW-6)/L)));const keysL=mgKeys(g);
-  const E=CE={notes:(g.chart||[]).map(n=>({t:n.t,l:n.l})),snap:1,T:0,playing:false,undo:[],hit:true,pk:null,wave:true,metro:false,rate:1,raf:0,last:0,dur:60000,ac:null};
+  const E=CE={notes:(g.chart||[]).map(n=>({t:n.t,l:n.l,len:n.len||0})),tool:'tap',held:{},snap:1,T:0,playing:false,undo:[],hit:true,pk:null,wave:true,metro:false,rate:1,raf:0,last:0,dur:60000,ac:null};
   const hue=i=>Math.round(i*360/L+10);
   const el=document.createElement('div');el.className='mgedit';
   el.innerHTML=`<div class="mgeh">
     <button class="btn primary mgeplay" data-e="play" ${mi?'':'disabled'} aria-label="play">▶</button><b class="mget">0.00 s</b>
     <span class="mgez"><button class="btn small" data-e="zout" aria-label="zoom out">－</button><button class="btn small" data-e="zin" aria-label="zoom in">＋</button></span>
-    <label>${t('mgSnap')} <select data-e="snap">${[1,2,3,4,6,8,12,16,24,32].map(n=>`<option value="${n}">1/${n}</option>`).join('')}</select></label>
+    <button class="btn small" data-e="tool" aria-pressed="false">▮ ${t('mgToolHold')}</button>
+    <label>${t('mgSnap')} <select data-e="snap">${[1,2,3,4,6,8,12,16,24,32,64].map(n=>`<option value="${n}">1/${n}</option>`).join('')}</select></label>
     <button class="btn small" data-e="help" aria-label="help">?</button>
     <span class="mgecount muted"></span>
     ${isV?`<video class="mgevid" playsinline src="${esc(mi.url)}" preload="auto"></video>`:''}
@@ -37,17 +38,38 @@ function mgChartEdit(){
     for(let b=0;b<nb;b++){const ms=b*60000/g.bpm;lab+=`<span style="top:${ms/sm*rowH}px">${(ms/1000).toFixed(b%4?1:1)}s</span>`}
     $q('.mgeruler').innerHTML=lab;drawNotes();head();drawWave()}
   function drawNotes(){
-    $q('.mgenotes').innerHTML=E.notes.map(n=>`<div class="mgen" style="left:${n.l*laneW+3}px;top:${yOf(n.t)}px;width:${laneW-6}px;height:${Math.max(8,rowH-3)}px;background:hsl(${hue(n.l)} 70% 50%)"></div>`).join('');cnt()}
+    const sm=stepMs();
+    $q('.mgenotes').innerHTML=E.notes.map(n=>{const hh=Math.max(8,rowH-3),len=n.len>0?n.len/sm*rowH:0,c=hue(n.l);
+      return`<div class="mgen${len?' hold':''}" style="left:${n.l*laneW+3}px;top:${yOf(n.t)}px;width:${laneW-6}px;height:${hh+len}px;background:${len?`linear-gradient(to bottom,hsl(${c} 75% 58%) 0 ${hh}px,hsl(${c} 60% 36%) ${hh}px)`:`hsl(${c} 70% 50%)`}"></div>`}).join('');cnt()}
   function cnt(){$q('.mgecount').textContent=E.notes.length+' '+t('mgNotesUnit')}
   function head(){const y=yOf(Math.max(0,E.T));$q('.mgehead').style.top=y+'px';$q('.mget').textContent=(E.T/1000).toFixed(2)+' s';return y}
   function push(){E.undo.push(JSON.stringify(E.notes));if(E.undo.length>60)E.undo.shift()}
   function toggle(l,t){
-    const sm=stepMs(),i=E.notes.findIndex(n=>n.l===l&&Math.abs(n.t-t)<sm/2);push();
-    if(i>=0)E.notes.splice(i,1);else E.notes.push({t:Math.max(0,Math.round(t)),l});
+    const sm=stepMs(),i=E.notes.findIndex(n=>n.l===l&&t>=n.t-sm/2&&t<=n.t+(n.len||0)+sm/2);push();
+    if(i>=0)E.notes.splice(i,1);else E.notes.push({t:Math.max(0,Math.round(t)),l,len:0});
     drawNotes()}
-  function addAt(l){const sm=stepMs(),t=Math.round(Math.max(0,E.T)/sm)*sm;
-    if(E.notes.some(n=>n.l===l&&Math.abs(n.t-t)<sm/2))return;push();E.notes.push({t:Math.round(t),l});drawNotes()}
-  grid.addEventListener('click',e=>{const r=grid.getBoundingClientRect(),l=Math.floor((e.clientX-r.left)/laneW),row=Math.floor((e.clientY-r.top)/rowH);if(l<0||l>=L||row<0)return;toggle(l,row*stepMs())});
+  function addAt(l){const sm=stepMs(),t=Math.round(Math.round(Math.max(0,E.T)/sm)*sm);
+    if(E.notes.some(n=>n.l===l&&Math.abs(n.t-t)<sm/2))return null;push();const n={t,l,len:0};E.notes.push(n);drawNotes();return n}
+  function holdStart(l){const n=addAt(l);E.held[l]=n?{n}:null}
+  function holdEnd(l){const h=E.held[l];E.held[l]=null;if(!h||!E.playing)return;const sm=stepMs(),dur=E.T-h.n.t;
+    if(dur>=Math.max(150,sm*1.5)){h.n.len=Math.round(Math.max(sm,Math.round(dur/sm)*sm));drawNotes()}}
+  /* long notes: in the long-note tool, drag down over the cells (or hold a key while the clip plays) */
+  let dr=null;
+  const rowOf=e=>Math.floor((e.clientY-grid.getBoundingClientRect().top)/rowH);
+  function prev(){let p=$q('.mgen.prev');if(!p){p=document.createElement('div');p.className='mgen prev';$q('.mgenotes').appendChild(p)}
+    p.style.cssText=`left:${dr.l*laneW+3}px;top:${dr.row0*rowH}px;width:${laneW-6}px;height:${(dr.row1-dr.row0+1)*rowH-3}px;background:hsl(${hue(dr.l)} 70% 50%);opacity:.6`}
+  function dragEnd(){
+    if(!dr)return;const d=dr;dr=null;const p=$q('.mgen.prev');if(p)p.remove();const sm=stepMs();
+    if(d.row1>d.row0){push();const t=Math.round(d.row0*sm);E.notes=E.notes.filter(n=>!(n.l===d.l&&Math.abs(n.t-t)<sm/2));E.notes.push({t,l:d.l,len:Math.round((d.row1-d.row0)*sm)});drawNotes()}
+    else toggle(d.l,d.row0*sm)}
+  grid.addEventListener('pointerdown',e=>{if(E.tool!=='hold')return;const l=Math.floor((e.clientX-grid.getBoundingClientRect().left)/laneW),row=rowOf(e);if(l<0||l>=L||row<0)return;
+    dr={l,row0:row,row1:row};try{grid.setPointerCapture(e.pointerId)}catch(x){}e.preventDefault();prev()});
+  grid.addEventListener('pointermove',e=>{if(!dr)return;const row=Math.max(dr.row0,rowOf(e));if(row!==dr.row1){dr.row1=row;prev()}});
+  grid.addEventListener('pointerup',dragEnd);grid.addEventListener('pointercancel',()=>{dr=null;const p=$q('.mgen.prev');if(p)p.remove()});
+  const lanesBar=$q('.mgelanes');
+  lanesBar.addEventListener('pointerdown',e=>{const b=e.target.closest('[data-l]');if(b){e.preventDefault();try{b.setPointerCapture(e.pointerId)}catch(x){}holdStart(Number(b.dataset.l))}});
+  ['pointerup','pointercancel'].forEach(ev=>lanesBar.addEventListener(ev,e=>{const b=e.target.closest('[data-l]');if(b)holdEnd(Number(b.dataset.l))}));
+  grid.addEventListener('click',e=>{if(E.tool==='hold')return;const r=grid.getBoundingClientRect(),l=Math.floor((e.clientX-r.left)/laneW),row=Math.floor((e.clientY-r.top)/rowH);if(l<0||l>=L||row<0)return;toggle(l,row*stepMs())});
   $q('.mgeruler').addEventListener('click',e=>{const r=$q('.mgeruler').getBoundingClientRect();seek(Math.max(0,(e.clientY-r.top)/rowH*stepMs()))});
   /* ---- waveform of the clip's sound, drawn behind the lanes (only the visible window is painted) ---- */
   const wst=m=>{const e=$q('.mgewst');if(e)e.textContent=m||''};
@@ -95,13 +117,14 @@ function mgChartEdit(){
     media.currentTime=Math.max(0,(g.offset+E.T)/1000);media.playbackRate=E.rate;const p=media.play();if(p&&p.catch)p.catch(()=>{});E.playing=true;$q('[data-e=play]').textContent='⏸';E.raf=requestAnimationFrame(tick)}
   function pause(){E.playing=false;cancelAnimationFrame(E.raf);if(media)media.pause();$q('[data-e=play]').textContent='▶'}
   function apply(){g.chart=E.notes.slice().sort((a,b)=>a.t-b.t||a.l-b.l)}
-  function close(){pause();document.removeEventListener('keydown',kd);el.remove();CE=null;render()}
+  function close(){pause();document.removeEventListener('keydown',kd);document.removeEventListener('keyup',ku);el.remove();CE=null;render()}
   const kd=e=>{
     if(e.target.matches&&e.target.matches('input[type=number]'))return;
     if(e.key==='Escape'){close();return}
     if(e.key===' '){e.preventDefault();E.playing?pause():play();return}
     if((e.ctrlKey||e.metaKey)&&e.key==='z'){e.preventDefault();undo();return}
-    const n=Number(e.key);if(n>=1&&n<=L&&!e.repeat){e.preventDefault();addAt(n-1)}};
+    const n=Number(e.key);if(n>=1&&n<=L&&!e.repeat){e.preventDefault();holdStart(n-1)}};
+  const ku=e=>{const n=Number(e.key);if(n>=1&&n<=L)holdEnd(n-1)};document.addEventListener('keyup',ku);
   function undo(){const s=E.undo.pop();if(s){E.notes=JSON.parse(s);drawNotes()}}
   document.addEventListener('keydown',kd);
   el.addEventListener('click',e=>{const b=e.target.closest('[data-e]');if(!b||b.tagName==='SELECT'||b.tagName==='INPUT'||b.tagName==='SUMMARY')return;const a=b.dataset.e;
@@ -112,11 +135,11 @@ function mgChartEdit(){
     else if(a==='zin'){rowH=Math.min(80,Math.round(rowH*1.25));layout()}
     else if(a==='zout'){rowH=Math.max(8,Math.round(rowH*.8));layout()}
     else if(a==='help'){const h=$q('.mgehint');h.hidden=!h.hidden}
-    else if(a==='lane')addAt(Number(b.dataset.l));
+    else if(a==='tool'){E.tool=E.tool==='hold'?'tap':'hold';b.classList.toggle('primary',E.tool==='hold');b.setAttribute('aria-pressed',E.tool==='hold');grid.classList.toggle('holdtool',E.tool==='hold')}
     else if(a==='save'){apply();close()}
     else if(a==='test'){pause();apply();mgPlay(g)}});
   el.addEventListener('change',e=>{const x=e.target.closest('[data-e]');if(!x)return;const a=x.dataset.e;
-    if(a==='snap'){E.snap=Number(x.value);layout()}
+    if(a==='snap'){E.snap=Number(x.value);rowH=E.snap>=32?12:E.snap>=16?16:26;layout()}
     else if(a==='hit')E.hit=x.checked;
     else if(a==='metro')E.metro=x.checked;
     else if(a==='wave'){E.wave=x.checked;drawWave()}
@@ -127,5 +150,5 @@ function mgChartEdit(){
   if(media&&media.addEventListener){media.addEventListener('loadedmetadata',dur);media.addEventListener('ended',pause)}
   layout();loadWave();
 }
-Object.assign(TX.th,{mgSet:'ตั้งค่า',mgMetro:'เสียงเมโทรนอม (ทุกบีต)',mgWave:'คลื่นเสียงจากคลิป',mgRate:'ความเร็วเล่น',mgWaveLoad:'กำลังวิเคราะห์เสียงจากคลิป…',mgWaveFail:'อ่านเสียงจากไฟล์นี้ไม่ได้ (ยังวางโน้ตและเล่นได้ตามปกติ)',mgWaveBig:'ไฟล์ใหญ่เกินไปสำหรับแสดงคลื่นเสียง (เกิน 60 MB)',mgUndo:'ย้อน',mgNotesUnit:'โน้ต',mgSnap:'ความละเอียด',mgHitSnd:'เสียงตอนผ่านโน้ต',mgEditHint:'แตะช่องเพื่อวาง/ลบโน้ต · แตะปุ่มเลนด้านบนหรือกดเลข {k} เพื่อวางที่เส้นเล่น · Space เล่น/หยุด · คลิกไม้บรรทัดซ้ายเพื่อข้ามไป'});
-Object.assign(TX.en,{mgSet:'Settings',mgMetro:'Metronome (every beat)',mgWave:'Waveform of the clip',mgRate:'Playback speed',mgWaveLoad:'Reading the clip sound…',mgWaveFail:'Could not read the sound of this file (you can still place notes and play)',mgWaveBig:'File too large to draw a waveform (over 60 MB)',mgUndo:'Undo',mgNotesUnit:'notes',mgSnap:'Snap',mgHitSnd:'Hit sound',mgEditHint:'Tap a cell to place/remove a note · tap a lane button above or press {k} to place at the playhead · Space play/pause · click the left ruler to seek'});
+Object.assign(TX.th,{mgToolHold:'โน้ตยาว',mgSet:'ตั้งค่า',mgMetro:'เสียงเมโทรนอม (ทุกบีต)',mgWave:'คลื่นเสียงจากคลิป',mgRate:'ความเร็วเล่น',mgWaveLoad:'กำลังวิเคราะห์เสียงจากคลิป…',mgWaveFail:'อ่านเสียงจากไฟล์นี้ไม่ได้ (ยังวางโน้ตและเล่นได้ตามปกติ)',mgWaveBig:'ไฟล์ใหญ่เกินไปสำหรับแสดงคลื่นเสียง (เกิน 60 MB)',mgUndo:'ย้อน',mgNotesUnit:'โน้ต',mgSnap:'ความละเอียด',mgHitSnd:'เสียงตอนผ่านโน้ต',mgEditHint:'แตะช่องเพื่อวาง/ลบโน้ต · แตะปุ่มเลนด้านบนหรือกดเลข {k} เพื่อวางที่เส้นเล่น (ขณะเล่น กดค้างเพื่ออัดโน้ตยาว) · ปุ่ม ▮ โน้ตยาว = ลากลงบนช่องเพื่อสร้างโน้ตยาว · Space เล่น/หยุด · คลิกไม้บรรทัดซ้ายเพื่อข้ามไป'});
+Object.assign(TX.en,{mgToolHold:'Long notes',mgSet:'Settings',mgMetro:'Metronome (every beat)',mgWave:'Waveform of the clip',mgRate:'Playback speed',mgWaveLoad:'Reading the clip sound…',mgWaveFail:'Could not read the sound of this file (you can still place notes and play)',mgWaveBig:'File too large to draw a waveform (over 60 MB)',mgUndo:'Undo',mgNotesUnit:'notes',mgSnap:'Snap',mgHitSnd:'Hit sound',mgEditHint:'Tap a cell to place/remove a note · tap a lane button above or press {k} to place at the playhead (hold it while the clip plays to record a long note) · the ▮ Long notes tool = drag down over the cells to make a long note · Space play/pause · click the left ruler to seek'});

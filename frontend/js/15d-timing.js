@@ -129,10 +129,10 @@ function mgTimingPlan(g){
 function mgSegAt(g,t){let c=0;for(const x of g.segs||[]){const len=x.len*1000;if(t>=c&&t<c+len)return x;c+=len}return null}
 function mgLanePlan(g){
   const out=mgLanePlan0(g).sort((a,b)=>a.t-b.t||a.l-b.l),next={};
-  for(let i=out.length-1;i>=0;i--){const n=out[i];n.gap=next[n.l]!=null?next[n.l]-n.t:1e9;next[n.l]=n.t}
+  for(let i=out.length-1;i>=0;i--){const n=out[i];n.len=n.len||0;n.gap=next[n.l]!=null?next[n.l]-n.t-n.len:1e9;next[n.l]=n.t}
   return out}
 function mgLanePlan0(g){
-  if(g.chart&&g.chart.length){const out=[];for(const n of g.chart){const x=mgSegAt(g,n.t);if(x&&x.kind==='cut')continue;out.push({t:n.t,l:Math.min(n.l,g.lanes-1),dir:(x&&x.dir)||g.dir,fall:(x&&x.fall)||g.fall,cz:(x&&x.cz)||''})}return out}
+  if(g.chart&&g.chart.length){const out=[];for(const n of g.chart){const x=mgSegAt(g,n.t);if(x&&x.kind==='cut')continue;out.push({t:n.t,len:n.len||0,l:Math.min(n.l,g.lanes-1),dir:(x&&x.dir)||g.dir,fall:(x&&x.fall)||g.fall,cz:(x&&x.cz)||''})}return out}
   if(!(g.segs&&g.segs.length))return mgChart(g).map(n=>({...n,dir:g.dir,fall:g.fall,cz:''}));
   const L=g.lanes,pat=(g.pat||'').replace(/\s+/g,'').split('').map(Number),hasP=pat.some(x=>x>0),out=[];
   let seed=0;for(const ch of g.id)seed=(seed*31+ch.charCodeAt(0))>>>0;
@@ -167,7 +167,7 @@ function mgPlay(g,cb){
   document.body.appendChild(el);
   const media=isV?el.querySelector('video'):(it?new Audio(it.url):null);
   const $q=s=>el.querySelector(s);
-  const S={phase:'ready',res:[],t0:0,raf:0,H:0};
+  const S={phase:'ready',res:[],t0:0,raf:0,H:0,holds:new Set(),holdL:{}};
   MGP=S;
   let noteEls=[];
   if(isL){const lanes=el.querySelectorAll('.mglane');noteEls=notes.map(n=>{const d=document.createElement('div');d.className='mgnote';d.style.background=n.cz||col.zone;d.style.display='none';lanes[n.l].appendChild(d);return d})}
@@ -176,9 +176,9 @@ function mgPlay(g,cb){
   function say(txt,c){const f=$q('.mgfb');f.textContent=txt;f.style.color=c;f.classList.remove('pop');void f.offsetWidth;f.classList.add('pop')}
   function counts(){const r=S.res;return{p:r.filter(x=>x==='p').length,h:r.filter(x=>x==='h').length,m:r.filter(x=>x==='m').length}}
   function hud(){const c=counts();$q('.mgsc').textContent=`✦${c.p}  ✔${c.h}  ✘${c.m}  /${total}`}
-  function resolve(k,v){if(S.res[k]!=null)return;S.res[k]=v;hud();if(isL&&noteEls[k])noteEls[k].style.display='none';say(v==='p'?t('mgPerfect'):v==='h'?t('mgHit'):t('mgMiss'),v==='p'?col.perfect:v==='h'?col.zone:'#ef4444')}
+  function resolve(k,v){if(S.res[k]!=null)return;S.res[k]=v;hud();if(isL&&noteEls[k]&&!(v!=='m'&&notes[k].len>0))noteEls[k].style.display='none';say(v==='p'?t('mgPerfect'):v==='h'?t('mgHit'):t('mgMiss'),v==='p'?col.perfect:v==='h'?col.zone:'#ef4444')}
   function finish(){
-    if(S.phase==='done')return;S.phase='done';cancelAnimationFrame(S.raf);if(media)media.pause();
+    if(S.phase==='done')return;S.holds.clear();S.phase='done';cancelAnimationFrame(S.raf);if(media)media.pause();
     for(let k=0;k<total;k++)if(S.res[k]==null)S.res[k]='m';
     const c=counts(),dmg=mgRollDmg(g.dmg,c.m);S.out={perfect:c.p,hit:c.h,miss:c.m,dmg};if(cb)cb(S.out);
     const r=$q('.mgres');r.hidden=false;
@@ -190,13 +190,17 @@ function mgPlay(g,cb){
     if(isL){
       const NHM=Math.max(24,S.H*.08);let open=0;
       for(let i=0;i<notes.length;i++){
-        if(S.res[i]!=null)continue;open++;const n=notes[i],dt=n.t-T;
+        const n=notes[i],e=noteEls[i],ppm=(S.H-NHM)/n.fall;
+        if(S.holds.has(i)){/* being held: the head stays on the line while the tail runs out */
+          const rem=n.t+n.len-T;if(rem<=60){endHold(i,true);continue}
+          const h=NHM*.6+rem*ppm;e.style.height=h+'px';e.style.transform=`translateY(${n.dir==='up'?0:S.H-h}px)`;continue}
+        if(S.res[i]!=null)continue;open++;const dt=n.t-T;
         if(-dt>WIN){resolve(i,'m');continue}
-        const p=1-dt/n.fall,e=noteEls[i];
+        const p=1-dt/n.fall;
         if(p<0){e.style.display='none';continue}
-        const NH=Math.max(10,Math.min(NHM,n.gap/n.fall*(S.H-NHM)-4));e.style.display='block';e.style.height=NH+'px';
-        const y=n.dir==='up'?(1-p)*(S.H-NH):p*(S.H-NH);e.style.transform=`translateY(${y}px)`}
-      if(!open&&(!notes.length||T>notes[notes.length-1].t+300)){finish();return}
+        const NH=Math.max(10,Math.min(NHM,n.gap/n.fall*(S.H-NHM)-4)),tail=n.len>0?n.len*ppm:0;e.style.display='block';e.style.height=(NH+tail)+'px';
+        const y=n.dir==='up'?(1-p)*(S.H-NH):p*(S.H-NH)+NH-(NH+tail);e.style.transform=`translateY(${y}px)`}
+      if(!open&&!S.holds.size&&(!notes.length||T>lastEnd+300)){finish();return}
       const nx=notes.find((n,i)=>S.res[i]==null),dr=nx?nx.dir:g.dir;
       if(S.dir!==dr){S.dir=dr;const ln=$q('.mgline');ln.style.top=dr==='up'?'0':'auto';ln.style.bottom=dr==='up'?'auto':'0'}
     }else{
@@ -207,14 +211,23 @@ function mgPlay(g,cb){
       if(T<sw.t){bar.style.opacity='.35';mk.style.left='0%'}else{bar.style.opacity='1';mk.style.left=((T-sw.t)/sw.D*100)+'%'}
     }
     S.raf=requestAnimationFrame(loop)}
+  const lastEnd=notes.reduce((a,n)=>Math.max(a,n.t+n.len),0);
+  function endHold(i,done){
+    if(!S.holds.has(i))return;const n=notes[i];S.holds.delete(i);delete S.holdL[n.l];
+    const pad=el.querySelector('.mgpad[data-l="'+n.l+'"]');if(pad)pad.classList.remove('on');
+    if(noteEls[i])noteEls[i].style.display='none';
+    if(!done){S.res[i]='m';hud();say(t('mgMiss'),'#ef4444')}}
+  function release(l){
+    const i=S.holdL[l];if(i==null||S.phase!=='run')return;const n=notes[i],T=clock()-offs();
+    endHold(i,T>=n.t+n.len-120)}
   function press(l){
     if(S.phase!=='run')return;const T=clock()-offs();
     if(isL){
-      const pad=el.querySelector('.mgpad[data-l="'+l+'"]');if(pad){pad.classList.add('on');setTimeout(()=>pad.classList.remove('on'),110)}
+      const pad=el.querySelector('.mgpad[data-l="'+l+'"]');if(pad){pad.classList.add('on');setTimeout(()=>{if(S.holdL[l]==null)pad.classList.remove('on')},110)}
       /* one press = one note, and the earliest note still waiting in that lane goes first (close notes are never taken together) */
       for(let i=0;i<notes.length;i++){if(S.res[i]!=null||notes[i].l!==l)continue;const d=Math.abs(T-notes[i].t);
         if(notes[i].t-T>WIN)break;
-        if(d<=WIN){resolve(i,d<=PERF?'p':'h');break}}
+        if(d<=WIN){resolve(i,d<=PERF?'p':'h');if(notes[i].len>0){S.holds.add(i);S.holdL[l]=i;if(pad)pad.classList.add('on')}break}}
       return}
     const k=S.si,sw=sweeps[k];if(!sw||T<sw.t||S.res[k]!=null)return;
     const dist=Math.abs((T-sw.t)/sw.D*100-sw.zone),half=sw.zw/2;
@@ -224,14 +237,15 @@ function mgPlay(g,cb){
     if(isL)S.H=$q('.mglanes').clientHeight;
     if(media){try{media.currentTime=0;const p=media.play();if(p&&p.catch)p.catch(()=>{S.t0=performance.now()})}catch(e){}}
     S.raf=requestAnimationFrame(loop)}
-  function close(){cancelAnimationFrame(S.raf);if(media){media.pause()}document.removeEventListener('keydown',kd);window.removeEventListener('resize',rs);el.remove();MGP=null}
+  function close(){cancelAnimationFrame(S.raf);if(media){media.pause()}document.removeEventListener('keydown',kd);document.removeEventListener('keyup',ku);window.removeEventListener('resize',rs);el.remove();MGP=null}
   const kd=e=>{if(e.key==='Escape'){close();return}if(e.repeat)return;const k=e.key.toLowerCase();
     if(isL){const l=keys.indexOf(k);if(l>=0){e.preventDefault();press(l)}return}
     const kk=S.key||key;if(k===(kk?kk.toLowerCase():' ')){e.preventDefault();press()}};
   const rs=()=>{if(isL&&S.phase==='run')S.H=$q('.mglanes').clientHeight};
-  document.addEventListener('keydown',kd);window.addEventListener('resize',rs);
+  const ku=e=>{if(isL){const l=keys.indexOf(e.key.toLowerCase());if(l>=0)release(l)}};
+  document.addEventListener('keydown',kd);document.addEventListener('keyup',ku);window.addEventListener('resize',rs);
   $q('.mgx').onclick=close;
-  if(isL)el.querySelectorAll('.mgpad').forEach(b=>b.addEventListener('pointerdown',e=>{e.preventDefault();press(Number(b.dataset.l))}));
+  if(isL)el.querySelectorAll('.mgpad').forEach(b=>{b.addEventListener('pointerdown',e=>{e.preventDefault();try{b.setPointerCapture(e.pointerId)}catch(x){}press(Number(b.dataset.l))});['pointerup','pointercancel'].forEach(ev=>b.addEventListener(ev,()=>release(Number(b.dataset.l))))});
   else $q('.mgtap').addEventListener('pointerdown',e=>{e.preventDefault();press()});
   $q('.mgstart .big').onclick=start;
   el.addEventListener('click',e=>{
