@@ -52,10 +52,10 @@ def clean_chart(v, lanes):
 def clean_events(v, lanes):
     """Stage effects of a lane game: [{t, type, len ms, c: event column 0-2, l: lane (hide/show), v: strength 1-5}]."""
     seen, out = set(), []
-    for e in (v if isinstance(v, list) else [])[:300]:
+    for e in (v if isinstance(v, list) else [])[:800]:
         if not isinstance(e, dict) or e.get("type") not in EVENTS:
             continue
-        t, c = clampi(e.get("t"), 0, 3600000, 0), clampi(e.get("c"), 0, 2, 0)
+        t, c = clampi(e.get("t"), 0, 3600000, 0), clampi(e.get("c"), 0, 5, 0)
         if (t, c) in seen:
             continue
         seen.add((t, c))

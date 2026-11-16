@@ -2,7 +2,7 @@
 let CE=null;
 function mgChartEdit(){
   const g=GD;if(!g||CE)return;
-  const ty=g.type,isLane=ty==='lane',isSimon=ty==='simon',isTap=ty==='tap',multi=isLane||isSimon,mi=mgMi(g),isV=mi&&mi.type.startsWith('video'),L=multi?g.lanes:1,RW=56;let rowH=26;const EC=3,laneW=Math.max(34,Math.min(64,Math.floor((Math.min(window.innerWidth,900)-RW-6)/(L+EC))));const keysL=multi?mgKeys(g):[(g.key||'').trim()||'●'];const defLen=()=>isTap?Math.round(4*60000/g.bpm):0;
+  const ty=g.type,isLane=ty==='lane',isSimon=ty==='simon',isTap=ty==='tap',multi=isLane||isSimon,mi=mgMi(g),isV=mi&&mi.type.startsWith('video'),L=multi?g.lanes:1,RW=56;let rowH=26;const EC=6,laneW=Math.max(34,Math.min(64,Math.floor((Math.min(window.innerWidth,900)-RW-6)/(L+EC))));const keysL=multi?mgKeys(g):[(g.key||'').trim()||'●'];const defLen=()=>isTap?Math.round(4*60000/g.bpm):0;
   const E=CE={notes:(g.chart||[]).map(n=>({t:n.t,l:Math.min(n.l,L-1),len:(isLane||isTap)?(n.len||0):0})),events:(g.events||[]).map(e=>({...e})),ev:{type:'shake',l:0,v:3,beats:4},tool:isTap?'hold':'tap',held:{},snap:1,T:0,playing:false,undo:[],hit:true,pk:null,wave:true,metro:false,rate:1,raf:0,last:0,dur:60000,ac:null};
   const hue=i=>Math.round(i*360/L+10);
   const el=document.createElement('div');el.className='mgedit';
@@ -28,7 +28,7 @@ function mgChartEdit(){
      <label>${t('mgEvLen')} <input type="number" min="0.25" max="64" step="0.25" value="4" data-e="evbeats" style="width:58px"></label></span>
     <small class="mgewst muted"></small>
     <small class="muted mgehint" hidden>${t('mgEditHint').replace('{k}','1-'+L)}</small></div>
-   <div class="mgelanes" style="width:${RW+(L+EC)*laneW}px;padding-left:${RW}px">${keysL.map((k,i)=>`<button data-e="lane" data-l="${i}" style="width:${laneW}px;background:hsl(${hue(i)} 70% 42%)"><b>${i+1}</b><small>${esc(k.toUpperCase())}</small></button>`).join('')}${[0,1,2].map(c=>`<span class="mgeevh" style="width:${laneW}px"><b>✨</b><small>E${c+1}</small></span>`).join('')}</div>
+   <div class="mgelanes" style="width:${RW+(L+EC)*laneW}px;padding-left:${RW}px">${keysL.map((k,i)=>`<button data-e="lane" data-l="${i}" style="width:${laneW}px;background:hsl(${hue(i)} 70% 42%)"><b>${i+1}</b><small>${esc(k.toUpperCase())}</small></button>`).join('')}${[0,1,2,3,4,5].map(c=>`<span class="mgeevh" style="width:${laneW}px"><b>✨</b><small>E${c+1}</small></span>`).join('')}</div>
    <div class="mgescroll"><div class="mgeinner"><div class="mgeruler"></div><div class="mgegrid"><div class="mgeevbg"></div><canvas class="mgewave"></canvas><div class="mgenotes"></div><div class="mgehead"></div></div></div></div>
    <div class="mgefoot"><button class="btn small" data-e="undo">↶ ${t('mgUndo')}</button><button class="btn small" data-e="clear">${t('mgChartClear')}</button><button class="btn" data-e="test">▶ ${t('mgTest')}</button><button class="btn primary" data-e="save">${t('save')}</button><button class="btn" data-e="cancel">${t('mgCancel')}</button></div>`;
   document.body.appendChild(el);
