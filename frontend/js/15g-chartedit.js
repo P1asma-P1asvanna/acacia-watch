@@ -2,14 +2,14 @@
 let CE=null;
 function mgChartEdit(){
   const g=GD;if(!g||CE)return;
-  const ty=g.type,isLane=ty==='lane',isSimon=ty==='simon',isTap=ty==='tap',multi=isLane||isSimon,mi=mgMi(g),isV=mi&&mi.type.startsWith('video'),L=multi?g.lanes:1,RW=56;let rowH=26;const EC=6,laneW=Math.max(34,Math.min(64,Math.floor((Math.min(window.innerWidth,900)-RW-6)/(L+EC))));const keysL=multi?mgKeys(g):[(g.key||'').trim()||'●'];const defLen=()=>isTap?Math.round(4*60000/g.bpm):0;
-  const E=CE={notes:(g.chart||[]).map(n=>({t:n.t,l:Math.min(n.l,L-1),len:(isLane||isTap)?(n.len||0):0})),events:(g.events||[]).map(e=>({...e})),ev:{type:'shake',l:0,v:3,beats:4},tool:isTap?'hold':'tap',held:{},snap:1,T:0,playing:false,undo:[],hit:true,pk:null,wave:true,metro:false,rate:1,raf:0,last:0,dur:60000,ac:null};
+  const ty=g.type,isMix=ty==='mix',isLane=ty==='lane'||isMix,isTap=ty==='tap',holdOk=ty!=='timing',multi=isLane,mi=mgMi(g),isV=mi&&mi.type.startsWith('video'),L=multi?g.lanes:1,RW=56;let rowH=26;const EC=6,laneW=Math.max(34,Math.min(64,Math.floor((Math.min(window.innerWidth,900)-RW-6)/(L+EC))));const keysL=multi?mgKeys(g):[(g.key||'').trim()||'●'];const defLen=()=>ty==='tap'?Math.round(4*60000/g.bpm):0;
+  const E=CE={notes:(g.chart||[]).map(n=>({t:n.t,l:Math.min(n.l,L-1),len:holdOk?(n.len||0):0})),events:(g.events||[]).map(e=>({...e})),ev:{type:'shake',l:0,v:3,beats:4},tool:ty==='tap'?'hold':'tap',held:{},snap:1,T:0,playing:false,undo:[],hit:true,pk:null,wave:true,metro:false,rate:1,raf:0,last:0,dur:60000,ac:null};
   const hue=i=>Math.round(i*360/L+10);
   const el=document.createElement('div');el.className='mgedit';
   el.innerHTML=`<div class="mgeh">
     <button class="btn primary mgeplay" data-e="play" ${mi?'':'disabled'} aria-label="play">▶</button><b class="mget">0.00 s</b>
     <span class="mgez"><button class="btn small" data-e="zout" aria-label="zoom out">－</button><button class="btn small" data-e="zin" aria-label="zoom in">＋</button></span>
-    ${isLane?`<button class="btn small" data-e="tool" aria-pressed="false">▮ ${t('mgToolHold')}</button>`:''}
+    ${holdOk?`<button class="btn small" data-e="tool" aria-pressed="false">▮ ${t('mgToolHold')}</button>`:''}
     <label>${t('mgSnap')} <select data-e="snap">${[1,2,3,4,6,8,12,16,24,32,64].map(n=>`<option value="${n}">1/${n}</option>`).join('')}</select></label>
     <button class="btn small" data-e="help" aria-label="help">?</button>
     <span class="mgecount muted"></span>
@@ -22,8 +22,9 @@ function mgChartEdit(){
      <label class="mgechk"><input type="checkbox" data-e="wave" checked> ${t('mgWave')}</label>
      <label>${t('mgRate')} <select data-e="rate">${[.5,.75,1,1.25,1.5].map(r=>`<option value="${r}" ${r===1?'selected':''}>×${r}</option>`).join('')}</select></label></div></details>
     <span class="mgeev"><b>✨ ${t('mgEv')}</b>
-     <select data-e="evtype">${MG_EVT.map(([k,ic])=>`<option value="${k}">${ic} ${t('mgEv_'+k)}</option>`).join('')}</select>
+     <select data-e="evtype">${MG_EVT.filter(([k])=>isMix||!/^m_/.test(k)).map(([k,ic])=>`<option value="${k}">${ic} ${t('mgEv_'+k)}</option>`).join('')}</select>
      <label class="mgevl" hidden ${multi?'':'data-off="1"'}>${t('mgLaneNo')} <select data-e="evlane">${keysL.map((k,i)=>`<option value="${i}">${i+1} (${esc(k.toUpperCase())})</option>`).join('')}</select></label>
+     <label class="mgevt" hidden>${t('mgEvTr')} <select data-e="evtr">${[1,2,3,4,5].map(n=>`<option value="${n}">${t('mgTr'+n)}</option>`).join('')}</select></label>
      <label class="mgevs">${t('mgEvStr')} <input type="number" min="1" max="5" value="3" data-e="evv" style="width:48px"></label>
      <label>${t('mgEvLen')} <input type="number" min="0.25" max="64" step="0.25" value="4" data-e="evbeats" style="width:58px"></label></span>
     <small class="mgewst muted"></small>
@@ -43,9 +44,15 @@ function mgChartEdit(){
     const nb=Math.ceil(E.dur/(60000/g.bpm));let lab='';
     for(let b=0;b<nb;b++){const ms=b*60000/g.bpm;lab+=`<span style="top:${ms/sm*rowH}px">${(ms/1000).toFixed(b%4?1:1)}s</span>`}
     $q('.mgeruler').innerHTML=lab;drawNotes();head();drawWave()}
+  function bands(){
+    if(!isMix)return'';const sm=stepMs(),m=E.events.filter(e=>/^m_/.test(e.type)).sort((a,b)=>a.t-b.t),H=Math.ceil(E.dur/sm)*rowH;
+    const cols={m_lane:'#3b82f6',m_timing:'#ec4899',m_tap:'#f59e0b'};let out='',cur='m_lane',st=0;
+    const seg=(a,b,k)=>{if(b>a)out+=`<div class="mgband" style="top:${yOf(a)}px;height:${yOf(b)-yOf(a)}px;background:${cols[k]}"><b>${MG_EVT_OF[k][0]} ${esc(t('mgEv_'+k))}</b></div>`};
+    for(const e of m){seg(st,e.t,cur);cur=e.type;st=e.t}
+    seg(st,H/rowH*sm,cur);return out}
   function drawNotes(){
     const sm=stepMs();
-    $q('.mgenotes').innerHTML=E.notes.map(n=>{const hh=Math.max(8,rowH-3),len=n.len>0?n.len/sm*rowH:0,c=hue(n.l);
+    $q('.mgenotes').innerHTML=bands()+E.notes.map(n=>{const hh=Math.max(8,rowH-3),len=n.len>0?n.len/sm*rowH:0,c=hue(n.l);
       return`<div class="mgen${len?' hold':''}" style="left:${n.l*laneW+3}px;top:${yOf(n.t)}px;width:${laneW-6}px;height:${hh+len}px;background:${len?`linear-gradient(to bottom,hsl(${c} 75% 58%) 0 ${hh}px,hsl(${c} 60% 36%) ${hh}px)`:`hsl(${c} 70% 50%)`}"></div>`}).join('')+
       E.events.map(e=>{const d=MG_EVT_OF[e.type],h=Math.max(rowH-3,e.len/sm*rowH);
         return`<div class="mgen mgee" title="${esc(t('mgEv_'+e.type))}" style="left:${(L+e.c)*laneW+3}px;top:${yOf(e.t)}px;width:${laneW-6}px;height:${h}px;background:${d[1]}"><span>${d[0]}${multi&&(e.type==='hide'||e.type==='show')?`<small>${e.l+1}</small>`:''}</span></div>`}).join('');cnt()}
@@ -59,7 +66,7 @@ function mgChartEdit(){
   function addAt(l){const sm=stepMs(),t=Math.round(Math.round(Math.max(0,E.T)/sm)*sm);
     if(E.notes.some(n=>n.l===l&&Math.abs(n.t-t)<sm/2))return null;push();const n={t,l,len:defLen()};E.notes.push(n);drawNotes();return n}
   function holdStart(l){const n=addAt(l);E.held[l]=n?{n}:null}
-  function holdEnd(l){const h=E.held[l];E.held[l]=null;if(!h||!E.playing||!(isLane||isTap))return;const sm=stepMs(),dur=E.T-h.n.t;
+  function holdEnd(l){const h=E.held[l];E.held[l]=null;if(!h||!E.playing||!holdOk)return;const sm=stepMs(),dur=E.T-h.n.t;
     if(dur>=Math.max(150,sm*1.5)){h.n.len=Math.round(Math.max(sm,Math.round(dur/sm)*sm));drawNotes()}}
   /* long notes: in the long-note tool, drag down over the cells (or hold a key while the clip plays) */
   let dr=null;
@@ -158,9 +165,10 @@ function mgChartEdit(){
     else if(a==='metro')E.metro=x.checked;
     else if(a==='wave'){E.wave=x.checked;drawWave()}
     else if(a==='rate'){E.rate=Number(x.value);if(media)media.playbackRate=E.rate}
-    else if(a==='evtype'){E.ev.type=x.value;const k=x.value;$q('.mgevl').hidden=!(multi&&(k==='hide'||k==='show'));$q('.mgevs').hidden=!['shake','pulse','sway','flash','spin','tilt','fog'].includes(k)}
+    else if(a==='evtype'){E.ev.type=x.value;const k=x.value;$q('.mgevl').hidden=!(multi&&(k==='hide'||k==='show'));const mk=/^m_/.test(k);$q('.mgevt').hidden=!mk;$q('.mgevs').hidden=mk||!['shake','pulse','sway','flash','spin','tilt','fog'].includes(k);E.ev.v=mk?Number($q('[data-e=evtr]').value):Math.max(1,Math.min(5,Math.round(Number($q('[data-e=evv]').value)||3)))}
     else if(a==='evlane')E.ev.l=Number(x.value);
     else if(a==='evv')E.ev.v=Math.max(1,Math.min(5,Math.round(Number(x.value)||3)));
+    else if(a==='evtr'){E.ev.v=Number(x.value)}
     else if(a==='evbeats')E.ev.beats=Math.max(.25,Math.min(64,Number(x.value)||4));
     else if(a==='bpm'){g.bpm=Math.max(30,Math.min(300,Number(x.value)||100));layout()}
     else if(a==='off'){g.offset=Math.round(Number(x.value)||0);layout()}});
@@ -168,7 +176,7 @@ function mgChartEdit(){
   if(media&&media.addEventListener){media.addEventListener('loadedmetadata',dur);media.addEventListener('ended',pause)}
   layout();loadWave();
 }
-const MG_EVT=[['shake','〰'],['hide','◌'],['show','◉'],['flip','⇅'],['pulse','♥'],['sway','⇋'],['flash','✦'],['spin','↻'],['tilt','⟋'],['fog','☁']],
- MG_EVT_OF={shake:['〰','#f97316'],hide:['◌','#64748b'],show:['◉','#22c55e'],flip:['⇅','#06b6d4'],pulse:['♥','#ec4899'],sway:['⇋','#a855f7'],flash:['✦','#eab308'],spin:['↻','#14b8a6'],tilt:['⟋','#f43f5e'],fog:['☁','#475569']};
-Object.assign(TX.th,{mgEv:'Event',mgEv_shake:'โน้ตสั่น',mgEv_hide:'เลนค่อยๆ หายไป',mgEv_show:'เลนค่อยๆ กลับมา',mgEv_flip:'โน้ตกลับทิศ (ตกขึ้นไป)',mgEv_pulse:'เลนเต้นตามจังหวะ',mgEv_sway:'เลนโยกตามจังหวะ',mgEv_flash:'แฟลชตามจังหวะ',mgEv_spin:'หมุนรอบตัว (แรง 4-5 = ย้อนทิศ)',mgEv_tilt:'เอียงโยกตามจังหวะ',mgEv_fog:'หมอกบังด้านบน',mgLaneNo:'เลนที่',mgEvStr:'แรง (1-5)',mgEvLen:'นาน (บีต)',mgEvUnit:'event',mgToolHold:'โน้ตยาว',mgSet:'ตั้งค่า',mgMetro:'เสียงเมโทรนอม (ทุกบีต)',mgWave:'คลื่นเสียงจากคลิป',mgRate:'ความเร็วเล่น',mgWaveLoad:'กำลังวิเคราะห์เสียงจากคลิป…',mgWaveFail:'อ่านเสียงจากไฟล์นี้ไม่ได้ (ยังวางโน้ตและเล่นได้ตามปกติ)',mgWaveBig:'ไฟล์ใหญ่เกินไปสำหรับแสดงคลื่นเสียง (เกิน 60 MB)',mgUndo:'ย้อน',mgNotesUnit:'โน้ต',mgSnap:'ความละเอียด',mgHitSnd:'เสียงตอนผ่านโน้ต',mgEditHint:'แตะช่องเพื่อวาง/ลบโน้ต · แตะปุ่มเลนด้านบนหรือกดเลข {k} เพื่อวางที่เส้นเล่น (ขณะเล่น กดค้างเพื่ออัดโน้ตยาว) · ปุ่ม ▮ โน้ตยาว = ลากลงบนช่องเพื่อสร้างโน้ตยาว · Space เล่น/หยุด · คลิกไม้บรรทัดซ้ายเพื่อข้ามไป'});
-Object.assign(TX.en,{mgEv:'Event',mgEv_shake:'Notes shake',mgEv_hide:'Lane fades away',mgEv_show:'Lane fades back',mgEv_flip:'Flip direction (notes rise)',mgEv_pulse:'Lanes pulse to the beat',mgEv_sway:'Lanes sway to the beat',mgEv_flash:'Flash to the beat',mgEv_spin:'Spin around (strength 4-5 = reverse)',mgEv_tilt:'Tilt to the beat',mgEv_fog:'Fog hides the top',mgLaneNo:'Lane',mgEvStr:'Strength (1-5)',mgEvLen:'Length (beats)',mgEvUnit:'events',mgToolHold:'Long notes',mgSet:'Settings',mgMetro:'Metronome (every beat)',mgWave:'Waveform of the clip',mgRate:'Playback speed',mgWaveLoad:'Reading the clip sound…',mgWaveFail:'Could not read the sound of this file (you can still place notes and play)',mgWaveBig:'File too large to draw a waveform (over 60 MB)',mgUndo:'Undo',mgNotesUnit:'notes',mgSnap:'Snap',mgHitSnd:'Hit sound',mgEditHint:'Tap a cell to place/remove a note · tap a lane button above or press {k} to place at the playhead (hold it while the clip plays to record a long note) · the ▮ Long notes tool = drag down over the cells to make a long note · Space play/pause · click the left ruler to seek'});
+const MG_EVT=[['m_lane','🎹'],['m_timing','💓'],['m_tap','👆'],['shake','〰'],['hide','◌'],['show','◉'],['flip','⇅'],['pulse','♥'],['sway','⇋'],['flash','✦'],['spin','↻'],['tilt','⟋'],['fog','☁']],
+ MG_EVT_OF={m_lane:['🎹','#3b82f6'],m_timing:['💓','#ec4899'],m_tap:['👆','#f59e0b'],shake:['〰','#f97316'],hide:['◌','#64748b'],show:['◉','#22c55e'],flip:['⇅','#06b6d4'],pulse:['♥','#ec4899'],sway:['⇋','#a855f7'],flash:['✦','#eab308'],spin:['↻','#14b8a6'],tilt:['⟋','#f43f5e'],fog:['☁','#475569']};
+Object.assign(TX.th,{mgEvTr:'ท่าเปลี่ยนฉาก',mgTr1:'ค่อยๆ จาง',mgTr2:'เลื่อนออกด้านข้าง',mgTr3:'ซูมเข้า',mgTr4:'ตกลงมา',mgTr5:'พลิกหน้า',mgEv_m_lane:'เปลี่ยนเป็น เลนโน้ต',mgEv_m_timing:'เปลี่ยนเป็น Rhythm Doctor',mgEv_m_tap:'เปลี่ยนเป็น กดรัว',mgEv:'Event',mgEv_shake:'โน้ตสั่น',mgEv_hide:'เลนค่อยๆ หายไป',mgEv_show:'เลนค่อยๆ กลับมา',mgEv_flip:'โน้ตกลับทิศ (ตกขึ้นไป)',mgEv_pulse:'เลนเต้นตามจังหวะ',mgEv_sway:'เลนโยกตามจังหวะ',mgEv_flash:'แฟลชตามจังหวะ',mgEv_spin:'หมุนรอบตัว (แรง 4-5 = ย้อนทิศ)',mgEv_tilt:'เอียงโยกตามจังหวะ',mgEv_fog:'หมอกบังด้านบน',mgLaneNo:'เลนที่',mgEvStr:'แรง (1-5)',mgEvLen:'นาน (บีต)',mgEvUnit:'event',mgToolHold:'โน้ตยาว',mgSet:'ตั้งค่า',mgMetro:'เสียงเมโทรนอม (ทุกบีต)',mgWave:'คลื่นเสียงจากคลิป',mgRate:'ความเร็วเล่น',mgWaveLoad:'กำลังวิเคราะห์เสียงจากคลิป…',mgWaveFail:'อ่านเสียงจากไฟล์นี้ไม่ได้ (ยังวางโน้ตและเล่นได้ตามปกติ)',mgWaveBig:'ไฟล์ใหญ่เกินไปสำหรับแสดงคลื่นเสียง (เกิน 60 MB)',mgUndo:'ย้อน',mgNotesUnit:'โน้ต',mgSnap:'ความละเอียด',mgHitSnd:'เสียงตอนผ่านโน้ต',mgEditHint:'แตะช่องเพื่อวาง/ลบโน้ต · แตะปุ่มเลนด้านบนหรือกดเลข {k} เพื่อวางที่เส้นเล่น (ขณะเล่น กดค้างเพื่ออัดโน้ตยาว) · ปุ่ม ▮ โน้ตยาว = ลากลงบนช่องเพื่อสร้างโน้ตยาว · Space เล่น/หยุด · คลิกไม้บรรทัดซ้ายเพื่อข้ามไป'});
+Object.assign(TX.en,{mgEvTr:'Transition',mgTr1:'Fade',mgTr2:'Slide off',mgTr3:'Zoom',mgTr4:'Drop',mgTr5:'Flip',mgEv_m_lane:'Switch to note lanes',mgEv_m_timing:'Switch to Rhythm Doctor',mgEv_m_tap:'Switch to rapid tap',mgEv:'Event',mgEv_shake:'Notes shake',mgEv_hide:'Lane fades away',mgEv_show:'Lane fades back',mgEv_flip:'Flip direction (notes rise)',mgEv_pulse:'Lanes pulse to the beat',mgEv_sway:'Lanes sway to the beat',mgEv_flash:'Flash to the beat',mgEv_spin:'Spin around (strength 4-5 = reverse)',mgEv_tilt:'Tilt to the beat',mgEv_fog:'Fog hides the top',mgLaneNo:'Lane',mgEvStr:'Strength (1-5)',mgEvLen:'Length (beats)',mgEvUnit:'events',mgToolHold:'Long notes',mgSet:'Settings',mgMetro:'Metronome (every beat)',mgWave:'Waveform of the clip',mgRate:'Playback speed',mgWaveLoad:'Reading the clip sound…',mgWaveFail:'Could not read the sound of this file (you can still place notes and play)',mgWaveBig:'File too large to draw a waveform (over 60 MB)',mgUndo:'Undo',mgNotesUnit:'notes',mgSnap:'Snap',mgHitSnd:'Hit sound',mgEditHint:'Tap a cell to place/remove a note · tap a lane button above or press {k} to place at the playhead (hold it while the clip plays to record a long note) · the ▮ Long notes tool = drag down over the cells to make a long note · Space play/pause · click the left ruler to seek'});
