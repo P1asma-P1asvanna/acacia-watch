@@ -47,7 +47,8 @@ document.addEventListener('click',async e=>{
     else if(a==='applyall'){(MGS[rid]?MGS[rid].res:[]).forEach(r=>mgApplyDmg(rid,r.pc))}
     else if(a==='play'){
       const s=(prooms.find(r=>r.id===rid)||{}).mg;if(!s||s.status!=='open')return;
-      mgPlay(s.game,out=>{api('POST','api/mg',{room:rid,op:'submit',run:s.run,pc,perfect:out.perfect,hit:out.hit,miss:out.miss}).then(r=>{mgSet(rid,r.mg);render()}).catch(()=>{})});return}
+      let busy=false;const live=snap=>{if(busy&&snap.ph==='run')return;busy=true;fetch('api/mgfeed',{method:'POST',credentials:'same-origin',headers:{'Content-Type':'application/json','X-Requested-With':'dd'},body:JSON.stringify(Object.assign({room:rid,run:s.run,pc},snap))}).catch(()=>{}).finally(()=>{busy=false})};
+      mgPlay(s.game,out=>{api('POST','api/mg',{room:rid,op:'submit',run:s.run,pc,perfect:out.perfect,hit:out.hit,miss:out.miss}).then(r=>{mgSet(rid,r.mg);render()}).catch(()=>{})},{live});return}
   }catch(err){mgMsg=t('mgFail')}
   render()});
 Object.assign(TX.th,{mgOpenRoom:'เปิดเกมในห้อง',mgCloseRoom:'ปิดเกม',mgSkip:'ข้ามคนถัดไป',mgApply:'หักเลือด',mgApplyAll:'หักเลือดทั้งหมด',mgApplied:'หักแล้ว',mgWaiting:'รอผู้เล่น',mgNoGames:'ยังไม่มีเกม สร้างได้ที่เมนู Minigame',mgSkipped:'ข้าม',mgNotYet:'ยังไม่ถึงตา / รอ GM',mgPlayAs:'เล่นเป็น'});

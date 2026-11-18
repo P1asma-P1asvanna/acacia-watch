@@ -7,7 +7,7 @@ from .images import URL_RE as IMG_URL
 from .numbers import clampi
 
 TYPES = ("timing", "lane", "tap", "mix")  # "simon" was removed: old Simon games become note lanes
-EVENTS = ("shake", "hide", "show", "flip", "pulse", "sway", "flash", "spin", "tilt", "fog", "m_lane", "m_timing", "m_tap")  # m_*: a mix game changes how it is played
+EVENTS = ("shake", "hide", "show", "flip", "pulse", "sway", "flash", "spin", "tilt", "fog", "m_lane", "m_timing", "m_tap", "r_wave", "r_ghost", "r_ease", "r_hop")  # m_*: a mix game changes how it is played
 SHAPES = ("bar", "arrow", "circle", "diamond", "star", "img")
 HEX = re.compile(r"^#[0-9a-fA-F]{6}$")
 DMG = re.compile(r"^\d{1,3}(d\d{1,3})?([+-]\d{1,3})?$")
@@ -92,6 +92,8 @@ def clean_game(g):
         "nimgs": [(str(u) if isinstance(u, str) and IMG_URL.match(u) else "") for u in (g.get("nimgs") if isinstance(g.get("nimgs"), list) else [])[:10]],
         "cd": clampi(g.get("cd"), 0, 10, 3),
         "rn": clampi(g.get("rn"), 2, 8, 4),
+        "rows": clampi(g.get("rows"), 1, 3, 1),
+        "ps": clampi(g.get("ps"), 0, 4, 0),
         "brk": clampi(g.get("brk"), 0, 120, 8),
         "dur": clampi(g.get("dur"), 3, 60, 10),
         "goal": clampi(g.get("goal"), 1, 500, 30),

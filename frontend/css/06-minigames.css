@@ -135,7 +135,7 @@
 .mgflash{position:absolute;inset:0;background:#fff;opacity:0;pointer-events:none;border-radius:8px;z-index:3}
 .mgeev [hidden]{display:none!important}
 
-.mgrd,.mgprog{opacity:var(--fo,1)}.mgprog.idle{opacity:calc(.55*var(--fo,1))}
+.mgrds,.mgprog{opacity:var(--fo,1)}.mgprog.idle{opacity:calc(.55*var(--fo,1))}
 .mgfog{position:absolute;inset:0;pointer-events:none;opacity:0;z-index:3;background:linear-gradient(to bottom,#000 0,rgba(0,0,0,.9) var(--fp,50%),rgba(0,0,0,0) calc(var(--fp,50%) + 28%));border-radius:inherit}
 .mgflash{border-radius:inherit}
 
@@ -161,7 +161,11 @@
 .mgbrk.on{opacity:.85}
 .mgfb{transition:opacity .45s}.mgfb.out{opacity:0}
 /* Rhythm Doctor line */
-.mgrd{position:relative;width:min(94vw,760px);height:120px;display:flex;align-items:center;gap:0;margin:auto 0}
+.mgrds{position:relative;width:min(94vw,760px);margin:auto 0;display:flex;flex-direction:column;gap:6px}
+.mgrd{position:relative;width:100%;height:120px;display:flex;align-items:center;gap:0}
+.mgrds.r2 .mgrd{height:92px}.mgrds.r3 .mgrd{height:74px}
+.mgrds.r2 .mgrdc,.mgrds.r2 .mgrdh{width:64px;height:64px;font-size:2.1rem}.mgrds.r3 .mgrdc,.mgrds.r3 .mgrdh{width:52px;height:52px;font-size:1.7rem}
+.mgrds.rev .mgrd{flex-direction:row-reverse}.mgrds.rev .mgrdline>i{transform:scaleX(-1)}
 .mgrdc,.mgrdh{flex:none;width:84px;height:84px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:2.8rem;background:rgba(255,255,255,.1);box-shadow:0 0 0 3px rgba(255,255,255,.35);overflow:hidden;z-index:2}
 .mgrdc img,.mgrdh img{width:100%;height:100%;object-fit:cover}
 .mgrdh{color:var(--rc);transform-origin:center}
@@ -181,3 +185,50 @@
 @media(max-height:480px){.mgrd{height:90px}.mgrdc,.mgrdh{width:62px;height:62px;font-size:2rem}.mgprog{height:54px}.mgprogn{font-size:1.6rem}}
 
 .mgband{position:absolute;left:0;right:0;opacity:.13;pointer-events:none}.mgband b{position:absolute;left:4px;top:2px;font-size:.7rem;color:#fff;white-space:nowrap}
+
+/* Rhythm Doctor extras */
+.mgrdc{position:relative}.mgrdc.bop{animation:rdBop .32s ease-out}
+@keyframes rdBop{30%{transform:translateY(-8px) scale(1.06)}}
+.mgrdh{position:relative;overflow:visible}.mgrdh svg{width:62%;height:62%}.mgrdh img{border-radius:50%}
+.mgrdx{position:absolute;inset:0;pointer-events:none}
+.mgring{position:absolute;inset:0;border-radius:50%;border:3px solid var(--rc);animation:rdRing .6s ease-out forwards}
+.mgring.p{border-color:#fff;box-shadow:0 0 18px var(--pc)}
+@keyframes rdRing{from{transform:scale(1);opacity:.9}to{transform:scale(2.2);opacity:0}}
+.mgspark{position:absolute;left:50%;top:50%;width:7px;height:7px;margin:-3px;border-radius:50%;background:var(--pc);box-shadow:0 0 8px var(--pc);animation:rdSpark .6s ease-out forwards}
+@keyframes rdSpark{to{transform:rotate(var(--a)) translateX(var(--d));opacity:0}}
+.mgrdh.crack{animation:rdCrack .5s ease-out;filter:grayscale(.9) brightness(.7)}
+@keyframes rdCrack{20%{transform:translateX(-7px) rotate(-6deg)}40%{transform:translateX(7px) rotate(6deg)}60%{transform:translateX(-4px)}}
+.mgrdh.crack{transition:filter 1s}
+.mgrdw{display:none;position:absolute;left:0;top:50%;width:100%;height:40px;margin-top:-20px;overflow:visible;color:var(--rc);opacity:.85}
+.mgcombo{position:absolute;right:0;top:-34px;font-size:1.7rem;font-weight:800;color:#fff;text-shadow:0 0 calc(6px + 16px*var(--k,0)) var(--pc),0 2px 6px #000;opacity:0;pointer-events:none}
+.mgcombo.on{opacity:1}.mgcombo.pop{animation:rdCombo .3s ease-out}
+@keyframes rdCombo{from{transform:scale(1.7)}}
+@media(max-height:480px){.mgrds.r2 .mgrd{height:70px}.mgrds.r3 .mgrd{height:56px}.mgrds.r2 .mgrdc,.mgrds.r2 .mgrdh{width:50px;height:50px}.mgrds.r3 .mgrdc,.mgrds.r3 .mgrdh{width:42px;height:42px}}
+
+/* red screen edge on a miss */
+.mgvig{position:absolute;inset:0;pointer-events:none;z-index:5;opacity:0;background:radial-gradient(ellipse at center,rgba(255,0,0,0) 45%,rgba(255,30,30,.55) 85%,rgba(255,0,0,.85) 100%);box-shadow:inset 0 0 70px 14px rgba(255,0,0,.55)}
+.mgvig.on{animation:mgVig .7s ease-out}
+@keyframes mgVig{0%{opacity:1}100%{opacity:0}}
+
+/* ---- little live windows: watching somebody else play ---- */
+#mgDock{position:fixed;right:8px;bottom:8px;z-index:60;display:flex;flex-wrap:wrap;justify-content:flex-end;gap:8px;max-width:calc(100vw - 16px);pointer-events:none}
+#mgDock:empty{display:none}
+.mgplay.mini{position:relative;inset:auto;z-index:auto;width:min(46vw,250px);height:150px;padding:0;gap:0;border-radius:12px;box-shadow:0 4px 18px rgba(0,0,0,.55),0 0 0 2px rgba(255,255,255,.28);pointer-events:auto;font-size:12px;animation:mgMiniIn .35s ease-out}
+@keyframes mgMiniIn{from{transform:translateY(20px) scale(.9);opacity:0}}
+.mgplay.mini .mgpads,.mgplay.mini .mgtap,.mgplay.mini .mgstart,.mgplay.mini .mgrot,.mgplay.mini .mgcal{display:none!important}
+.mgplay.mini .mghud{top:4px;left:8px;font-size:.78rem;gap:0;z-index:6;max-width:calc(100% - 40px);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.mgplay.mini .mgx{top:3px;right:3px;width:26px;height:26px;font-size:.8rem;z-index:6}
+.mgplay.mini .mglanes{width:calc(100% - 16px);margin:26px 0 8px}
+.mgplay.mini .mgfb{font-size:1.15rem}
+.mgplay.mini .mgcount{font-size:2.2rem}
+.mgplay.mini .mgbrk{font-size:.95rem;top:30%}
+.mgplay.mini .mgv{gap:0}
+.mgplay.mini .mgrds{width:calc(100% - 14px);margin:24px 0 0}
+.mgplay.mini .mgrd,.mgplay.mini .mgrds.r2 .mgrd,.mgplay.mini .mgrds.r3 .mgrd{height:46px}
+.mgplay.mini .mgrdc,.mgplay.mini .mgrdh,.mgplay.mini .mgrds.r2 .mgrdc,.mgplay.mini .mgrds.r2 .mgrdh,.mgplay.mini .mgrds.r3 .mgrdc,.mgplay.mini .mgrds.r3 .mgrdh{width:34px;height:34px;font-size:1.2rem}
+.mgplay.mini .mgp{width:15px;height:22px;margin:-11px 0 0 -7px}.mgplay.mini .mgp.hit{width:20px;height:28px;margin:-14px 0 0 -10px}
+.mgplay.mini .mgcombo{font-size:1rem;top:-20px}
+.mgplay.mini .mgprog{height:36px;width:calc(100% - 16px);margin:auto 0}.mgplay.mini .mgprogn{font-size:1.2rem}
+.mgplay.mini .mgres{font-size:.9rem;background:rgba(0,0,0,.7);position:absolute;inset:0;display:flex;align-items:center;justify-content:center;z-index:7}
+.mgplay.mini .mgres p{margin:0}
+.mgplay.mini .mgwho{position:absolute;bottom:3px;left:8px;z-index:6;font-size:.7rem;opacity:.7}

@@ -11,7 +11,7 @@ from .errors import Err
 from .numbers import clampi
 from .security import check_pw, hash_pw, new_user_row
 from .store import boot_state, clean_cat, clean_site, kv_get, kv_set, user_pub
-from . import dice, feedback, games, images, media, mg, profile, turns
+from . import dice, feedback, games, images, media, mg, profile, stream, turns
 from .config import IMG_SLOTS
 from .validation import ID_RE, clean_prefs, clean_record, ADMIN_ONLY
 
@@ -317,6 +317,32 @@ class Routes:
             lst = games.clean_list(b.get("games"))
             kv_set(c, "games", lst)
             return {"ok": True, "games": lst}
+
+        if path == "/api/mgfeed" and me:  # live snapshot of a player's rhythm game (memory only, no database write)
+            rid = str(b.get("room") or "")
+            pc = str(b.get("pc") or "")
+            run = str(b.get("run") or "")
+            if not (ID_RE.match(rid) and ID_RE.match(pc)):
+                raise Err(400, "bad_room")
+            snap = stream.clean(b)
+            if snap is None:
+                raise Err(400, "bad_snap")
+            key = (me["id"], rid, pc, run)
+            nm = stream.known(key)
+            if nm is None:
+                st = kv_get(c, "mg:" + rid)
+                if not isinstance(st, dict) or st.get("status") != "open" or st.get("run") != run or pc not in (st.get("order") or []):
+                    raise Err(409, "mg_closed")
+                row = c.execute("SELECT data, owner FROM docs WHERE kind='pc' AND id=?", (pc,)).fetchone()
+                if not row or (not admin and row["owner"] != me["id"]):
+                    raise Err(403, "not_yours")
+                try:
+                    nm = str(json.loads(row["data"]).get("name") or "-")[:80]
+                except Exception:
+                    nm = "-"
+                stream.remember(key, nm)
+            stream.post(rid, pc, me["id"], nm, run, snap)
+            return {"ok": True}
 
         if path == "/api/mg" and me:
             rid = str(b.get("room") or "")

@@ -11,7 +11,7 @@ from http import cookies
 from http.server import BaseHTTPRequestHandler
 from urllib.parse import parse_qs, unquote, urlparse
 
-from . import images, live
+from . import images, live, stream
 from .media import EXT_TYPES
 from .config import COOKIE, FRONTEND_DIR, LOCK, MAX_BODY, POLL_SECONDS, SESSION_DAYS
 from .database import run
@@ -22,7 +22,7 @@ from .store import boot_state
 MIME = {".html": "text/html", ".css": "text/css", ".js": "application/javascript", ".json": "application/json",
         ".svg": "image/svg+xml", ".png": "image/png", ".jpg": "image/jpeg", ".jpeg": "image/jpeg", ".webp": "image/webp",
         ".gif": "image/gif", ".ico": "image/x-icon", ".woff2": "font/woff2", ".txt": "text/plain"}
-QUIET = ("/api/login", "/api/logout", "/api/me/password")  # these change nothing others can see
+QUIET = ("/api/mgfeed", "/api/login", "/api/logout", "/api/me/password")  # these change nothing others can see
 STATIC = {}  # full path -> ((mtime, size), bytes, gzipped bytes or None, etag)
 
 
@@ -109,6 +109,8 @@ class H(Routes, BaseHTTPRequestHandler):
                 return self.send(200, res)
             if path == "/api/poll":
                 return self.poll()
+            if path == "/api/mgfeed":
+                return self.mgfeed()
             if path.startswith("/api/"):
                 return self.send(404, {"error": "not_found"})
             if path.startswith("/img/"):
@@ -156,6 +158,25 @@ class H(Routes, BaseHTTPRequestHandler):
             except Exception:
                 pass  # fall back to the plain answer; the browser then asks for the state itself
         return self.send(200, {"v": cur})
+
+    def mgfeed(self):
+        """Spectators of a rhythm game: long poll for new snapshots of the people who are playing in room ?room=."""
+        q = parse_qs(urlparse(self.path).query)
+        rid = (q.get("room") or [""])[0]
+        if not re.match(r"^[A-Za-z0-9_-]{1,64}$", rid):
+            raise Err(400, "bad_room")
+        with LOCK:
+            who = run(lambda c: self.session_user(c))
+        if not who:
+            raise Err(401, "unauthorized")
+        try:
+            since = int((q.get("v") or [""])[0])
+        except ValueError:
+            since = None
+        cur = stream.wait(rid, since, 20)
+        if cur is None:
+            raise Err(503, "busy")
+        return self.send(200, {"v": cur, "streams": stream.view(rid)})
 
     def media(self, full, ctype):
         """Videos / audio are streamed from disk in pieces and honour Range requests (phones need that to play and to seek)."""
