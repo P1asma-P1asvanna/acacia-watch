@@ -48,7 +48,7 @@ function mgPlay(g,cb,opt){
   opt=opt||{};const watch=!!opt.watch;
   if(!g||(MGP&&!watch))return;
   if(g.type==='simon')g={...g,type:'lane'};
-  const it=watch?null:mgMi(g),isV=it&&it.type.startsWith('video'),beep=watch?()=>{}:mgBeep;
+  const it=mgMi(g),isV=it&&it.type.startsWith('video'),beep=watch?()=>{}:mgBeep;
   const P=mgPlans(g),modes=P.modes,notes=P.laneNotes,hits=P.hits,pulses=P.pulses,wins=P.wins,beat=P.beat,cdn=g.cd||0;
   const mset=new Set(modes.map(x=>x.mode)),useL=mset.has('lane'),useR=mset.has('timing'),useT=mset.has('tap');
   const col=g.col,key=(g.key||'').trim(),keyLab=key.split(/\s+/)[0]||'●',keys=mgKeys(g),WIN=150,PERF=60;
@@ -72,7 +72,7 @@ function mgPlay(g,cb,opt){
   const viewT=`<div class="mgv v-tap"><div class="mgprog idle" style="background:${col.bar}"><i style="background:${col.zone}"></i><span class="mgprogn">0 / ${g.goal}</span></div>
    <button class="mgtap" style="background:${col.zone}">${esc(keyLab)}</button></div>`;
   el.innerHTML=`${isV?`<video class="mgvid" playsinline preload="auto" src="${esc(it.url)}"></video>`:''}
-   <button class="mgx" aria-label="${t('close')}">✕</button>
+   <button class="mgx" aria-label="${t('close')}">✕</button>${watch&&it?'<button class="mgsnd" aria-label="sound">🔇</button>':''}
    <div class="mghud"><b>${esc(watch?(opt.who||g.name):g.name)}</b><span class="mgsc"></span></div>
    <div class="mgrot" hidden>↻ ${t('mgRotate')}</div>
    <div class="mgvig"></div><div class="mgmid"><div class="mgfb" aria-live="polite"></div></div>
@@ -82,9 +82,10 @@ function mgPlay(g,cb,opt){
    <div class="mgres" hidden></div>`;
   (watch&&opt.host||document.body).appendChild(el);
   const media=isV?el.querySelector('video'):(it?new Audio(it.url):null);
+  if(watch&&media){media.muted=true;media.preload='auto'}
   const $q=s=>el.querySelector(s),views={lane:$q('.v-lane'),timing:$q('.v-timing'),tap:$q('.v-tap')},vwrap=$q('.mgviews');
   const S={phase:'ready',res:[],resR:[],resT:[],t0:0,raf:0,H:0,holds:new Set(),holdL:{},mi:0,view:null,mode:null,bi:0,ctxt:'',taps:0,ti:0,rh:0,pi:0};
-  if(!watch)MGP=S;
+  if(!watch){MGP=S;document.documentElement.classList.add('mgplaying')}
   const W=watch?{snap:null,last:-1e9,DELAY:900}:null;
   let liveAt=0;const liveSend=(ph)=>{if(!opt.live)return;const str=(a,n)=>{let o='';for(let i=0;i<n;i++)o+=a[i]||'.';return o};opt.live({ph,T:Math.round(S.lastT||0),r:str(S.res,notes.length),rr:str(S.resR,hits.length),rt:str(S.resT,wins.length),tp:S.taps||0})};
   const FX=['lane','timing','tap'].filter(m=>mset.has(m)).map(m=>mgFxMake(el,g,m));
@@ -206,7 +207,7 @@ function mgPlay(g,cb,opt){
   function loop(){
     if(S.phase!=='run')return;
     const T=watch?W.T():clock()-offs();S.lastT=T;
-    if(watch)applySnap(T);else if(opt.live&&performance.now()-liveAt>500){liveAt=performance.now();liveSend('run')}
+    if(watch){applySnap(T);watchMedia(T)}else if(opt.live&&performance.now()-liveAt>500){liveAt=performance.now();liveSend('run')}
     while(S.mi+1<modes.length&&T>=modes[S.mi+1].ts){S.mi++;showView(modes[S.mi].mode,modes[S.mi].tr)}
     FX.forEach(f=>f.tick(T));
     if(useL)laneTick(T);if(useR)rdTick(T);if(useT)tapTick(T);
@@ -239,7 +240,7 @@ function mgPlay(g,cb,opt){
     S.phase='run';S.t0=performance.now();measure();
     if(media){try{media.currentTime=0;const p=media.play();if(p&&p.catch)p.catch(()=>{S.t0=performance.now()})}catch(e){}}
     S.raf=requestAnimationFrame(loop)}
-  function close(){if(opt.live&&S.phase!=='done')liveSend('x');clearTimeout(S.cdT);clearTimeout(S.fbT);if(!watch)mgLandscape(false);window.removeEventListener('resize',rc);cancelAnimationFrame(S.raf);if(media){media.pause()}document.removeEventListener('keydown',kd);document.removeEventListener('keyup',ku);window.removeEventListener('resize',rs);el.remove();if(!watch)MGP=null}
+  function close(){if(opt.live&&S.phase!=='done')liveSend('x');clearTimeout(S.cdT);clearTimeout(S.fbT);if(!watch)mgLandscape(false);window.removeEventListener('resize',rc);cancelAnimationFrame(S.raf);if(media){media.pause()}document.removeEventListener('keydown',kd);document.removeEventListener('keyup',ku);window.removeEventListener('resize',rs);el.remove();if(!watch){MGP=null;document.documentElement.classList.remove('mgplaying')}}
   const one=(key||' ').split(/\s+/)[0].toLowerCase();
   const kd=e=>{if(e.key==='Escape'){close();return}if(e.repeat)return;const k=e.key.toLowerCase();
     if(S.mode==='lane'){const l=keys.indexOf(k);if(l>=0){e.preventDefault();press(l)}return}
@@ -248,14 +249,14 @@ function mgPlay(g,cb,opt){
   const rs=()=>{if(S.phase==='run')measure()};
   const rc=()=>mgRotCheck(el);
   if(!watch){window.addEventListener('resize',rc);rc();document.addEventListener('keydown',kd);document.addEventListener('keyup',ku);window.addEventListener('resize',rs)}
-  $q('.mgx').onclick=close;
+  $q('.mgx').onclick=watch?()=>{if(opt.onclose)opt.onclose();else close()}:close;
   el.querySelectorAll('.mgpad').forEach(b=>{b.addEventListener('pointerdown',e=>{e.preventDefault();try{b.setPointerCapture(e.pointerId)}catch(x){}press(Number(b.dataset.l))});['pointerup','pointercancel'].forEach(ev=>b.addEventListener(ev,()=>release(Number(b.dataset.l))))});
   el.querySelectorAll('.mgtap').forEach(b=>b.addEventListener('pointerdown',e=>{e.preventDefault();press()}));
   $q('.mgstart .big').onclick=start;
   el.addEventListener('click',e=>{
     const c=e.target.closest('[data-c]');if(c){const v=mgCal()+Number(c.dataset.c);mgCal(v);c.parentNode.querySelector('b').textContent=mgCal();return}
     const r=e.target.closest('[data-r]');if(!r)return;if(r.dataset.r==='close')close();else{S.phase='ready';start()}});
-  if(media&&media.addEventListener)media.addEventListener('ended',()=>{if(S.phase==='run')finish()});
+  if(media&&media.addEventListener)media.addEventListener('ended',()=>{if(S.phase==='run'&&!watch)finish()});
   /* ---- watching somebody else play: the same game replays here, a little behind, driven by their snapshots ---- */
   if(watch){
     $q('.mgstart').hidden=true;$q('.mgres').hidden=true;
@@ -268,6 +269,15 @@ function mgPlay(g,cb,opt){
         if(T>=hits[i].t-20&&(v!=='m'||T>=hits[i].t+WIN-30)){resolve(S.resR,i,v);rdFx(i,v)}}
       for(let i=0;i<wins.length;i++){const v=sn.rt[i];if(!v||v==='.'||S.resT[i]!=null)continue;if(T>=wins[i].t+400)resolve(S.resT,i,v)}
       if(S.tact&&sn.tp>S.taps){S.taps=sn.tp;progUpd()}}
+    /* the clip / music follows the player's position; only one window at a time plays sound (the other clips are muted) */
+    const snd=$q('.mgsnd');
+    S.setMute=m=>{if(media)media.muted=m;if(snd)snd.textContent=m?'🔇':'🔊'};
+    if(snd)snd.onclick=()=>{if(opt.onsound)opt.onsound()};
+    function watchMedia(T){
+      if(!media||S.phase!=='run')return;const want=(T+(g.offset||0))/1000;
+      if(want<0)return;
+      if(media.paused){const p=media.play&&media.play();if(p&&p.catch)p.catch(()=>{if(!media.muted){S.setMute(true);if(opt.onblocked)opt.onblocked()}media.play().catch(()=>{})});media.currentTime=want}
+      else if(Math.abs(media.currentTime-want)>.35)media.currentTime=want}
     S.feed=sn=>{
       W.snap={...sn,at:performance.now()-(sn.age||0)};
       if(sn.ph==='run'&&S.phase!=='run'){

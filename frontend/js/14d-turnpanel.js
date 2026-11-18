@@ -48,17 +48,6 @@ async function taRoll(rid,eid,body){
   catch(err){TA.err=err&&err.code==='not_seated'?t('tdNotSeated'):t('tdFail')}
   return null}
 const taNat=e=>{const s=e&&e.sets&&e.sets[e.keep||0];return e&&e.sides===20&&e.n===1&&s?s[0]:0};
-async function taWeapon(rid,eid,wid,kind){
-  if(TA.busy)return;const d=taDoc(rid,eid),r=d&&(d.weapons||[]).find(x=>x.id===wid),s=r&&weaponStats(d,r);if(!s)return;
-  TA.busy=true;render();const slot=TA.open.startsWith('rea')?'rea':TA.open==='bon'?'bon':'act';let txt='';
-  if(kind==='atk'){const e=await taRoll(rid,eid,{n:1,sides:20,mod:s.atk,mode:TA.mode,why:r.ref+' '+t('wRollAtk')});
-    if(e){const nat=taNat(e);txt=`${r.ref} ${t('taAtk')} ${e.label} = ${e.total}${nat===20?' ('+t('taCrit')+')':nat===1?' ('+t('taMiss')+')':''}${taTarget(rid,eid)}`}}
-  else if(s.ds){const m=kind==='crit'?2:1;
-    const e=await taRoll(rid,eid,{n:s.dn*m,sides:s.ds,mod:s.db,why:r.ref+' '+t(kind==='crit'?'wRollCrit':'wRollDmg')});
-    if(e){let tot=e.total,more='';
-      if(s.bs){const y=await taRoll(rid,eid,{n:s.bn*m,sides:s.bs,why:r.ref+' + '+s.w.bdie+(s.w.btype?' '+s.w.btype:'')});if(y){tot+=y.total;more=` + ${y.label} = ${y.total}`}}
-      txt=`${r.ref} ${t(kind==='crit'?'wRollCrit':'taDmg')} ${e.label} = ${e.total}${more}${more?' ⇒ '+tot:''}${s.w.dtype?' '+s.w.dtype:''}${taTarget(rid,eid)}`}}
-  TA.busy=false;if(txt)await taUse(rid,eid,slot,txt);else render()}
 async function taExtra(rid,eid){
   if(TA.busy)return;const m=/^\s*(\d{1,2})?\s*d\s*(\d{1,3})\s*([+-]\s*\d{1,3})?\s*$/i.exec(TA.xr);if(!m){TA.err=t('taBadDice');render();return}
   TA.busy=true;render();
@@ -71,19 +60,15 @@ function taSpellOpts(d,sp){
   if(I.pact&&I.pact[1]>=L)o.push(`<option value="p">${t('spPact')} (${Math.max(0,I.pact[0]-(d.sl.p||0))}/${I.pact[0]})</option>`);
   return{I,opts:o.join('')}}
 async function taCast(rid,eid,slot,name){
-  const d=taDoc(rid,eid),sp=spellOf(name);if(!d)return;let lvTxt='',note='';
+  if(TA.busy)return;const d=taDoc(rid,eid),sp=spellOf(name);if(!d)return;let lvTxt='',note='',castLv=sp?sp.lvl||0:0;
   const L=sp?sp.lvl||0:0,I=typeof spellInfo==='function'?spellInfo(d):null;
   if(L>0&&I){d.sl=d.sl||{u:[],p:0};d.sl.u=d.sl.u||[];const sel=document.getElementById('ta_sl_'+CSS.escape(name.replace(/\W/g,'_')));const v=sel?sel.value:'';
-    if(v==='p'){if((d.sl.p||0)>=I.pact[0]){TA.err=t('spNoSlot');render();return}d.sl.p=(d.sl.p||0)+1;lvTxt=` (${t('spPact')})`}
-    else if(v){const k=Number(v)-1;if((d.sl.u[k]||0)>=(I.slots[k]||0)){TA.err=t('spNoSlot');render();return}d.sl.u[k]=(d.sl.u[k]||0)+1;lvTxt=` (${t('spLv')} ${v})`}
+    if(v==='p'){if((d.sl.p||0)>=I.pact[0]){TA.err=t('spNoSlot');render();return}d.sl.p=(d.sl.p||0)+1;lvTxt=` (${t('spPact')})`;castLv=I.pact[1]}
+    else if(v){const k=Number(v)-1;if((d.sl.u[k]||0)>=(I.slots[k]||0)){TA.err=t('spNoSlot');render();return}d.sl.u[k]=(d.sl.u[k]||0)+1;lvTxt=` (${t('spLv')} ${v})`;castLv=Number(v)}
     else{TA.err=t('spNoSlot');render();return}}
   if(sp&&sp.conc){note=d.conc&&d.conc!==name?` · ${fill(t('spSwap'),{o:d.conc})}`:'';d.conc=name;note+=' · '+t('spConc')}
   commit(taKind(taEnts(rid).find(x=>x.id===eid).ref));
-  await taUse(rid,eid,slot,`${t('spCast')} ${name}${lvTxt}${note}${taTarget(rid,eid)}`)}
-async function taSpellAtk(rid,eid,name){
-  if(TA.busy)return;const d=taDoc(rid,eid),I=d&&typeof spellInfo==='function'?spellInfo(d):null;if(!I)return;
-  TA.busy=true;render();const e=await taRoll(rid,eid,{n:1,sides:20,mod:Math.round(num(I.atk)),mode:TA.mode,why:name+' '+t('spAtk')});
-  TA.busy=false;if(e){const nat=taNat(e);await taUse(rid,eid,'note',`${name} ${t('spAtk')} ${e.label} = ${e.total}${nat===20?' ('+t('taCrit')+')':nat===1?' ('+t('taMiss')+')':''}${taTarget(rid,eid)}`)}else render()}
+  await taSpellFlow(rid,eid,slot,name,lvTxt+note,castLv)}
 function taResUse(rid,eid,slot,rid2){
   const d=taDoc(rid,eid),r=d&&(d.res||[]).find(x=>x.id===rid2);if(!r)return;const mx=resMax(d,r),u=Math.min(mx,Math.max(0,Math.round(num(r.used))));
   if(u>=mx){TA.err=t('taResOut');render();return}r.used=u+1;commit(taKind(taEnts(rid).find(x=>x.id===eid).ref));
@@ -143,6 +128,7 @@ function taPanel(rid,eid){
   const ended=cur.end?(gm?`<div class="ta-ended" role="status">⏹ ${fill(t('taEnded'),{n:esc(en.name)})}<button class="btn small" data-act="ini-next">${t('taNext')}</button></div>`:`<div class="ta-ended" role="status">⏹ ${t('taWait')}</div>`):'';
   return`<div class="ta" data-ta-room="${rid}"><div class="ta-head"><h3>▶ ${fill(t('taTitle'),{n:esc(en.name)})}</h3></div>${ended}
    <div class="ta-meters" role="group">${meters}</div>
+   ${taCardHtml(eid)}
    ${TA.err?`<p class="err" role="alert">${esc(TA.err)}</p>`:''}
    ${TA.open?`<div class="ta-body">${taSection(rid,eid,TA.open,d)}</div>`:`<p class="note ta-pick">${t('taHint')}</p>`}
    <details class="ta-more"><summary>🎲 ${t('taMore')}</summary><div class="ta-xr">${modeSel}<div class="field"><label for="ta_xr">${t('taXRoll')}</label><input id="ta_xr" data-ta="xr" maxlength="14" placeholder="${esc(t('taXPh'))}" value="${esc(TA.xr)}"></div><div class="field"><label for="ta_xw">${t('taXWhy')}</label><input id="ta_xw" data-ta="xw" maxlength="40" value="${esc(TA.xw)}"></div><button type="button" class="btn small" data-act="ta-xroll" data-rid="${rid}" data-id="${eid}" ${TA.busy?'disabled':''}>${t('roll')}</button></div></details>
@@ -152,7 +138,7 @@ function taReaStrip(rid,eid){
   const cur=taSl(taSt(rid),eid),en=taEnts(rid).find(x=>x.id===eid),d=taDoc(rid,eid);if(!en)return'';
   const op=TA.open==='rea:'+eid;
   return`<div class="ta ta-rea"><button type="button" class="ta-reab" data-act="ta-reaopen" data-id="${eid}" aria-expanded="${op}"><b>${fill(t('taReaOf'),{n:esc(en.name)})}</b> <span class="${cur.s.rea?'ta-dot on':'ta-dot'}">R</span> <span>${cur.s.rea?esc(cur.s.rea):t('taFree')}</span></button>
-   ${op?`${TA.err?`<p class="err" role="alert">${esc(TA.err)}</p>`:''}<div class="ta-body">${taSection(rid,eid,'rea',d)}</div>`:''}</div>`}
+   ${taCardHtml(eid)}${op?`${TA.err?`<p class="err" role="alert">${esc(TA.err)}</p>`:''}<div class="ta-body">${taSection(rid,eid,'rea',d)}</div>`:''}</div>`}
 function taGmPanel(rid){const cur=taCur(rid);return(cur?taPanel(rid,cur):'')+taLogHtml(rid)}
 function taPlayerPanel(rid){
   const cur=taCur(rid),mine=taEnts(rid).filter(x=>x.mine);let h='';
@@ -161,6 +147,9 @@ function taPlayerPanel(rid){
 /* ---- events ---- */
 function taClick(a,b){
   const rid=b.dataset.rid||(typeof roomOpen!=='undefined'?roomOpen:''),eid=b.dataset.id,v=b.dataset.v,k=b.dataset.k;
+  if(a==='ta-apply'){taApply(rid,eid,Number(v));return}
+  if(a==='ta-cardx'){delete TA.card[eid];render();return}
+  if(a==='ta-more'){taSpellMore(rid,eid);return}
   if(a==='ta-open'){TA.open=TA.open===v?'':v;render();return}
   if(a==='ta-reaopen'){TA.open=TA.open==='rea:'+eid?'':'rea:'+eid;render();return}
   if(a==='ta-dot'){const e=taSl(taSt(rid),eid);taPost(rid,eid,e.s[v]?{op:'undo',slot:v}:{op:'use',slot:v,text:'✓',mark:1});return}

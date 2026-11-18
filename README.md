@@ -452,3 +452,19 @@ tools/build_single.py      รวมหน้าเว็บเป็นไฟ�
 - ตอนผู้เล่นคนหนึ่งเล่นเกมที่ GM เปิดในห้อง คนอื่นในห้องจะเห็นจอเล็กมุมขวาล่างที่เล่นตามแบบสดๆ (โน้ตตก/พัลส์/แถบกดรัว คะแนน และขอบแดงตอนพลาด) ช้ากว่าตัวจริงราว 1 วินาที
 - ผู้เล่นที่กำลังเล่นอยู่เองจะไม่เห็นจอเล็ก (เลยไม่มีผลถ้าทุกคนเล่นพร้อมกัน) ส่วน GM เห็นเสมอ สูงสุด 6 จอ (ผู้เล่น 3 จอ) กด ✕ เพื่อปิดจอนั้นในรอบนี้
 - ทำงานผ่าน `api/mgfeed` เก็บในหน่วยความจำของเซิร์ฟเวอร์เท่านั้น (ไม่เขียนฐานข้อมูล) ผู้เล่นส่งสถานะประมาณวินาทีละ 2 ครั้ง ผู้ชมแค่เล่นเกมเดียวกันซ้ำในเครื่องตัวเอง จึงไม่กินแบนด์วิดท์แบบสตรีมวิดีโอ
+- จอเล็กของผู้ชมเล่นคลิปพื้นหลัง/เพลงของเกมตามตำแหน่งของผู้เล่น (ปุ่ม 🔊/🔇 ที่จอ; เปิดเสียงทีละจอ จอแรกมีเสียงเป็นค่าเริ่มต้น)
+
+## Combat ใน Initiative: To-hit / ดาเมจ / เซฟ เห็นตัวเลขชัดๆ
+- ทุกตัวใน Initiative มี **AC** (ตัวละครจากชีตคำนวณให้เอง ศัตรู/พิเศษใส่ในช่อง AC และ "โบนัสเซฟ" ตอนเพิ่ม) GM ติ๊ก "ซ่อน AC ศัตรูจากผู้เล่น" ได้ (ผู้เล่นจะเห็นแค่โดน/ไม่โดน)
+- **โจมตีด้วยอาวุธ**: เลือกเป้าหมาย กด "ทอยโจมตี" การ์ดผลจะขึ้นเลข To-hit ใหญ่ๆ เทียบ AC: ต่ำกว่า = "ไม่โดน (พลาด)" แล้วจบ, เท่ากับหรือมากกว่า = "โดน!" แล้วทอยดาเมจต่อให้ทันทีพร้อมเลขดาเมจใหญ่ (ทอย 20 = คริติคอลดาเมจ ×2 โดนแน่นอน, ทอย 1 = พลาดสนิท)
+- **ร่ายเวท**: การ์ดโชว์ข้อมูลเวทและข้อความความสามารถที่เขียนไว้ในแคตตาล็อก แล้วทำตามข้อความนั้น: เวทโจมตี = ทอยเหมือนอาวุธ, เวทที่ให้เซฟ = ทอยเซฟให้เป้าหมายเทียบ DC ของผู้ร่าย (ผ่าน = ดาเมจครึ่งหนึ่งหรือไม่โดนตามที่ข้อความบอก, ไม่ผ่าน = เต็ม), เวทฟื้นฟู = ทอยค่าฟื้นฟู; เพิ่มดาเมจตามช่องเวทที่ใช้และระดับตัวละครสำหรับ cantrip
+- ดาเมจ/ฟื้นฟูเป็นข้อเสนอ: GM กด "Apply" เพื่อหักหรือเพิ่ม HP ของเป้าหมาย ปุ่ม "ใช้กับเป้าหมายอื่น" ใช้ซ้ำกับเวทเดิมโดยไม่เสียช่อง
+
+## Background scenes & window-opening effects (per user)
+
+My settings → "Background scene & window effects". Saved per user (not global).
+- 13 scenes: rising shapes, D&D dice, runes, light & shadow, aurora, moving gradient, stars (+shooting stars), embers, fireflies, mist, rain, waves, glowing orbs. Default: none.
+- Scene color tint, quality (auto / high / light / off) and strength slider. Only transform/opacity animations; one fixed layer outside `#root`.
+- Auto quality on mobile/low-end; an FPS guard lowers quality for the session if frames drop. Paused on hidden tab and while a minigame plays; off with reduced-motion.
+- Window effects when a page/popup opens: float up, fade, zoom, slide, drop, pop, blur, flip, none, plus speed and a preview button.
+- Code: `frontend/js/24-bgfx.js`, `frontend/css/18-bgfx.css`; prefs whitelisted in `validation.py`.

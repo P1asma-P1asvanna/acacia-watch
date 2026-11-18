@@ -1,0 +1,70 @@
+/* ---------- background scenes (js/24-bgfx.js) ---------- */
+#bgfx{position:fixed;inset:0;z-index:-1;pointer-events:none;overflow:hidden;contain:strict;display:none;opacity:var(--bgi,.6)}
+html.has-bgfx #bgfx{display:block}
+html.mgplaying #bgfx{display:none!important}
+html.fx-pause #bgfx i{animation-play-state:paused!important}
+#bgfx i{position:absolute;display:block;will-change:transform,opacity;backface-visibility:hidden}
+html.has-bgfx .panel{background:color-mix(in srgb,var(--surface) 90%,transparent)}
+/* rising things: geometric shapes, dice, runes, embers, bokeh */
+.bgp{left:var(--x);bottom:-90px;width:var(--s);height:var(--s);color:var(--c);opacity:0;animation:bgRise var(--d) linear var(--dl) infinite}
+.bgp svg{width:100%;height:100%;display:block}
+@keyframes bgRise{0%{transform:translate3d(0,0,0) rotate(0);opacity:0}10%{opacity:var(--o)}85%{opacity:var(--o)}100%{transform:translate3d(var(--dx),var(--dy,-115vh),0) rotate(var(--r));opacity:0}}
+.bgrune{filter:drop-shadow(0 0 6px currentColor)}
+.bgem{border-radius:50%;background:var(--c);box-shadow:0 0 8px 2px var(--c);animation-name:bgEmber}
+@keyframes bgEmber{0%{transform:translate3d(0,0,0) scale(1);opacity:0}12%{opacity:var(--o)}100%{transform:translate3d(var(--dx),-105vh,0) scale(.2);opacity:0}}
+.bgbk{border-radius:50%;background:radial-gradient(circle,color-mix(in srgb,var(--c) 55%,transparent) 0,color-mix(in srgb,var(--c) 22%,transparent) 55%,transparent 70%)}
+/* light and shadow */
+.bgl-pool{left:var(--x);top:var(--y);width:70vmax;height:70vmax;margin:-35vmax 0 0 -35vmax;border-radius:50%;background:radial-gradient(circle,color-mix(in srgb,var(--c) 34%,transparent) 0,transparent 62%);animation:bgPool var(--d) ease-in-out var(--dl) infinite alternate}
+@keyframes bgPool{from{transform:translate3d(-6vw,-4vh,0) scale(.9)}to{transform:translate3d(8vw,7vh,0) scale(1.12)}}
+.bgl-beam{left:var(--x);top:-20vh;width:24vmax;height:150vh;background:linear-gradient(to bottom,color-mix(in srgb,var(--bc1) 26%,transparent),transparent 78%);transform:rotate(18deg);transform-origin:top;animation:bgBeam var(--d) ease-in-out var(--dl) infinite alternate}
+.bgl-beam.b2{width:14vmax;opacity:.7;transform:rotate(24deg)}
+@keyframes bgBeam{from{transform:translate3d(-12vw,0,0) rotate(16deg)}to{transform:translate3d(14vw,0,0) rotate(24deg)}}
+.bgl-vig{inset:0;background:radial-gradient(ellipse at 50% 45%,transparent 50%,rgba(0,0,0,.5) 100%)}
+/* aurora */
+.bga{left:calc((100vw - var(--w))/2);top:var(--y);width:var(--w);height:58vh;background:radial-gradient(ellipse at 50% 50%,color-mix(in srgb,var(--c) 55%,transparent) 0,color-mix(in srgb,var(--c) 18%,transparent) 45%,transparent 70%);transform:translate3d(0,0,0);animation:bgAur var(--d) ease-in-out var(--dl) infinite alternate}
+@keyframes bgAur{0%{transform:translate3d(-9vw,0,0) rotate(-4deg) scale(1,.8)}50%{transform:translate3d(4vw,6vh,0) rotate(2deg) scale(1.05,1.15)}100%{transform:translate3d(10vw,-3vh,0) rotate(5deg) scale(.95,.9)}}
+.bga-cur{left:-20vw;top:0;width:140vw;height:70vh;background:repeating-linear-gradient(90deg,transparent 0 46px,color-mix(in srgb,var(--bc1) 14%,transparent) 62px,transparent 96px);transform:skewX(-12deg);animation:bgCur 40s linear infinite}
+@keyframes bgCur{to{transform:translate3d(-96px,0,0) skewX(-12deg)}}
+/* moving gradient: one huge layer that only rotates / slides */
+.bgg1{left:-50vmax;top:-50vmax;width:200vmax;height:200vmax;background:conic-gradient(from 0deg at 50% 50%,var(--bc1),var(--bc2),var(--bc3),var(--bc1));animation:bgSpin 80s linear infinite;opacity:.9}
+.bgg2{left:-30vw;top:-30vh;width:160vw;height:160vh;background:linear-gradient(115deg,transparent 30%,color-mix(in srgb,var(--bc3) 55%,transparent) 50%,transparent 70%);animation:bgSlide 28s ease-in-out infinite alternate}
+@keyframes bgSpin{to{transform:rotate(360deg)}}@keyframes bgSlide{from{transform:translate3d(-25vw,0,0)}to{transform:translate3d(25vw,0,0)}}
+/* stars */
+.bgs{width:var(--s);height:var(--s);border-radius:50%;background:var(--c);box-shadow:0 0 calc(var(--s)*3) var(--c);animation:bgTw var(--d) ease-in-out var(--dl) infinite alternate}
+@keyframes bgTw{from{opacity:.15;transform:scale(.7)}to{opacity:1;transform:scale(1.15)}}
+.bgsh{left:var(--x);top:var(--y);width:140px;height:2px;background:linear-gradient(90deg,transparent,#fff);opacity:0;transform:rotate(32deg);animation:bgShoot 11s ease-in var(--dl) infinite}
+@keyframes bgShoot{0%{transform:translate3d(0,0,0) rotate(32deg);opacity:0}2%{opacity:1}9%{transform:translate3d(32vw,20vw,0) rotate(32deg);opacity:0}100%{transform:translate3d(32vw,20vw,0) rotate(32deg);opacity:0}}
+/* fireflies */
+.bgf{width:5px;height:5px;border-radius:50%;background:var(--c);box-shadow:0 0 12px 4px var(--c);animation:bgFly var(--d) ease-in-out var(--dl) infinite alternate,bgBlink var(--b) ease-in-out infinite alternate}
+@keyframes bgFly{0%{transform:translate3d(0,0,0)}50%{transform:translate3d(var(--x1),var(--y1),0)}100%{transform:translate3d(var(--x2),var(--y2),0)}}
+@keyframes bgBlink{from{opacity:.1}to{opacity:1}}
+/* mist */
+.bgfog{left:0;top:var(--y);width:200vw;height:var(--h);background:radial-gradient(ellipse at 50% 50%,color-mix(in srgb,var(--ink) 20%,transparent) 0,transparent 68%) 0 0/50% 100% repeat-x;animation:bgMist var(--d) linear var(--dl) infinite}
+@keyframes bgMist{to{transform:translate3d(-50%,0,0)}}
+/* rain */
+.bgr{top:-20vh;width:1.5px;height:var(--s);background:linear-gradient(transparent,var(--c));opacity:var(--o);animation:bgRain var(--d) linear var(--dl) infinite}
+@keyframes bgRain{from{transform:translate3d(0,0,0) rotate(10deg)}to{transform:translate3d(-24vh,130vh,0) rotate(10deg)}}
+/* waves */
+.bgw{left:0;bottom:var(--b);width:200vw;height:var(--h);color:var(--c);opacity:var(--o);animation:bgWave var(--d) linear infinite var(--dr)}
+.bgw svg{width:100%;height:100%;display:block}
+@keyframes bgWave{to{transform:translate3d(-50%,0,0)}}
+@media(prefers-reduced-motion:reduce){#bgfx i{animation:none!important}}
+/* ---------- "window opens" effects ---------- */
+:root{--win-ms:380ms}
+#main.fx-in>*,#main.fx-in .wgrid>*,#main.fx-in .stagebody>*{animation:var(--wn,winRise) var(--win-ms) cubic-bezier(.2,.7,.3,1) both;animation-delay:calc(var(--i,0)*55ms)}
+html[data-win=rise]{--wn:winRise}html[data-win=fade]{--wn:winFade}html[data-win=zoom]{--wn:winZoom}html[data-win=slide]{--wn:winSlide}html[data-win=drop]{--wn:winDrop}html[data-win=pop]{--wn:winPop}html[data-win=blur]{--wn:winBlur}html[data-win=flip]{--wn:winFlip}
+html[data-win=pop] #main.fx-in>*,html[data-win=pop] #main.fx-in .wgrid>*{animation-timing-function:cubic-bezier(.34,1.56,.64,1)}
+@keyframes winRise{from{opacity:0;transform:translate3d(0,22px,0)}}
+@keyframes winFade{from{opacity:0}}
+@keyframes winZoom{from{opacity:0;transform:scale(.94)}}
+@keyframes winSlide{from{opacity:0;transform:translate3d(34px,0,0)}}
+@keyframes winDrop{from{opacity:0;transform:translate3d(0,-22px,0)}}
+@keyframes winPop{from{opacity:0;transform:scale(.88)}}
+@keyframes winBlur{from{opacity:0;filter:blur(8px)}}
+@keyframes winFlip{from{opacity:0;transform:perspective(900px) rotateX(-14deg) translate3d(0,10px,0);transform-origin:50% 0}}
+.fx-ov{animation:var(--wn,winRise) var(--win-ms) cubic-bezier(.2,.7,.3,1) both}
+html[data-win=slide] .cpop.fx-ov,html[data-win=rise] .cpop.fx-ov{animation-name:winFade}
+@media(prefers-reduced-motion:reduce){#main.fx-in>*,#main.fx-in .wgrid>*,#main.fx-in .stagebody>*,.fx-ov{animation:none!important}}
+.bgfxrow{display:flex;flex-wrap:wrap;gap:8px;padding:0 16px 8px}
+.bgchip{display:inline-flex;align-items:center;gap:6px;padding:8px 12px;border:1px solid var(--line);border-radius:999px;background:transparent;color:var(--ink);cursor:pointer;font:inherit;font-size:.92rem}
+.bgchip[aria-pressed=true]{border-color:var(--ink);box-shadow:0 0 0 1px var(--ink) inset;font-weight:700}

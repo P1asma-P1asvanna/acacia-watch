@@ -47,8 +47,13 @@ def clean_prefs(v, own_imgs=()):
         out["turn"] = v["turn"]
     if v.get("anim") in ("on", "off"):
         out["anim"] = v["anim"]
+    for k, allowed in (("bgfx", ("geo", "dice", "runes", "light", "aurora", "gradient", "stars", "embers", "fireflies", "fog", "rain", "waves", "bokeh")),
+                       ("bgc", ("blue", "violet", "pink", "green", "gold", "white")), ("bgq", ("hi", "mid", "off")),
+                       ("win", ("rise", "fade", "zoom", "slide", "drop", "pop", "blur", "flip", "none"))):
+        if v.get(k) in allowed:
+            out[k] = v[k]
     for k, lo, hi in (("fxms", 60, 500), ("fxamt", 0, 10), ("radius", 0, 20), ("pg", 3, 100), ("dim", 0, 90),
-                      ("pdim", 0, 100), ("decoSize", 48, 320), ("decoOp", 10, 100)):
+                      ("pdim", 0, 100), ("decoSize", 48, 320), ("decoOp", 10, 100), ("bgi", 10, 100), ("winms", 150, 900)):
         if v.get(k) not in (None, ""):
             out[k] = clampi(v[k], lo, hi, lo)
     for k in IMG_KEYS:

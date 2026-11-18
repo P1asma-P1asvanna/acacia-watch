@@ -230,5 +230,6 @@
 .mgplay.mini .mgcombo{font-size:1rem;top:-20px}
 .mgplay.mini .mgprog{height:36px;width:calc(100% - 16px);margin:auto 0}.mgplay.mini .mgprogn{font-size:1.2rem}
 .mgplay.mini .mgres{font-size:.9rem;background:rgba(0,0,0,.7);position:absolute;inset:0;display:flex;align-items:center;justify-content:center;z-index:7}
-.mgplay.mini .mgres p{margin:0}
+.mgplay.mini .mgres[hidden]{display:none}.mgplay.mini .mgres p{margin:0}
+.mgplay.mini .mgsnd{position:absolute!important;top:3px;right:32px;width:26px;height:26px;border-radius:50%;border:0;background:rgba(0,0,0,.6);color:#fff;font-size:.8rem;z-index:6;padding:0}
 .mgplay.mini .mgwho{position:absolute;bottom:3px;left:8px;z-index:6;font-size:.7rem;opacity:.7}

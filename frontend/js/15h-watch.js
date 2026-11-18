@@ -14,12 +14,13 @@ function watchApply(rid,list){
     const key=s.run+':'+st.pc;if(WATCH.hid.has(key))continue;
     seen.add(st.pc);let m=WATCH.minis[st.pc];
     if(!m){if(n>=cap)continue;
-      m=mgPlay(s.game,null,{watch:true,host:watchDock(),who:st.name,ended:()=>setTimeout(()=>watchDrop(st.pc),4000)});
-      if(!m)continue;m.__key=key;m.__at=0;WATCH.minis[st.pc]=m;n++;
-      const x=m.__x=document.querySelector('#mgDock .mgplay.mini:last-child .mgx');if(x)x.onclick=()=>{WATCH.hid.add(key);watchDrop(st.pc)}}
+      m=mgPlay(s.game,null,{watch:true,host:watchDock(),who:st.name,onclose:()=>{WATCH.hid.add(key);watchDrop(st.pc)},ended:()=>setTimeout(()=>watchDrop(st.pc),4000),onsound:()=>{WATCH.snd=st.pc;watchSound()},onblocked:()=>{if(WATCH.snd===st.pc)WATCH.snd=''}});
+      if(!m)continue;m.__key=key;m.__at=0;WATCH.minis[st.pc]=m;n++}
     m.__at=performance.now();m.feed(Object.assign({},st.snap,{age:st.age}));
     if(st.snap.ph==='x')watchDrop(st.pc)}
-  for(const pc of Object.keys(WATCH.minis))if(!seen.has(pc)&&performance.now()-WATCH.minis[pc].__at>1500)watchDrop(pc)}
+  for(const pc of Object.keys(WATCH.minis))if(!seen.has(pc)&&performance.now()-WATCH.minis[pc].__at>1500)watchDrop(pc);
+  watchSound()}
+function watchSound(){const ks=Object.keys(WATCH.minis);if(!ks.length)return;if(!WATCH.snd||!WATCH.minis[WATCH.snd])WATCH.snd=ks[0];ks.forEach(pc=>{const m=WATCH.minis[pc];if(m.setMute)m.setMute(pc!==WATCH.snd)})}
 async function watchLoop(){
   if(WATCH.run)return;WATCH.run=true;
   try{

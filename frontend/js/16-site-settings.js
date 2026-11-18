@@ -29,6 +29,7 @@ function renderSite(){
     <div class="field"><label for="s_decoOp">${t('sDecoOp')}: <span id="v_decoOp">${d.decoOp||100}</span>%</label><input id="s_decoOp" data-s="decoOp" type="range" min="10" max="100" step="5" value="${d.decoOp||100}" style="padding:0"></div>
     <div class="field"><label for="s_anim">${t('sAnim')}</label><select id="s_anim" data-s="anim"><option value="" ${d.anim?'':'selected'}>${t('animAuto')}</option><option value="on" ${d.anim==='on'?'selected':''}>${t('animOn')}</option><option value="off" ${d.anim==='off'?'selected':''}>${t('animOff')}</option></select></div></div>
    <p class="note" style="padding:0 16px 14px">${t('sGifNote')}</p></section>
+  ${renderBgfxPanel(d)}
   <section class="panel" data-w="fx">${wc('site','fx')}<div class="ph"><h2>${t('sFx')}</h2></div><div class="grid wide">
     <div class="field"><label for="s_fx">${t('fxStyle')}</label><select id="s_fx" data-s="fx">${['lift','glow','shine','bounce','none'].map(o=>`<option value="${o}" ${(d.fx||'lift')===o?'selected':''}>${t('fx_'+o)}</option>`).join('')}</select></div>
     <div class="field"><label for="s_turn">${t('turnSet')}</label><select id="s_turn" data-s="turn"><option value="on" ${(d.turn||'on')==='on'?'selected':''}>${t('turnOnL')}</option><option value="off" ${d.turn==='off'?'selected':''}>${t('turnOffL')}</option></select></div>

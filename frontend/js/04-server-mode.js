@@ -75,7 +75,7 @@ let view='players', edit=null, authTab='signin', authErr='', delArm=null, flashM
 let dataTab='races', dedit=null, dataArm=null, dataErr='';
 let SITE=Object.assign({},load('dd_site',{})), siteDraft=null, siteMsg='';  /* SITE: name, tagline, logo, cover (shared by everyone, admin edits) */
 let PREFS=load('dd_theme',{}), prefsFor;  /* PREFS: this user's own colors, effects, shape, rows per page */
-const GLOBAL_KEYS=['name','tagline','logo','cover'],PREF_KEYS=['bg','surface','ink','accent','side','fxc','tnow','tnext','tdone','navb','fxb','fx','fxms','fxamt','radius','font','pg','imgBg','imgPanel','imgDeco','dim','pdim','decoPos','decoSize','decoOp','anim','lay'];
+const GLOBAL_KEYS=['name','tagline','logo','cover'],PREF_KEYS=['bg','surface','ink','accent','side','fxc','tnow','tnext','tdone','navb','fxb','fx','fxms','fxamt','radius','font','pg','imgBg','imgPanel','imgDeco','dim','pdim','decoPos','decoSize','decoOp','anim','bgfx','bgc','bgq','bgi','win','winms','lay'];
 const THEME_DEF={bg:'#050505',surface:'#1e1e20',ink:'#dcdcdf',accent:'#121213',side:'#000000',fxc:'#000000',tnow:'#ffffff',tnext:'#999999',tdone:'#1e1e20',navb:'#999999',fxb:'#6ee7a8'};
 const IMG_KEYS=['imgBg','imgPanel','imgDeco'];
 const siteInit=()=>Object.assign({},clone(SITE),clone(PREFS));
@@ -118,7 +118,7 @@ function applySite(s0){
   set('--nav-edge',s.navb);set('--turn-now',s.tnow);set('--turn-next',s.tnext);set('--turn-done',s.tdone);set('--fxb',s.fxb);
   set('--r',s.radius!==undefined&&s.radius!==''&&s.radius!==null?s.radius+'px':'');
   set('--display',FONTS[s.font]||'');
-  applyDecor(s);
+  applyDecor(s);bgApply(s);
 }
 let diceSides=20, diceCount=1, diceMod=0, diceMode='normal', rolls=[], lastRoll=null;
 const t=k=>TX[lang][k];

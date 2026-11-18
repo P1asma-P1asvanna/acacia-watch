@@ -1,6 +1,6 @@
 /* ---------- adventure: rooms with a player rail that fits one screen ---------- */
 const MAXSEATS=12;
-const saveRooms=()=>put('dd_rooms',rooms);
+const saveRooms=()=>{try{if(typeof iniSyncAll==='function')iniSyncAll()}catch(e){}put('dd_rooms',rooms)};
 const inStage=()=>view==='adventure'&&!roomEdit&&rooms.some(r=>r.id===roomOpen);
 function renderAdventure(){
   if(roomEdit)return renderRoomForm();

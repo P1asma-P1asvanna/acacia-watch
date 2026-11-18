@@ -6,5 +6,6 @@ function render(){
   applySite(curTheme());applyLayout();
   const root=$('#root');
   root.innerHTML=me()?renderApp():renderLogin();
+  fxAfterRender();
 }
 

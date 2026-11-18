@@ -124,7 +124,7 @@ document.addEventListener('input',e=>{
   if(view==='adminset'&&adminDraft&&el.dataset.ad){const f=el.dataset.ad;adminDraft[f]=f==='abMax'?el.value:el.value;if(f!=='abMax'){const bd=document.querySelector('.side .brand');if(bd)bd.innerHTML=brandHtml()}return}
   if(view==='site'&&siteDraft&&(el.dataset.sk||el.dataset.s)){
     if(el.dataset.sk){siteDraft[el.dataset.sk]=el.value;const h=$('#hx_'+el.dataset.sk);if(h)h.textContent=el.value}
-    else{const f=el.dataset.s;siteDraft[f]=['radius','fxms','fxamt','dim','pdim','decoSize','decoOp'].includes(f)?Number(el.value):el.value;const sp=f==='radius'?$('#rv'):$('#v_'+f);if(sp)sp.textContent=el.value}
+    else{const f=el.dataset.s;siteDraft[f]=['radius','fxms','fxamt','dim','pdim','decoSize','decoOp','bgi','winms'].includes(f)?Number(el.value):el.value;const sp=f==='radius'?$('#rv'):$('#v_'+f);if(sp)sp.textContent=el.value}
     applySite(siteDraft);const bd=document.querySelector('.side .brand');if(bd)bd.innerHTML=brandHtml();return;
   }
   if(el.dataset.eqmax){const n=Math.round(Number(el.value));if(n>=1&&n<=99){CAT.eqMax=n;put('dd_cat',CAT)}return}

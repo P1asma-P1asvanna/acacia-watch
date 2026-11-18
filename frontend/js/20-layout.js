@@ -6,7 +6,7 @@ const LAYOUT={
   sheet:{ids:['basic','bgpick','abil','asi','prof','hp','spells','res','weapons','profs','items','ac','feat','combat'],
     label:{basic:'secBasic',bgpick:'secBgPick',abil:'secAbil',asi:'secAsi',prof:'secProf',hp:'hpTitle',spells:'spTitle',res:'resTitle',weapons:'wTitle',profs:'prTitle',items:'itTitle',ac:'acTitle',feat:'featTitleP',combat:'secCombat'}},
   players:{ids:['list','accounts'],label:{list:'players',accounts:'accounts'}},
-  site:{ids:['colors','decor','fx','shape'],label:{colors:'sColors',decor:'sDecor',fx:'sFx',shape:'sShape'}},
+  site:{ids:['colors','decor','bgfx','fx','shape'],label:{colors:'sColors',decor:'sDecor',bgfx:'sBgfx',fx:'sFx',shape:'sShape'}},
   adminset:{ids:['identity','rules','backup'],label:{identity:'sIdentity',rules:'aRules',backup:'bkTitle'}},
   stage:{ids:['main','rail'],label:{main:'advMain',rail:'playersRail'},nosize:true}
 };

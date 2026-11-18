@@ -20,6 +20,7 @@ function iniPanel(rm){
      <div class="ini-name">${c?cpicHtml(c,'sm'):''}<div><b>${esc(iniName(e))}</b>${taDots(rm.id,e.id)}<small>${kind} · ${t('iniMod')} ${sgn(iniModOf(e))}${now?' · '+t('iniNow'):nxt?' · '+t('iniNextTag'):dn?' · '+t('iniDoneTag'):''}</small></div></div>
      <input type="number" aria-label="${t('iniInit')}: ${esc(iniName(e))}" data-ini="init" data-id="${e.id}" value="${e.init==null?'':e.init}" placeholder="${t('iniNoRoll')}">
      <span class="ini-hp">${t('iniHpF')} ${hp}</span>
+     <span class="ini-ac">${t('iniAc')} ${c?`<b>${iniAcOf(e)}</b>`:`<input type="number" min="0" max="60" aria-label="${t('iniAc')}" data-ini="ac" data-id="${e.id}" value="${e.ac==null?'':esc(e.ac)}" placeholder="AC">`}</span>
      <div class="ini-act"><button class="btn small" data-act="ini-roll" data-id="${e.id}">${t('iniRoll')}</button><button class="btn small danger" data-act="ini-del" data-id="${e.id}" aria-label="${t('iniDel')} ${esc(iniName(e))}">✕</button></div>${cbSub(e)}</li>`}).join('');
   return`<section class="panel ini"><div class="ph"><h2>${t('iniTab')}</h2></div>
    <div class="ini-top"><span class="ini-round">${t('iniRound')} ${I.round}</span>
@@ -31,11 +32,14 @@ function iniPanel(rm){
     <button class="btn" data-act="ini-addseat">${t('iniAddSeat')}</button>
     <div class="field"><label for="ini_gm">${t('iniPickGm')}</label><select id="ini_gm"><option value="">—</option>${gm}</select></div>
     <button class="btn" data-act="ini-addgm">${t('iniAddGm')}</button>
-    <button class="btn" data-act="ini-rollall">${t('iniRollAll')}</button></div>
+    <button class="btn" data-act="ini-rollall">${t('iniRollAll')}</button>
+    <label class="chk"><input type="checkbox" data-ini-room="hideAc" ${I.hideAc?'checked':''}> ${t('iniHideAc')}</label></div>
    <div class="ini-add"><span class="note" style="width:100%">${t('iniCustom')}</span>
     <div class="field"><label for="ini_name">${t('iniName')}</label><input id="ini_name" placeholder="Goblin 1"></div>
     <div class="field sm"><label for="ini_mod">${t('iniMod')}</label><input id="ini_mod" type="number" value="0"></div>
     <div class="field sm"><label for="ini_hp">${t('iniHpF')}</label><input id="ini_hp" type="number" min="0"></div>
+    <div class="field sm"><label for="ini_ac">${t('iniAc')}</label><input id="ini_ac" type="number" min="0" max="60"></div>
+    <div class="field sm"><label for="ini_sv">${t('iniSv')}</label><input id="ini_sv" type="number" value="0"></div>
     <button class="btn" data-act="ini-addcustom">${t('iniAdd')}</button><span class="err" role="alert">${esc(iniErr)}</span></div>
    ${mgGmPanel(rm.id)}${started?taGmPanel(rm.id):taLogHtml(rm.id)}${cbEvtHtml(I.evt,I.list,true)}${cbQueue(I)}${cbHowHtml()}${started?`<div class="ini-legend"><span><i style="background:var(--turn-now)"></i>${t('iniNow')}</span><span><i style="background:var(--turn-next)"></i>${t('iniNextTag')}</span><span><i style="background:var(--turn-done)"></i>${t('iniDoneTag')}</span></div>`:''}${I.list.length?`<ul class="ini-list">${rows}</ul><p class="note" style="margin:0;padding:10px 16px 14px">${t('iniTies')} · ${t('iniHpNote')}</p>`:`<div class="empty"><div>${t('iniEmpty')}</div></div>`}${cbLogHtml(I)}</section>`;
 }
@@ -46,7 +50,7 @@ function iniAction(a,id){
   if(a==='ini-addseat'){rm.assign.filter(Boolean).forEach(cid=>{if(!has('pc:'+cid))add({ref:'pc:'+cid})})}
   else if(a==='ini-addgm'){const g=document.getElementById('ini_gm').value;if(g&&!has('npc:'+g))add({ref:'npc:'+g})}
   else if(a==='ini-addcustom'){const n=document.getElementById('ini_name').value.trim();if(!n){iniErr=t('iniNeedName');render();return}
-    const hpv=document.getElementById('ini_hp').value;add({name:n,mod:Math.round(num(document.getElementById('ini_mod').value)),hp:hpv===''?null:Math.max(0,Math.round(num(hpv))),hpMax:hpv===''?null:Math.max(0,Math.round(num(hpv)))})}
+    const hpv=document.getElementById('ini_hp').value;add({name:n,mod:Math.round(num(document.getElementById('ini_mod').value)),ac:document.getElementById('ini_ac').value===''?null:Math.max(0,Math.min(60,Math.round(num(document.getElementById('ini_ac').value)))),svm:Math.round(num(document.getElementById('ini_sv').value)),hp:hpv===''?null:Math.max(0,Math.round(num(hpv))),hpMax:hpv===''?null:Math.max(0,Math.round(num(hpv)))})}
   else if(a==='ini-rollall'){I.list.forEach(e=>{if(e.init==null)iniRollOne(e)})}
   else if(a==='ini-roll'){const e=I.list.find(x=>x.id===id);if(e)iniRollOne(e)}
   else if(a==='ini-del'){
@@ -61,7 +65,27 @@ function iniAction(a,id){
 function iniChange(el){
   const rm=rooms.find(r=>r.id===roomOpen);if(!rm)return;const I=iniData(rm),e=I.list.find(x=>x.id===el.dataset.id);if(!e)return;
   if(el.dataset.ini==='init')e.init=el.value===''?null:Math.round(num(el.value));
+  else if(el.dataset.ini==='ac')e.ac=el.value===''?null:Math.max(0,Math.min(60,Math.round(num(el.value))));
   else if(el.dataset.ini==='hp'){e.hp=el.value===''?null:Math.max(0,Math.round(num(el.value)));if(e.hp!=null&&(e.hpMax==null||e.hp>e.hpMax))e.hpMax=e.hp}
   iniSort(I);saveRooms();render();
 }
 
+
+/* ---- armor class and saving throws of every combatant, kept on the entry so the table can say "hit / miss" and roll saves.
+   Sheet characters are worked out here (the GM's page has every sheet); the server passes the numbers on to the players. ---- */
+const iniAcOf=e=>{const c=iniChar(e);if(!c)return e.ac==null?null:Math.round(num(e.ac));const x=Object.assign({},c);normAc(x);return effAc(x)};
+const iniSaveOf=(c,ab)=>mod(abT(c,ab))+prof(c.level)*profLevel(c,'save',ab);
+function iniStatsOf(e){
+  const c=iniChar(e);
+  if(c)return{ac:iniAcOf(e),sv:Object.fromEntries(ABS.map(k=>[k,iniSaveOf(c,k)]))};
+  const m=Math.round(num(e.svm));return{ac:e.ac==null?null:Math.round(num(e.ac)),sv:Object.fromEntries(ABS.map(k=>[k,m]))}}
+function iniSyncAll(){
+  if(!isAdmin())return false;let ch=false;
+  rooms.forEach(rm=>{const I=rm.init;if(!I||!Array.isArray(I.list))return;
+    I.list.forEach(e=>{if(!e.ref)return;let s;try{s=iniStatsOf(e)}catch(x){return}
+      if(e.ac!==s.ac||JSON.stringify(e.sv)!==JSON.stringify(s.sv)){e.ac=s.ac;e.sv=s.sv;ch=true}})});
+  return ch}
+document.addEventListener('change',e=>{const el=e.target;if(!el.dataset||!el.dataset.iniRoom)return;
+  const rm=rooms.find(r=>r.id===roomOpen);if(!rm)return;iniData(rm)[el.dataset.iniRoom]=el.checked;saveRooms();render()});
+Object.assign(TX.th,{iniAc:'AC',iniSv:'โบนัสเซฟ',iniHideAc:'ซ่อนเลข AC ศัตรูจากผู้เล่น (บอกแค่โดน/พลาด)'});
+Object.assign(TX.en,{iniAc:'AC',iniSv:'Save bonus',iniHideAc:"Hide foes' AC from players (only say hit / miss)"});

@@ -134,7 +134,11 @@ def player_rooms(c, me):
             else:
                 name = str(e.get("name") or "")
             v = num(e.get("init"))
-            entries.append({"id": str(e.get("id")), "name": (name or "—")[:80], "init": int(v) if v == int(v) else v,
+            # armor class and saving-throw bonuses, so the table can say "hit / miss" and roll saves (the GM's page keeps them up to date)
+            ac = int(num(e.get("ac"))) if e.get("ac") not in (None, "") and 0 <= num(e.get("ac")) <= 60 else None
+            sv = e.get("sv") if isinstance(e.get("sv"), dict) else {}
+            sv = {k: max(-20, min(30, int(num(sv.get(k))))) for k in ("str", "dex", "con", "int", "wis", "cha")} if sv else None
+            entries.append({"id": str(e.get("id")), "ac": ac, "sv": sv, "name": (name or "—")[:80], "init": int(v) if v == int(v) else v,
                             "kind": "pc" if is_pc else "other", "mine": is_pc and cid in mine, "pc": cid if cid in mine else "",
                             "fx": public_fx(e.get("fx")), "pic": pic_of.get(ref, "") if ref[:3] == "pc:" or ref[:4] == "npc:" else ""})
         seen = {x["id"] for x in entries}
@@ -142,7 +146,7 @@ def player_rooms(c, me):
                for x in (ini.get("evt") if isinstance(ini.get("evt"), list) else [])[:60]
                if isinstance(x, dict) and x.get("k") in ("turn_start", "turn_end", "round_start", "round_end", "expire") and str(x.get("eid")) in seen]
         out.append({"id": str(rm.get("id")), "name": str(rm.get("name") or "")[:80], "round": clampi(ini.get("round"), 1, 9999, 1), "evt": evt,
-                    "cur": str(ini.get("cur") or ""), "list": entries, "feed": feed_pub(kv_get(c, "feed:" + str(rm.get("id")))),
+                    "cur": str(ini.get("cur") or ""), "hideAc": bool(ini.get("hideAc")), "list": entries, "feed": feed_pub(kv_get(c, "feed:" + str(rm.get("id")))),
                     "mg": mg.pub(kv_get(c, "mg:" + str(rm.get("id")))),
                     "turn": turns.pub(turns.view(kv_get(c, "turn:" + str(rm.get("id"))), ini), seen),
                     "party": [{"name": pc_name.get(a, "—"), "mine": a in mine, "pc": a if a in mine else ""} for a in assign]})
