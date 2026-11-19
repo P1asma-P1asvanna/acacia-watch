@@ -57,17 +57,20 @@ function taCardHtml(eid){
     if(r.k==='dmg'||r.k==='heal'){
       const ap=c.apply.findIndex(a=>a.row===r),a=ap>=0?c.apply[ap]:null;
       return`<div class="tr ${r.k==='heal'?'heal':'dmg'}"><div class="tr-big">${r.k==='heal'?'+':''}${r.amt}</div><div class="tr-txt"><b>${r.k==='heal'?t('taHeals'):t('taDmgN')}${r.dtype?' · '+esc(r.dtype):''}</b><small>${esc(r.detail||'')}${r.tgt?' → '+esc(r.tgt):''}</small></div>
-       ${a&&isAdmin()?(a.done?`<span class="pill">✔ ${t('taApplied')}</span>`:`<button type="button" class="btn small primary" data-act="ta-apply" data-id="${eid}" data-v="${ap}">${r.k==='heal'?t('taApplyHeal'):t('taApplyDmg')}</button>`):''}</div>`}
+       ${a&&isAdmin()?(a.done?`<span class="pill">✔ ${t('taApplied')}</span>`:`<button type="button" class="btn small primary" data-act="ta-apply" data-id="${eid}" data-v="${ap}" ${r.th&&(rxFind(typeof roomOpen!=='undefined'?roomOpen:'',r.th)||{}).st==='open'?'disabled':''}>${r.k==='heal'?t('taApplyHeal'):t('taApplyDmg')}</button>`):''}</div>`}
     const v=taV[r.v]||taV.unk,big=r.k==='save'?r.tot:r.tot;
     const vs=r.k==='save'?`${t('taVsDc')} ${r.dc}`:(r.ac==null||r.hide?'':`${t('taVsAc')} ${r.ac}`);
     return`<div class="tr ${v[2]}"><div class="tr-big">${big}</div><div class="tr-txt"><b>${v[0]} ${t(v[1])}</b><small>${r.k==='save'?`${t('taSaveOf')} ${(r.ab||'').toUpperCase()}`:t('taToHit')}${r.nat?` · d20=${r.nat}`:''}${vs?' · '+vs:''}${r.tgt?' → '+esc(r.tgt):''}</small></div></div>`}).join('');
   const more=c.spell&&c.spell.more&&TA.tgt[eid]?`<button type="button" class="btn small" data-act="ta-more" data-id="${eid}" ${TA.busy?'disabled':''}>${t('taMoreTgt')}</button>`:'';
   return`<div class="tacard${isNew?' tc-new':''}" role="status"><div class="tc-h"><b>${esc(c.title)}</b>${c.sub?`<small>${esc(c.sub)}</small>`:''}<button type="button" class="tc-x" data-act="ta-cardx" data-id="${eid}" aria-label="${t('close')}">✕</button></div>
-   ${rows}${more}${c.desc?`<details class="tc-desc" open><summary>${t('taSpellText')}</summary><div>${esc(c.desc).replace(/\n/g,'<br>')}</div></details>`:''}</div>`}
+   ${rows}${rxCardBlock(c)}${more}${c.desc?`<details class="tc-desc" open><summary>${t('taSpellText')}</summary><div>${esc(c.desc).replace(/\n/g,'<br>')}</div></details>`:''}</div>`}
 function taApply(rid,eid,i){
   const c=TA.card[eid],a=c&&c.apply[i];if(!a||a.done||!isAdmin())return;
-  const rm=rooms.find(r=>r.id===rid);if(!rm)return;const I=iniData(rm),e=I.list.find(x=>x.id===a.tid);if(!e)return;
-  if(a.heal)cbHeal(I,e,a.amt);else cbDamage(I,e,a.amt,a.dtype);
+  const rm=rooms.find(r=>r.id===rid);if(!rm)return;const I=iniData(rm);let amt=a.amt,tid=a.tid;
+  const th=a.row&&a.row.th?rxFind(rid,a.row.th):null;   /* reactions may have changed the damage, or who takes it */
+  if(th){if(th.st==='open'){TA.err=t('rxWait');render();return}const o=rxOutcome(th);amt=o.hit?o.amt:0;if(o.take)tid=o.take}
+  const e=I.list.find(x=>x.id===tid);if(!e)return;
+  if(a.heal)cbHeal(I,e,amt);else if(amt>0)cbDamage(I,e,amt,a.dtype);
   a.done=true;saveRooms();render()}
 /* ---- weapon attack: to-hit against AC, then the damage ---- */
 async function taWeaponDmg(rid,eid,r,s,crit){
@@ -93,10 +96,11 @@ async function taWeapon(rid,eid,wid,kind){
     const D=await taWeaponDmg(rid,eid,r,s,kind==='crit');
     if(D){const row={k:'dmg',amt:D.amt,detail:D.detail,dtype:D.dtype,tgt:tg&&tg.name};card.rows.push(row);taPushApply(card,row,tg);
       txt=`${r.ref} ${t(kind==='crit'?'wRollCrit':'taDmg')} ${D.amt}${D.dtype?' '+D.dtype:''}${tg?' → '+tg.name:''}`}}
+  try{await rxOpen(rid,eid,card,tg,0,r.ref,false)}catch(e){console.error(e)}
   TA.busy=false;if(txt)await taUse(rid,eid,slot,txt);else render()}
 /* ---- spells ---- */
 async function taSpellTarget(rid,eid,card){
-  const S=card.spell,info=S.info,tg=taTgtInfo(rid,eid),nm=S.name;let txt='';
+  const S=card.spell,info=S.info,tg=taTgtInfo(rid,eid),nm=S.name,from0=card.rows.length;let txt='';
   if(info.atk){
     const e=await taRoll(rid,eid,{n:1,sides:20,mod:Math.round(num(S.atk)),mode:TA.mode,why:nm+' '+t('spAtk')});
     if(e){const J=taJudge(e,tg&&tg.ac);card.rows.push({k:'atk',tot:e.total,nat:J.nat,ac:tg&&tg.ac,hide:tg&&tg.hide,v:J.v,tgt:tg&&tg.name});
@@ -120,6 +124,7 @@ async function taSpellTarget(rid,eid,card){
   else if(info.dmg){
     const D=await taDice(rid,eid,info.dmg,nm+' '+t('taDmg'),false);
     if(D){const row={k:'dmg',amt:D.total,detail:`${taDiceTxt(info.dmg)} = ${D.total}`,dtype:info.dmg.type,tgt:tg&&tg.name};card.rows.push(row);taPushApply(card,row,tg);txt=`${D.total} ${info.dmg.type}${tg?' → '+tg.name:''}`}}
+  try{await rxOpen(rid,eid,card,tg,from0,nm,true)}catch(e){console.error(e)}
   return txt}
 async function taSpellFlow(rid,eid,slot,name,lead,castLv,force){
   const d=taDoc(rid,eid),sp=spellOf(name),I=d&&typeof spellInfo==='function'?spellInfo(d):null;

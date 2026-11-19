@@ -9,6 +9,7 @@ function render(){
   const SC='.stagemain,.tdfeed,.cpop,.ta-body,.mgescroll',keep=[...document.querySelectorAll(SC)].map(e=>e.scrollTop),sx=window.scrollX,sy=window.scrollY,k0=typeof FX!=='undefined'?FX.key:'';
   root.innerHTML=me()?renderApp():renderLogin();
   fxAfterRender();
+  try{rxDock()}catch(e){console.error(e)}
   if(typeof FX==='undefined'||FX.key===k0){
     if(sy||sx)window.scrollTo(sx,sy);
     document.querySelectorAll(SC).forEach((e,i)=>{if(keep[i])e.scrollTop=keep[i]})}

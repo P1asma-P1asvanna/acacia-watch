@@ -131,3 +131,11 @@ button.ta-dot{cursor:pointer}
 .tc-desc summary{cursor:pointer;font-weight:600;color:var(--ink)}.tc-desc div{margin-top:6px;line-height:1.55}
 .ini-ac{display:inline-flex;align-items:center;gap:6px;white-space:nowrap;font-size:.9rem;color:var(--muted)}.ini-ac input{width:64px}.ini-ac b{color:var(--ink);font-size:1.05rem}
 @media(max-width:560px){.tr{grid-template-columns:58px 1fr;}.tr .btn,.tr .pill{grid-column:1/-1;justify-self:start}.tr-big{font-size:2rem}}
+
+/* reactions to an attack */
+#rxdock{position:fixed;left:50%;bottom:12px;transform:translateX(-50%);z-index:260;width:min(560px,calc(100vw - 24px));max-height:70vh;overflow:auto;display:grid;gap:10px}
+.rxc{background:var(--surface);border:2px solid var(--gold,#e3b449);border-radius:14px;padding:12px 14px;box-shadow:0 10px 30px rgba(0,0,0,.45)}
+.rxh{font-weight:800;font-size:1.05rem}.rxs{color:var(--muted);margin:2px 0 8px}
+.rxp{display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin-top:6px}.rxp>b{flex:1 0 100%}
+.rxb{display:grid;gap:1px;text-align:left}.rxb small{color:var(--muted);font-weight:400}
+.tr.rx .rx-ans{margin:4px 0 0;padding-left:18px}.rx-pass{color:var(--muted)}

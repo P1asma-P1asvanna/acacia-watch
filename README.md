@@ -468,3 +468,10 @@ My settings → "Background scene & window effects". Saved per user (not global)
 - Auto quality on mobile/low-end; an FPS guard lowers quality for the session if frames drop. Paused on hidden tab and while a minigame plays; off with reduced-motion.
 - Window effects when a page/popup opens: float up, fade, zoom, slide, drop, pop, blur, flip, none, plus speed and a preview button.
 - Code: `frontend/js/24-bgfx.js`, `frontend/css/18-bgfx.css`; prefs whitelisted in `validation.py`.
+
+## Reactions to an attack
+
+When the GM's attack / spell lands on a player character (`taWeapon` / `taSpellTarget` → `rxOpen` in `frontend/js/14f-react.js`), a "threat" is stored in the turn state (`th`, `backend/acacia/turns.py`, ops `threat` / `react` / `pass` / `close`).
+- Only characters with a free Reaction and a usable reaction spell / feature are asked (the target: self options; others: ally options). If nobody can react, nothing changes.
+- Players get a box (`#rxdock`) with the options and a "let it pass" button. A pick spends the Reaction and the spell slot and sends its effect; the GM's card recomputes the result (`rxOutcome`): +AC, −to-hit, cancel (Counterspell), half / reduced damage, or another character takes the damage. "Apply damage" waits until everyone answered (or the GM presses "Stop waiting").
+- Known reactions are in `RX_DB` (Shield, Absorb Elements, Counterspell, Silvery Barbs, Uncanny Dodge, Deflect Missiles, Interception, Protection, Defensive Duelist, Parry, Cutting Words, Warding Flare). Other spells with casting time "reaction" and features of kind Reaction are guessed from their text (+N AC, half damage, "take the damage instead"); anything else is marked "GM rules the result".

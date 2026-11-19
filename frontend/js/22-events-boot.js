@@ -25,6 +25,7 @@ document.addEventListener('click',e=>{
   if(a.startsWith('bk-')){bkAction(a);return}
   if(a==='media-del'){mediaDel(b.dataset.id);return}
   if(a.startsWith('ta-')){taClick(a,b);return}
+  if(a.startsWith('rx-')){rxClick(a,b);return}
   if(a.startsWith('ini-')){iniAction(a,id);return}
   if(a.startsWith('cb-')||a.startsWith('fx-')||a.startsWith('q-')){cbAction(a,b);return}
   if(a==='lang'){lang=v;put('dd_lang',lang);render()}
