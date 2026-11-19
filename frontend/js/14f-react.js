@@ -7,7 +7,7 @@
       it, damage can be reduced / halved, or another character takes it. "Apply" is available once everybody answered (or the GM closes it).
    Effect kinds: ac (+N AC), sub (-N from the attack roll), neg (the attack / spell has no effect), half, res (resistance to elemental
    damage), red (-N damage), take (the answering character takes the damage instead), dis / reroll / note (the GM rules it by hand). */
-const RX={seen:{},busy:false,err:''};
+const RX={seen:{},auto:{},busy:false,err:''};
 const RX_ELEM=['acid','cold','fire','lightning','thunder'];
 /* known reactions: name -> what it does. self / ally = who may use it; when = hit (an attack that hit) | spell | elem (elemental damage) */
 const RX_DB={
@@ -25,7 +25,9 @@ const RX_DB={
   'warding flare':{self:1,when:'hit',fx:{k:'dis'}}};
 const RX_INC=['uncanny dodge','deflect missiles','interception','protection','defensive duelist','parry','cutting words','warding flare'];
 /* what a reaction does: from the table by name, otherwise guessed from its text */
-function rxClass(name,desc,isSp){
+function rxClass(name,desc,isSp,spObj){
+  if(spObj&&spObj.rx&&spObj.rx.k){const x=spObj.rx,m=x.dice&&/^(\d{1,2})d(\d{1,3})(?:([+-]\d{1,3}))?$/.exec(x.dice);
+    return{known:1,self:1,ally:x.ally?1:0,when:x.k==='res'?'elem':x.k==='ac'||x.k==='sub'?'hit':'',fx:{k:x.k,v:x.v||0},dice:m?[+m[1],+m[2],m[3]||'']:undefined}}
   const n=String(name||'').toLowerCase().trim();let k=RX_DB[n]&&!!RX_DB[n].sp===isSp?n:'';
   if(!k&&!isSp)k=RX_INC.find(x=>n.includes(x))||'';
   if(k)return Object.assign({known:1},RX_DB[k]);
@@ -34,7 +36,7 @@ function rxClass(name,desc,isSp){
   if(m)return{known:0,self:1,ally:ally,when:'hit',fx:{k:'ac',v:Number(m[1])}};
   if(/resistance to the (triggering )?damage|half (as much|the) damage|damage is halved|damage you take is halved/i.test(x))return{known:0,self:1,ally:ally,when:'hit',fx:{k:'half'}};
   return{known:0,self:1,ally:ally,fx:{k:'note'}}}
-const rxMod=(d,s)=>String(s||'').split('+').filter(Boolean).reduce((a,k)=>a+(k==='pb'?prof(d.level):k==='lvl'?Math.round(num(d.level))||1:ABS.includes(k)?mod(abT(d,k)):0),0);
+const rxMod=(d,s)=>String(s||'').split('+').filter(Boolean).reduce((a,k)=>a+(k==='pb'?prof(d.level):k==='lvl'?Math.round(num(d.level))||1:ABS.includes(k)?mod(abT(d,k)):/^-?\d+$/.test(k)?Number(k):0),0);
 /* a free spell slot for a spell of level lvl: {v:''} (cantrip), {v:'3'} (a normal slot), {v:'p'} (pact) or null */
 function rxSlot(d,lvl){
   if(!lvl)return{v:''};const I=typeof spellInfo==='function'?spellInfo(d):null;if(!I)return null;const sl=d.sl||{u:[],p:0};
@@ -44,13 +46,13 @@ function rxSlot(d,lvl){
 /* the usable reactions of a character against a threat */
 function rxOpts(d,th,self){
   if(!d)return[];const out=[],dt=String(th.dt||'').toLowerCase();
-  const add=(name,desc,isSp,lvl)=>{
-    const c=rxClass(name,desc,isSp);if(self&&!c.self)return;if(!self&&!c.ally)return;
+  const add=(name,desc,isSp,lvl,spObj)=>{
+    const c=rxClass(name,desc,isSp,spObj);if(self&&!c.self)return;if(!self&&!c.ally)return;
     if(c.when==='hit'&&th.kind!=='atk'&&!(c.fx.k==='half'||c.fx.k==='red'||c.fx.k==='take'))return;
     if(c.when==='spell'&&!th.sp)return;if(c.when==='elem'&&dt&&!RX_ELEM.includes(dt))return;
     if(isSp&&lvl>0&&!rxSlot(d,lvl))return;
     out.push({key:(isSp?'s:':'f:')+name,sp:isSp,name,lvl,c,fx:Object.assign({},c.fx)})};
-  (d.spells||[]).forEach(x=>{const sp=spellOf(x.n);if(sp&&sp.timeK==='reaction')add(sp.name||x.n,sp.desc,true,sp.lvl||0)});
+  (d.spells||[]).forEach(x=>{const sp=spellOf(x.n);if(sp&&sp.timeK==='reaction')add(sp.name||x.n,sp.desc,true,sp.lvl||0,sp)});
   featList(d).forEach(f=>{if(taFeatKind(f)==='reaction')add(f.name||'—',f.desc,false,0)});
   return out}
 const rxFxTxt=(fx,dice)=>({ac:`+${fx.v} AC`,sub:dice?t('rxSub'):`−${fx.v} ${t('taToHit')}`,neg:t('rxNeg'),half:t('rxHalf'),res:t('rxRes'),red:dice?t('rxRed'):`−${fx.v} ${t('taDmgN')}`,take:t('rxTake'),dis:t('rxDis'),reroll:t('rxReroll'),note:t('rxNote')})[fx.k]||'';
@@ -60,8 +62,8 @@ function rxOutcome(th){
   const judge=()=>th.nat===20?true:th.nat===1?false:ac==null?true:tot>=ac;
   let hit=atk?judge():true;
   (th.ans||[]).forEach(a=>{const f=a.fx;if(!f)return;
-    if(f.k==='ac'){if(atk){ac=(ac==null?0:ac)+f.v;hit=hit&&judge()}else notes.push(a)}
-    else if(f.k==='sub'){if(atk){tot-=f.v;hit=hit&&judge()}else notes.push(a)}
+    if(f.k==='ac'){if(atk&&ac!=null){ac+=f.v;hit=hit&&judge()}else notes.push(a)}
+    else if(f.k==='sub'){if(atk&&ac!=null){tot-=f.v;hit=hit&&judge()}else notes.push(a)}
     else if(f.k==='neg')hit=false;
     else if(f.k==='half')amt=Math.floor(amt/2);
     else if(f.k==='res'){if(RX_ELEM.includes(String(th.dt||'').toLowerCase()))amt=Math.floor(amt/2);else notes.push(a)}
@@ -72,15 +74,16 @@ function rxOutcome(th){
 const rxFind=(rid,id)=>{const st=isAdmin()?TURNS[rid]:(taRm(rid)||{}).turn;return st&&(st.th||[]).find(x=>x.id===id)||null};
 /* ---- GM: open a threat after an attack / spell on a player character ---- */
 async function rxOpen(rid,eid,card,tg,from,label,spell){
-  if(!isAdmin()||!tg)return;const en=taEnts(rid).find(x=>x.id===tg.id);if(!en||!String(en.ref).startsWith('pc:'))return;
+  if(!tg)return;const en=taEnts(rid).find(x=>x.id===tg.id);if(!en)return;
+  const toPc=String(en.ref).startsWith('pc:'),gmSide=!toPc;if(isAdmin()&&!toPc)return;   /* the GM's own attacks on the GM's characters are not asked about */
   const rows=card.rows.slice(from),atk=rows.find(r=>r.k==='atk'),sv=rows.find(r=>r.k==='save'),dm=rows.find(r=>r.k==='dmg'&&r.amt>0);
   if(!dm||(atk&&atk.v!=='hit'&&atk.v!=='crit'))return;
   const th={id:uid()+uid(),to:tg.id,tn:tg.name,fn:taTname(rid,eid),lb:label,kind:atk?'atk':sv?'save':'dmg',tot:atk?atk.tot:0,nat:atk?atk.nat||0:0,ac:atk&&!atk.hide?atk.ac:null,
     amt:dm.amt,dt:dm.dtype||'',sp:spell?1:0,sv:sv?`${(sv.ab||'').toUpperCase()} ${sv.tot} vs DC ${sv.dc}`:'',need:[]};
   const st=taSt(rid);
-  taEnts(rid).forEach(x=>{if(!String(x.ref).startsWith('pc:')||x.id===eid)return;if(taSl(st,x.id).s.rea)return;
+  if(!gmSide){taEnts(rid).forEach(x=>{if(!String(x.ref).startsWith('pc:')||x.id===eid)return;if(taSl(st,x.id).s.rea)return;
     const d=taDoc(rid,x.id);if(d&&rxOpts(d,th,x.id===tg.id).length)th.need.push(x.id)});
-  if(!th.need.length)return;
+    if(!th.need.length)return}
   try{await api('POST','api/turn',{room:rid,eid,op:'threat',th});
     dm.th=th.id;st.th=[Object.assign({ts:Math.floor(Date.now()/1000),st:'open',ans:[]},th),...(st.th||[])].slice(0,12)}
   catch(e){console.error('rxOpen',e)}}
@@ -94,10 +97,19 @@ function rxCardBlock(c){
     const head=open?`${t('rxWaiting')}: ${esc(wait)}`:!o.hit?'✔ '+t('rxNoEffect'):o.take?`${t('rxFinal')} ${o.amt} → ${esc(names(o.take))}`:`${t('rxFinal')} ${o.amt}`;
     return`<div class="tr rx ${open?'mid':o.hit?'bad':'ok'}"><div class="tr-big">${open?'⏳':o.hit?o.amt:'✔'}</div><div class="tr-txt"><b>${head}</b>${ans?`<ul class="rx-ans">${ans}</ul>`:`<small>${t('rxNone')}</small>`}
       ${o.notes.length?`<small>⚠ ${t('rxManual')}: ${o.notes.map(a=>esc(a.n+' ('+rxFxTxt(a.fx)+')')).join(', ')}</small>`:''}</div>
-      ${open?`<button type="button" class="btn small" data-act="rx-close" data-rid="${rid}" data-v="${th.id}">${t('rxClose')}</button>`:''}</div>`}).join('')}
+      ${open&&isAdmin()?`<button type="button" class="btn small" data-act="rx-close" data-rid="${rid}" data-v="${th.id}">${t('rxClose')}</button>`:''}</div>`}).join('')}
 /* ---- the players' box ---- */
 function rxMine(){
-  const out=[];(typeof prooms!=='undefined'?prooms:[]).forEach(rm=>{const st=rm.turn;if(!st)return;
+  const out=[];
+  if(isAdmin()){   /* the GM answers for the GM's characters (npc sheets) */
+    (rooms||[]).forEach(rm=>{const st=TURNS[rm.id];if(!st)return;
+      (st.th||[]).forEach(th=>{if(th.st!=='open')return;
+        (th.need||[]).forEach(id=>{if((th.ans||[]).some(a=>a.eid===id))return;
+          const en=((rm.init&&rm.init.list)||[]).find(e=>e.id===id);if(!en||!String(en.ref||'').startsWith('npc:'))return;
+          const d=npcs.find(c=>c.id===en.ref.slice(4)),e=st.e&&st.e[id],used=!!(e&&e.s&&e.s.rea),o=d&&!used?rxOpts(d,th,id===th.to):[];
+          if(o.length)out.push({rid:rm.id,th,en:{id,name:iniName(en),ref:en.ref},d,o});
+          else if(!RX.auto[th.id+id]){RX.auto[th.id+id]=1;setTimeout(()=>rxAutoPass(rm.id,id,th.id),1500)}})})});
+    return out}(typeof prooms!=='undefined'?prooms:[]).forEach(rm=>{const st=rm.turn;if(!st)return;
     (st.th||[]).forEach(th=>{if(th.st!=='open')return;
       (rm.list||[]).forEach(en=>{if(!en.mine||!en.pc||!(th.need||[]).includes(en.id)||(th.ans||[]).some(a=>a.eid===en.id))return;
         const e=st.e&&st.e[en.id];if(e&&e.s&&e.s.rea)return;
@@ -105,7 +117,7 @@ function rxMine(){
   return out}
 function rxCost(d,o){const s=o.sp&&o.lvl?rxSlot(d,o.lvl):null;return o.sp?(o.lvl?(s&&s.v==='p'?t('spPact'):s?t('spLv')+' '+s.v:''):t('spCantrip')):t('rxFeature')}
 function rxDock(){
-  let el=document.getElementById('rxdock');const L=(session&&!isAdmin())?rxMine():[];
+  let el=document.getElementById('rxdock');const L=session?rxMine():[];
   if(!L.length){if(el)el.remove();return}
   if(!el){el=document.createElement('div');el.id='rxdock';el.setAttribute('role','alertdialog');document.body.appendChild(el)}
   let fresh=false;L.forEach(x=>{const k=x.th.id+x.en.id;if(!RX.seen[k]){RX.seen[k]=1;fresh=true}});
@@ -127,18 +139,25 @@ async function rxPick(rid,eid,tid,key){
     let fx=Object.assign({},o.c.fx),txt='';
     if(o.sp&&o.lvl){const s=rxSlot(d,o.lvl);if(!s){RX.err=t('spNoSlot');return}
       d.sl=d.sl||{u:[],p:0};d.sl.u=d.sl.u||[];if(s.v==='p')d.sl.p=(d.sl.p||0)+1;else{const k=Number(s.v)-1;d.sl.u[k]=(d.sl.u[k]||0)+1}
-      commit('pc');txt=s.v==='p'?t('spPact'):t('spLv')+' '+s.v}
+      commit(taKind(taEnts(rid).find(x=>x.id===eid).ref));txt=s.v==='p'?t('spPact'):t('spLv')+' '+s.v}
     if(fx.k==='ac'&&fx.v==='pb')fx.v=prof(d.level);
     if(o.c.dice){const[n,sd,m]=o.c.dice,e=await taRoll(rid,eid,{n,sides:sd,mod:rxMod(d,m),why:o.name});if(!e){RX.err=t('tdFail');return}fx.v=Math.max(0,e.total)}
     if(fx.k==='take')fx.to=eid;
     const lab=rxFxTxt(fx,0);
     await api('POST','api/turn',{room:rid,eid,op:'react',tid,name:o.name,fx,text:[o.c.dice||fx.k==='ac'||fx.k==='sub'?lab:'',txt].filter(Boolean).join(' · ')||lab});
   }catch(err){RX.err=err&&err.code==='reaction_used'?t('rxUsed'):err&&err.code==='closed'?t('rxClosed'):t('taFail')}
-  finally{RX.busy=false;try{await livePull()}catch(e){}rxDock()}}
-async function rxPass(rid,eid,tid){
-  if(RX.busy)return;RX.busy=true;
+  finally{RX.busy=false;try{await livePull()}catch(e){}
+    if(isAdmin()){const t2=rxFind(rid,tid);if(t2&&t2.st==='done'){const o2=rxOutcome(t2);try{turnBanner(`${t2.tn}: ${o2.hit?t('rxFinal')+' '+o2.amt:t('rxNoEffect')}`)}catch(e){}}}
+    rxDock()}}
+/* a GM character with nothing to react with answers "pass" by itself (checked again after a moment, in case the data was still loading) */
+function rxAutoPass(rid,id,tid){
+  const th=rxFind(rid,tid);if(!th||th.st!=='open'||(th.ans||[]).some(a=>a.eid===id))return;
+  const en=((taRm(rid)||{}).init||{list:[]}).list.find(e=>e.id===id),d=en&&npcs.find(c=>c.id===String(en.ref||'').slice(4)),st=TURNS[rid],e=st&&st.e&&st.e[id];
+  if(d&&!(e&&e.s&&e.s.rea)&&rxOpts(d,th,id===th.to).length)return;rxPass(rid,id,tid,1)}
+async function rxPass(rid,eid,tid,auto){
+  if(RX.busy&&!auto)return;if(!auto)RX.busy=true;
   try{await api('POST','api/turn',{room:rid,eid,op:'pass',tid,name:''})}catch(e){}
-  finally{RX.busy=false;try{await livePull()}catch(e){}rxDock()}}
+  finally{if(!auto)RX.busy=false;try{await livePull()}catch(e){}rxDock()}}
 async function rxClose(rid,tid){
   const st=TURNS[rid],th=st&&(st.th||[]).find(x=>x.id===tid),eid=th?th.from:'';if(!th)return;th.st='done';render();
   try{await api('POST','api/turn',{room:rid,eid,op:'close',tid})}catch(e){}}

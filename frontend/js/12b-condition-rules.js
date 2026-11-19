@@ -99,7 +99,7 @@ const abOpts=any=>[...(any?[['',cr('any')]]:[]),...CR_AB.map(a=>[a,a])];
 const durUnitOpts=(none)=>[['',none||cr('durNone')],['turn',cr('turn')],['round',cr('round')],['minute',cr('minute')],['hour',cr('hour')]];
 function crActEditor(a,ri,l,ai){
   const at=`data-ri="${ri}" data-l="${l}" data-ai="${ai}"`,f=k=>`${at} data-af="${k}"`,fr=k=>`${at} data-af="${k}" data-rr="1"`;
-  const groups=CR_GROUPS.map(([g,ts])=>`<optgroup label="${esc(cr(g))}">${ts.map(k=>`<option value="${k}" ${a.t===k?'selected':''}>${esc(cr('t_'+k))}</option>`).join('')}</optgroup>`).join('');
+  const groups=(spEditing()?SP_GROUPS:CR_GROUPS).map(([g,ts])=>`<optgroup label="${esc(cr(g))}">${ts.map(k=>`<option value="${k}" ${a.t===k?'selected':''}>${esc(cr('t_'+k))}</option>`).join('')}</optgroup>`).join('');
   const others=(CAT.conditions||[]).map(c=>[c.id,c.name]);
   const num=(k,lo,hi,v,lab)=>`<label class="field"><span>${lab||cr('n')}</span><input ${f(k)} type="number" min="${lo}" max="${hi}" value="${esc(v)}"></label>`;
   const dice=(lab)=>`<label class="field"><span>${lab||cr('dice')}</span><input ${f('dice')} value="${esc(a.dice)}" maxlength="12" autocapitalize="off" spellcheck="false"></label>`;
@@ -121,6 +121,7 @@ function crActEditor(a,ri,l,ai){
     case'flag':p=`<label class="field"><span>${cr('t_flag')}</span>${sel(fr('f'),CR_FLAGS.map(k=>[k,cr('f_'+k)]),a.f)}</label>${a.f==='failsave'?`<label class="field"><span>${cr('ab')}</span>${sel(f('ab'),abOpts(true),a.ab)}</label>`:''}`;break;
     case'text':p=`<label class="field grow"><span>${cr('text')}</span><input ${f('text')} value="${esc(a.text)}" maxlength="200"></label>`;break;
   }
+  if(spEditing()&&(a.t==='dmg'||a.t==='heal'||a.t==='temp'))p+=`<label class="field"><span>${spr('up')}</span><input ${f('up')} value="${esc(a.up||'')}" maxlength="8" placeholder="1d6" autocapitalize="off" spellcheck="false"></label><label class="chk"><input type="checkbox" ${f('cant')} ${a.cant?'checked':''}> ${spr('cant')}</label>`;
   return`<div class="cract"><label class="field"><span>${cr('then')||''}</span><select ${fr('t')}>${groups}</select></label>${p}<button class="btn small danger" data-act="cr-act-del" ${at}>${cr('delAct')}</button></div>`}
 CR.then=['ผล','Effect'];
 function crActsBlock(r,ri,l,label){
@@ -154,10 +155,12 @@ function condRulesEditor(d){
    ${(d.rules||[]).length?d.rules.map(crRuleEditor).join(''):`<div class="empty" style="padding:18px">${cr('noRules')}</div>`}</div></section>`}
 const crNewAct=t=>({dmg:{t,dice:'1d4',dtype:'fire'},heal:{t,dice:'1d4'},temp:{t,dice:'5'},hpmax:{t,m:'add',n:-5},add:{t,cid:'',dur:{u:'',n:0}},rem:{t,cid:'self'},dur:{t,m:'add',n:1},lvl:{t,n:1},adv:{t,mode:'dis',on:'attack',ab:''},roll:{t,on:'attack',dice:'-1d4',ab:''},stat:{t,ab:'STR',n:-2},speed:{t,m:'zero',n:0,kind:'all'},ac:{t,m:'add',n:-2},res:{t,m:'resist',dtype:'all'},flag:{t,f:'noact',ab:''},text:{t,text:''}})[t];
 const crNewRule=()=>({id:uid(),when:'start',unit:'turn',every:1,rest:'any',chk:null,ok:[crNewAct('dmg')],no:[]});
-function crPrev(el,r){const p=el.closest('.crrule')?.querySelector('.crprev');if(p)p.textContent=crRuleText(r)}
+function crPrev(el,r){const p=el.closest('.crrule')?.querySelector('.crprev');if(p)p.textContent=(spEditing()?spRuleText:crRuleText)(r)}
 function condRuleEdit(el){   /* typing / choosing inside the rules editor; returns true if it was one of ours */
-  const d=dedit&&dedit.draft;if(!d||dedit.cat!=='conditions')return false;
+  const d=dedit&&dedit.draft;if(!d||(dedit.cat!=='conditions'&&dedit.cat!=='spells'))return false;
   const D=el.dataset,val=el.type==='checkbox'?el.checked:el.value;
+  if(dedit.cat==='spells'&&(D.rxk||D.sr||D.sk))return spRuleEdit(el,d,D,val);
+  if(dedit.cat==='spells'&&(D.cd||D.cl||D.rf||D.ck))return false;
   if(D.cd){d.dur=d.dur||{u:'',n:0};if(D.cd==='u'){d.dur.u=val;d.dur.n=val?Math.max(1,d.dur.n||1):0}else d.dur.n=Math.max(1,Math.min(999,Number(val)||1));if(D.rr)render();return true}
   if(D.cl){if(D.cl==='stack')d.stack=val;else if(D.cl==='maxLv')d.maxLv=Math.max(1,Math.min(20,Number(val)||6));
     else if(D.cl==='end'){const a=d.ends=d.ends||[],i=a.indexOf(D.e);if(val&&i<0)a.push(D.e);if(!val&&i>=0)a.splice(i,1)}
@@ -180,6 +183,7 @@ function condRuleEdit(el){   /* typing / choosing inside the rules editor; retur
     if(D.rr)render();else crPrev(el,r);return true}
   return false}
 function condRuleClick(a,b){
+  if(dedit.cat==='spells'){spRuleClick(a,b,dedit.draft);return}
   const d=dedit.draft,ri=Number(b.dataset.ri),ai=Number(b.dataset.ai),l=b.dataset.l;d.rules=d.rules||[];
   if(a==='cr-add')d.rules.push(crNewRule());
   else if(a==='cr-del')d.rules.splice(ri,1);

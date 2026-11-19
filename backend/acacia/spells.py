@@ -6,6 +6,7 @@ Character fields:
   conc  : name of the spell being concentrated on, or ""
 The slot tables themselves live in the page (11c-spells.js); the server only keeps the numbers sane.
 """
+from . import conditions
 from .numbers import clampi
 
 
@@ -21,7 +22,7 @@ def _n(v):
     n = clampi(v, 0, 999, 0)
     return n if n else ""
 
-def clean_cat_spells(v):
+def clean_cat_spells(v, cond_ids=()):
     out, seen = [], set()
     for x in (v.get("spells") if isinstance(v.get("spells"), list) else [])[:800]:
         if not isinstance(x, dict):
@@ -37,7 +38,8 @@ def clean_cat_spells(v):
                     "rit": 1 if x.get("rit") in (1, True, "1") else 0, "classes": str(x.get("classes") or "")[:160],
                     "timeK": _k(x.get("timeK"), TIME_K, "special"), "timeN": _n(x.get("timeN")), "timeX": str(x.get("timeX") or "")[:80],
                     "durK": _k(x.get("durK"), DUR_K, "special"), "durN": _n(x.get("durN")), "durX": str(x.get("durX") or "")[:80],
-                    "desc": str(x.get("desc") or "")[:8000]})
+                    "desc": str(x.get("desc") or "")[:8000],
+                    "rules": conditions.clean_spell_rules(x.get("rules"), cond_ids), "rx": conditions.clean_rx(x.get("rx"))})
     v["spells"] = out
 
 

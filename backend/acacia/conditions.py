@@ -146,3 +146,57 @@ def clean_condition(x, cond_ids):
     rules = [clean_rule(r, cond_ids) for r in (x.get("rules") if isinstance(x.get("rules"), list) else [])[:MAX_RULES]]
     x["rules"] = [r for r in rules if r]
     x.pop("th", None)
+
+
+# ---- spell effects: the same acts as a condition, run when the spell is cast ----
+SP_WHO = ("target", "self")
+SP_CHK = ("atk", "save")
+SP_ACTS = ("dmg", "heal", "temp", "hpmax", "add", "rem", "text")
+RX_KINDS = ("ac", "res", "red", "half", "neg", "note", "take", "sub", "dis", "reroll")
+MAX_SP_RULES = 10
+
+
+def _spell_act(a, cond_ids):
+    """One effect of a spell. dmg / heal / temp may add dice per slot level above the spell's level (`up`) and grow with the character (`cant`)."""
+    if not isinstance(a, dict) or a.get("t") not in SP_ACTS:
+        return None
+    out = clean_act(a, cond_ids)
+    if not out:
+        return None
+    if out["t"] in ("dmg", "heal", "temp"):
+        up = str(a.get("up") or "").replace(" ", "").lstrip("+-")
+        out["up"] = up if re.match(r"^\d{1,2}d\d{1,3}$", up) else ""
+        out["cant"] = 1 if a.get("cant") in (1, True, "1") else 0
+    return out
+
+
+def clean_spell_rules(rules, cond_ids):
+    """rule = {id, who: target|self, chk: null | {k: atk} | {k: save, ab, dc (0 = the caster's spell DC)}, half: 0|1 (half of the `no` damage on a passed save),
+    ok: [acts], no: [acts]}. ok = hit / save passed / no check; no = miss / save failed."""
+    out = []
+    for r in (rules if isinstance(rules, list) else [])[:MAX_SP_RULES]:
+        if not isinstance(r, dict):
+            continue
+        who = r.get("who") if r.get("who") in SP_WHO else "target"
+        c = r.get("chk") if isinstance(r.get("chk"), dict) and r["chk"].get("k") in SP_CHK and who == "target" else None
+        chk = None
+        if c:
+            chk = {"k": c["k"]}
+            if c["k"] == "save":
+                chk["ab"] = c.get("ab") if c.get("ab") in ABS else "DEX"
+                chk["dc"] = _int(c.get("dc"), 0, 99, 0)
+        acts = lambda v: [x for x in (_spell_act(a, cond_ids) for a in (v if isinstance(v, list) else [])[:MAX_ACTS]) if x]
+        out.append({"id": _id(r.get("id")), "who": who, "chk": chk, "half": 1 if chk and chk["k"] == "save" and r.get("half") in (1, True, "1") else 0,
+                    "ok": acts(r.get("ok")), "no": acts(r.get("no")) if chk else []})
+    return out
+
+
+def clean_rx(x):
+    """What the spell does when it is used as a Reaction against an attack (kept as typed by the GM; empty = guess from the text)."""
+    if not isinstance(x, dict) or x.get("k") not in RX_KINDS:
+        return None
+    out = {"k": x["k"], "v": _int(x.get("v"), -60, 60, 0), "ally": 1 if x.get("ally") in (1, True, "1") else 0,
+           "dice": _dice(x.get("dice"), "") if x.get("dice") else ""}
+    if out["dice"] and not re.match(r"^\d{1,2}d\d{1,3}(?:[+-]\d{1,3})?$", out["dice"]):
+        out["dice"] = ""
+    return out

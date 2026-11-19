@@ -54,7 +54,7 @@ def clean_cat(c, v):
                 conditions.clean_condition(x, ids)
     v["abMax"] = feats.ab_max(v)
     feats.clean_cat_feats(v)
-    spells.clean_cat_spells(v)
+    spells.clean_cat_spells(v, {x.get("id") for x in (v.get("conditions") or []) if isinstance(x, dict)})
     gear.clean_cat_gear(v)
     for k in ("races", "backgrounds"):
         for x in v.get(k) or []:

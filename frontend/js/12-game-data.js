@@ -93,7 +93,7 @@ function renderDataEditor(){
     <div class="media"><div class="lbl">${t('cColor')}</div><div class="crow"><input type="color" id="c_color" data-cf="color" value="${hexOf(d.color||getComputedStyle(document.documentElement).getPropertyValue('--ink').trim())}" aria-label="${t('cColor')}"><code>${esc(d.color||t('sDefault'))}</code>${d.color?`<button class="btn small" data-act="ccol-reset">${t('sDefault')}</button>`:''}</div>
     <p class="rules">${t('cColorHint')}</p><div class="cprev">${t('cPrev')} <span class="cref"${ccs(d)}>${esc(d.name||'—')}</span></div></div></div></section>`:'';
   return`${head(esc(d.name)||t('addItem'),t(c),`<button class="btn" data-act="dback">← ${t('back')}</button>`)}
-   <section class="panel"><div class="grid wide">${fields}</div></section>${condSec}${c==='conditions'?condRulesEditor(d):''}${c==='feats'||c==='armor'?featFxEditor(d):''}${gslSec}${skSec}${subs}${featSec}
+   <section class="panel"><div class="grid wide">${fields}</div></section>${condSec}${c==='conditions'?condRulesEditor(d):''}${c==='spells'?spRulesEditor(d):''}${c==='feats'||c==='armor'?featFxEditor(d):''}${gslSec}${skSec}${subs}${featSec}
    <div class="bar" style="padding:0"><div>${dedit.isNew?'':`<button class="btn danger" data-act="ddel-edit">${dataArm===d.id?(usage(c,d)?t('delInUse').replace('{n}',usage(c,d)):t('delSure')):t('del')}</button>`}</div>
    <div style="display:flex;gap:12px;align-items:center"><span class="err" role="alert">${esc(dataErr)}</span><button class="btn primary" data-act="dsave">${t('save')}</button></div></div>`;
 }

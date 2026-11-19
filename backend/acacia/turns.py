@@ -125,13 +125,17 @@ def _threat_op(st, ini, entry, who, admin, op, b):
     th = st.setdefault("th", [])
     ids = {str(e.get("id")): e for e in (ini.get("list") or []) if isinstance(e, dict) and e.get("init") is not None}
     if op == "threat":
-        if not admin:
-            raise Err(403, "not_yours")
         src = b.get("th") if isinstance(b.get("th"), dict) else {}
         to = str(src.get("to") or "")
-        if to not in ids or not str(ids[to].get("ref") or "").startswith("pc:"):
+        if to not in ids or to == str(entry.get("id")):
             raise Err(400, "bad_target")
-        need = [x for x in (src.get("need") if isinstance(src.get("need"), list) else []) if str(x) in ids and str(ids[str(x)].get("ref") or "").startswith("pc:")]
+        to_pc = str(ids[to].get("ref") or "").startswith("pc:")
+        if admin and to_pc:  # the GM's attack on a player's character: those players (and allies) are asked
+            need = [x for x in (src.get("need") if isinstance(src.get("need"), list) else []) if str(x) in ids and str(ids[str(x)].get("ref") or "").startswith("pc:")]
+        elif not to_pc:  # an attack on something the GM runs: the GM's characters are asked (the GM's page answers for those that cannot react)
+            need = [k for k, e in ids.items() if str(e.get("ref") or "").startswith("npc:") and k != str(entry.get("id"))]
+        else:
+            return st
         if not need:
             return st
         row = {"id": str(src.get("id") or "")[:40] or str(int(time.time() * 1000)), "from": str(entry.get("id")), "to": to, "need": need,

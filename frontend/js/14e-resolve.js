@@ -54,9 +54,11 @@ function taCardHtml(eid){
   const isNew=!c.seen;c.seen=1;
   const rows=c.rows.map(r=>{
     if(r.k==='info')return`<div class="tr mid"><div class="tr-txt"><small>${esc(r.text)}</small></div></div>`;
+    if(r.k==='cond'){const ap=c.apply.findIndex(a=>a.row===r),a=ap>=0?c.apply[ap]:null;
+      return`<div class="tr mid"><div class="tr-big">✦</div><div class="tr-txt"><b>${esc(r.text)}</b>${r.tgt?`<small>→ ${esc(r.tgt)}</small>`:''}</div>${a&&isAdmin()?(a.done?`<span class="pill">✔ ${t('taApplied')}</span>`:`<button type="button" class="btn small primary" data-act="ta-apply" data-id="${eid}" data-v="${ap}">${t('spApplyFx')}</button>`):''}</div>`}
     if(r.k==='dmg'||r.k==='heal'){
       const ap=c.apply.findIndex(a=>a.row===r),a=ap>=0?c.apply[ap]:null;
-      return`<div class="tr ${r.k==='heal'?'heal':'dmg'}"><div class="tr-big">${r.k==='heal'?'+':''}${r.amt}</div><div class="tr-txt"><b>${r.k==='heal'?t('taHeals'):t('taDmgN')}${r.dtype?' · '+esc(r.dtype):''}</b><small>${esc(r.detail||'')}${r.tgt?' → '+esc(r.tgt):''}</small></div>
+      return`<div class="tr ${r.k==='heal'?'heal':'dmg'}"><div class="tr-big">${r.k==='heal'?'+':''}${r.amt}</div><div class="tr-txt"><b>${r.k==='heal'?(r.temp?'Temp HP':t('taHeals')):t('taDmgN')}${r.dtype?' · '+esc(r.dtype):''}</b><small>${esc(r.detail||'')}${r.tgt?' → '+esc(r.tgt):''}</small></div>
        ${a&&isAdmin()?(a.done?`<span class="pill">✔ ${t('taApplied')}</span>`:`<button type="button" class="btn small primary" data-act="ta-apply" data-id="${eid}" data-v="${ap}" ${r.th&&(rxFind(typeof roomOpen!=='undefined'?roomOpen:'',r.th)||{}).st==='open'?'disabled':''}>${r.k==='heal'?t('taApplyHeal'):t('taApplyDmg')}</button>`):''}</div>`}
     const v=taV[r.v]||taV.unk,big=r.k==='save'?r.tot:r.tot;
     const vs=r.k==='save'?`${t('taVsDc')} ${r.dc}`:(r.ac==null||r.hide?'':`${t('taVsAc')} ${r.ac}`);
@@ -70,7 +72,7 @@ function taApply(rid,eid,i){
   const th=a.row&&a.row.th?rxFind(rid,a.row.th):null;   /* reactions may have changed the damage, or who takes it */
   if(th){if(th.st==='open'){TA.err=t('rxWait');render();return}const o=rxOutcome(th);amt=o.hit?o.amt:0;if(o.take)tid=o.take}
   const e=I.list.find(x=>x.id===tid);if(!e)return;
-  if(a.heal)cbHeal(I,e,amt);else if(amt>0)cbDamage(I,e,amt,a.dtype);
+  if(a.act)cbApply(I,e,null,[a.act]);else if(a.temp)cbTemp(I,e,amt);else if(a.heal)cbHeal(I,e,amt);else if(amt>0)cbDamage(I,e,amt,a.dtype);
   a.done=true;saveRooms();render()}
 /* ---- weapon attack: to-hit against AC, then the damage ---- */
 async function taWeaponDmg(rid,eid,r,s,crit){
@@ -101,6 +103,7 @@ async function taWeapon(rid,eid,wid,kind){
 /* ---- spells ---- */
 async function taSpellTarget(rid,eid,card){
   const S=card.spell,info=S.info,tg=taTgtInfo(rid,eid),nm=S.name,from0=card.rows.length;let txt='';
+  if(S.rules&&S.rules.length){txt=await taSpellRules(rid,eid,card,tg);try{await rxOpen(rid,eid,card,tg,from0,nm,true)}catch(e){console.error(e)}return txt}
   if(info.atk){
     const e=await taRoll(rid,eid,{n:1,sides:20,mod:Math.round(num(S.atk)),mode:TA.mode,why:nm+' '+t('spAtk')});
     if(e){const J=taJudge(e,tg&&tg.ac);card.rows.push({k:'atk',tot:e.total,nat:J.nat,ac:tg&&tg.ac,hide:tg&&tg.hide,v:J.v,tgt:tg&&tg.name});
@@ -132,7 +135,7 @@ async function taSpellFlow(rid,eid,slot,name,lead,castLv,force){
   const info=taParseSpell(sp,d,I,castLv||(sp?sp.lvl:0));if(force==='atk')info.atk=true;
   const meta=sp?[sp.lvl?t('spLv')+' '+sp.lvl:t('spCantrip'),sp.school,sp.time,sp.range,sp.dur].filter(Boolean).join(' · '):'';
   const card=TA.card[eid]={title:name,sub:meta,desc:sp&&sp.desc||'',rows:[],apply:[],
-    spell:{name,info,atk:I?I.atk:0,dc:I?I.dc:8,dmg:null,more:!!(info.atk||info.save),slot}};
+    spell:{name,info,atk:I?I.atk:0,dc:I?I.dc:8,dmg:null,sp,castLv:castLv||(sp?sp.lvl:0)||0,rules:(sp&&sp.rules)||[],more:!!(info.atk||info.save||(sp&&(sp.rules||[]).some(r=>r.who!=='self'))),slot}};
   let txt='';try{txt=await taSpellTarget(rid,eid,card)}catch(e){console.error('taSpellTarget',e)}
   TA.busy=false;
   await taUse(rid,eid,slot,`${t('spCast')} ${name}${lead||''}${txt?': '+txt:''}`.slice(0,160))}
@@ -145,3 +148,4 @@ async function taSpellAtk(rid,eid,name){
   await taSpellFlow(rid,eid,'note',name,'',sp?sp.lvl:0,'atk')}
 Object.assign(TX.th,{taHit:'โดน!',taCritHit:'คริติคอล โดนแน่นอน!',taMissed:'ไม่โดน (พลาด)',taFumble:'พลาดสนิท (ทอยได้ 1)',taNoAc:'ไม่ทราบ AC',taToHit:'To-hit',taVsAc:'เทียบ AC',taVsDc:'เทียบ DC',taSaveOf:'เซฟ',taSavePass:'เซฟผ่าน',taSaveFail:'เซฟไม่ผ่าน',taDmgN:'ดาเมจ',taHeals:'ฟื้นฟู HP',taApplyDmg:'หักเลือดเป้าหมาย',taApplyHeal:'เพิ่ม HP เป้าหมาย',taApplied:'ทำแล้ว',taMoreTgt:'ใช้กับเป้าหมายอื่น (ไม่เสีย Slot)',taSpellText:'ข้อความของเวท',taPickTgt:'เลือกเป้าหมายด้านบนก่อน จะได้เทียบ AC / ให้เป้าหมายทอยเซฟให้เห็นเลย',taNoAcHint:'เป้าหมายนี้ยังไม่มี AC (GM ใส่ในรายการ Initiative ได้) จึงยังไม่ตัดสินว่าโดนหรือไม่',taHalfOk:'เซฟผ่านได้ดาเมจครึ่งหนึ่ง'});
 Object.assign(TX.en,{taHit:'Hit!',taCritHit:'Critical hit!',taMissed:'Missed',taFumble:'Natural 1 — miss',taNoAc:'AC unknown',taToHit:'To-hit',taVsAc:'vs AC',taVsDc:'vs DC',taSaveOf:'save',taSavePass:'Save passed',taSaveFail:'Save failed',taDmgN:'Damage',taHeals:'Healing',taApplyDmg:'Apply damage to target',taApplyHeal:'Heal target',taApplied:'done',taMoreTgt:'Use on another target (no slot)',taSpellText:'Spell text',taPickTgt:'Pick a target above to compare against AC / roll their save here.',taNoAcHint:'This target has no AC yet (the GM can enter it in the Initiative list), so hit or miss is not decided.',taHalfOk:'half damage on a pass'});
+Object.assign(TX.th,{spApplyFx:'ใช้ผลกับเป้าหมาย'});Object.assign(TX.en,{spApplyFx:'Apply to target'});

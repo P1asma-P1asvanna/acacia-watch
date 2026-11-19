@@ -16,6 +16,7 @@ function turnEndWatch(){
     try{navigator.vibrate&&navigator.vibrate([120])}catch(e){}
     turnBeep();turnBanner(fill(t('taEndAlert'),{n:iniName(en)}));break}}}
 function turnWatch(){
+  setTimeout(()=>{try{rxDock()}catch(e){}},0);   /* reaction box: shown on every page, as soon as the new state is in */
   try{turnEndWatch()}catch(e){}
   try{
     const now={};(prooms||[]).forEach(rm=>{const c=rm.cur?(rm.list||[]).find(e=>e.id===rm.cur):null;now[rm.id]=!!(c&&c.mine)?c.id:''});
