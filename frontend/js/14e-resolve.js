@@ -51,6 +51,7 @@ async function taDice(rid,eid,m,why,crit){
 const taV={hit:['✔','taHit','ok'],crit:['★','taCritHit','ok crit'],miss:['✘','taMissed','bad'],fumble:['✘','taFumble','bad'],unk:['?','taNoAc','mid'],pass:['✔','taSavePass','ok'],fail:['✘','taSaveFail','bad']};
 function taCardHtml(eid){
   const c=TA.card[eid];if(!c)return'';
+  const isNew=!c.seen;c.seen=1;
   const rows=c.rows.map(r=>{
     if(r.k==='info')return`<div class="tr mid"><div class="tr-txt"><small>${esc(r.text)}</small></div></div>`;
     if(r.k==='dmg'||r.k==='heal'){
@@ -61,7 +62,7 @@ function taCardHtml(eid){
     const vs=r.k==='save'?`${t('taVsDc')} ${r.dc}`:(r.ac==null||r.hide?'':`${t('taVsAc')} ${r.ac}`);
     return`<div class="tr ${v[2]}"><div class="tr-big">${big}</div><div class="tr-txt"><b>${v[0]} ${t(v[1])}</b><small>${r.k==='save'?`${t('taSaveOf')} ${(r.ab||'').toUpperCase()}`:t('taToHit')}${r.nat?` · d20=${r.nat}`:''}${vs?' · '+vs:''}${r.tgt?' → '+esc(r.tgt):''}</small></div></div>`}).join('');
   const more=c.spell&&c.spell.more&&TA.tgt[eid]?`<button type="button" class="btn small" data-act="ta-more" data-id="${eid}" ${TA.busy?'disabled':''}>${t('taMoreTgt')}</button>`:'';
-  return`<div class="tacard" role="status"><div class="tc-h"><b>${esc(c.title)}</b>${c.sub?`<small>${esc(c.sub)}</small>`:''}<button type="button" class="tc-x" data-act="ta-cardx" data-id="${eid}" aria-label="${t('close')}">✕</button></div>
+  return`<div class="tacard${isNew?' tc-new':''}" role="status"><div class="tc-h"><b>${esc(c.title)}</b>${c.sub?`<small>${esc(c.sub)}</small>`:''}<button type="button" class="tc-x" data-act="ta-cardx" data-id="${eid}" aria-label="${t('close')}">✕</button></div>
    ${rows}${more}${c.desc?`<details class="tc-desc" open><summary>${t('taSpellText')}</summary><div>${esc(c.desc).replace(/\n/g,'<br>')}</div></details>`:''}</div>`}
 function taApply(rid,eid,i){
   const c=TA.card[eid],a=c&&c.apply[i];if(!a||a.done||!isAdmin())return;
