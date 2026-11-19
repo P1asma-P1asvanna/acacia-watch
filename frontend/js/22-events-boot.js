@@ -89,7 +89,7 @@ document.addEventListener('click',e=>{
   else if(a==='tdside'){tdSide(v)}
   else if(a==='feat-edit'){view='data';dataTab='feats';dataPage=0;dedit=null;location.hash='data';render()}
   else if(a==='cond-edit'){view='data';dataTab='conditions';dataPage=0;dedit=null;location.hash='data';render()}
-  else if(a==='dgm'){dataGm=!dataGm;if(dataGm&&!GM_CATS.includes(dataTab))dataTab='spells';dataPage=0;dataArm=null;dataSrc='';render()}
+  else if(a==='dgm'){dataGm=!dataGm;if(dataGm&&!GM_CATS.includes(dataTab))dataTab='races';dataPage=0;dataArm=null;dataSrc='';render()}
   else if(a==='dtab'){dataTab=v;dataPage=0;dataArm=null;dataSrc='';render()}
   else if(a==='dsrc'){dataSrc=v;dataPage=0;render()}
   else if(a==='srcnocol'){if(dedit){dedit.draft.col='';render()}}

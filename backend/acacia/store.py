@@ -52,6 +52,10 @@ def clean_cat(c, v):
         for x in L:
             if isinstance(x, dict):
                 conditions.clean_condition(x, ids)
+    for k in ("races", "backgrounds", "weapons", "armor", "conditions", "classes"):
+        for x in v.get(k) or []:
+            if isinstance(x, dict):
+                x["gm"] = 1 if x.get("gm") in (1, True, "1") else 0
     v["abMax"] = feats.ab_max(v)
     cids = {x.get("id") for x in (v.get("conditions") or []) if isinstance(x, dict)}
     feats.clean_cat_feats(v, cids)
@@ -164,24 +168,42 @@ def members(c):
     return out
 
 
-def strip_gm(cat):
-    """The catalog without what is marked GM-only (secret spells / feats / classes, and class features), for the players."""
+GM_KEYS = ("spells", "feats", "classes", "races", "backgrounds", "weapons", "armor", "conditions")
+
+
+def strip_gm(cat, seen=""):
+    """The catalog without what is marked GM-only (secret spells / feats / classes / races / backgrounds / weapons / armour / conditions,
+    and secret class or background features), for the players. `seen` = JSON text of what the player already holds or sees
+    (their own characters, the combat of their rooms): a secret entry that appears there stays, so a sheet or a condition on the
+    combat tracker never loses its definition."""
     if not isinstance(cat, dict):
         return cat
     out = dict(cat)
-    hid = lambda x: isinstance(x, dict) and x.get("gm")
-    for k in ("spells", "feats", "classes"):
+
+    def hid(x):
+        if not (isinstance(x, dict) and x.get("gm")):
+            return False
+        for k in ("name", "id"):
+            if x.get(k) and json.dumps(x[k]) in seen:
+                return False
+        return True
+
+    def feats_of(L):
+        return [f for f in (L or []) if not (isinstance(f, dict) and f.get("gm"))]
+    for k in GM_KEYS:
         if isinstance(out.get(k), list):
             out[k] = [x for x in out[k] if not hid(x)]
-    clean = []
-    for c in out.get("classes") or []:
-        if isinstance(c, dict):
-            c = dict(c)
-            c["feats"] = [f for f in (c.get("feats") or []) if not hid(f)]
-            c["subs"] = [dict(s, feats=[f for f in (s.get("feats") or []) if not hid(f)]) if isinstance(s, dict) else s for s in (c.get("subs") or [])]
-        clean.append(c)
-    if "classes" in out:
-        out["classes"] = clean
+    for k in ("classes", "backgrounds"):
+        if isinstance(out.get(k), list):
+            L = []
+            for c in out[k]:
+                if isinstance(c, dict):
+                    c = dict(c)
+                    c["feats"] = feats_of(c.get("feats"))
+                    if "subs" in c:
+                        c["subs"] = [dict(s, feats=feats_of(s.get("feats"))) if isinstance(s, dict) else s for s in (c.get("subs") or [])]
+                L.append(c)
+            out[k] = L
     return out
 
 
@@ -192,7 +214,7 @@ def boot_state(c, me):
     if not me:
         return out
     out["me"] = user_pub(me)
-    out["cat"] = kv_get(c, "cat") if me["role"] == "admin" else strip_gm(kv_get(c, "cat"))
+    out["cat"] = kv_get(c, "cat")
     out["prefs"] = kv_get(c, "prefs:" + me["id"]) or {}
     out["fb"] = feedback.view(kv_get(c, "fb"), me, me["role"] == "admin")
     out["members"] = members(c)
@@ -214,4 +236,5 @@ def boot_state(c, me):
         out["npcs"] = []
         out["rooms"] = []
         out["prooms"] = player_rooms(c, me)
+        out["cat"] = strip_gm(out["cat"], json.dumps([out["pcs"], out["prooms"]], ensure_ascii=False))
     return out

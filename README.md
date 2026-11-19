@@ -491,3 +491,4 @@ Game data → Spells → edit → "Spell effects". Each effect = who gets it (th
 - **Feature / feat effects** – class & background features (button "⚙ Effects" on each row) and catalog feats get the same free-form effect rules as spells (attack/save, damage, healing, temp HP, conditions, text, reaction override). A feature with rules shows a "Use" button in the turn panel that runs the effects on the combat card.
 - Turn panel layout tidied (one card, four even tiles, uniform tool rows); behaviour unchanged.
 Tests: `scratchpad/test/run87–run89.js` (not shipped).
+- **GM secret, all categories** – races, backgrounds, weapons, armour and conditions can be secret too (tick "🔒" on the item, or add it from the 🔒 tab). A secret entry that a player already holds (on their own character) or that appears in the combat of their rooms (e.g. a secret condition on an enemy) is still sent to that player, so sheets and the Initiative tracker never lose its definition.
