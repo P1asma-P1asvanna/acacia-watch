@@ -114,7 +114,7 @@ function taSection(rid,eid,slot,d){
     (d.res||[]).forEach(r=>{const mx=resMax(d,r),u=Math.min(mx,Math.max(0,Math.round(num(r.used))));
       rows.push(`<li><span class="ta-ic">◆</span><div class="ta-nm"><b>${esc(r.name)}</b><small>${mx-u}/${mx}</small></div><div class="ta-bt"><button type="button" class="btn small primary" data-act="ta-res" ${eidA} data-v="${esc(r.id)}" data-k="${slot}" ${u>=mx||TA.busy?'disabled':''}>${t('taUse')}</button></div></li>`)})}
   let h='';
-  if(cur.s[slot])h+=`<div class="ta-usedline"><span>✔ ${esc(cur.s[slot])}</span>${btn('ta-undo',t('taUndo'),`data-k="${slot}"`)}</div>`;
+  if(cur.s[slot])h+=`<div class="ta-usedline"><span>${TA.card[eid]?'✔':'✔ '+esc(cur.s[slot])}</span>${btn('ta-undo',t('taUndo'),`data-k="${slot}"`)}</div>`;
   h+=taTargetSel(rid,eid);
   if(rows.length)h+=`<ul class="ta-list">${rows.join('')}</ul>`;
   h+=other;
