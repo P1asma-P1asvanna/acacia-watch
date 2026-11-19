@@ -484,3 +484,10 @@ Game data → Spells → edit → "Spell effects". Each effect = who gets it (th
 - In combat (`frontend/js/14g-spellfx.js`) the card rolls exactly these rules; dice are rolled once per cast and shared by "use on another target"; each effect gets an Apply button.
 - "When used as a Reaction" sets what the spell does against an attack (+AC, cancel, half damage…), used by the reaction box; empty = guessed from the text.
 - Server: `backend/acacia/conditions.py` (`clean_spell_rules`, `clean_rx`) keeps only known words.
+
+## GM tools (actions, secret catalog, feature effects)
+- **Action counts** – in a turn, the GM can open "⚙ Adjust number of actions" for any non-player combatant and set Action / Bonus Action / Reaction / Interaction to 0–9 (kept between turns). A slot counts as used once all its uses are spent; "Undo" gives one back.
+- **🔒 GM secret** – Game data → the "🔒 GM secret" tab holds spells, feats and classes that players never receive (the server strips them from `boot`). In a class's feature list, tick "🔒 GM secret" on a single feature to hide just that one. Use them on GM characters (NPCs / enemies).
+- **Feature / feat effects** – class & background features (button "⚙ Effects" on each row) and catalog feats get the same free-form effect rules as spells (attack/save, damage, healing, temp HP, conditions, text, reaction override). A feature with rules shows a "Use" button in the turn panel that runs the effects on the combat card.
+- Turn panel layout tidied (one card, four even tiles, uniform tool rows); behaviour unchanged.
+Tests: `scratchpad/test/run87–run89.js` (not shipped).

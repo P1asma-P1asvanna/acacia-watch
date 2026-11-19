@@ -9,7 +9,11 @@
    spell.rx = {k, v, ally, dice}: what the spell does when cast as a Reaction against an attack (see 14f-react.js). Empty = guessed from the text.
    A spell without rules works as before (the dice and the save are read from the description). */
 const SP_GROUPS=[['gHp',['dmg','heal','temp','hpmax']],['gCond',['add','rem']],['gOther',['text']]];
-const spEditing=()=>!!(dedit&&dedit.cat==='spells');
+/* the thing whose effect rules are being edited: a spell, a catalog feat, or one class / background feature (dedit.ftx = its row) */
+function spTarget(){if(!dedit||!dedit.draft)return null;const c=dedit.cat;
+  if(c==='spells'||c==='feats')return dedit.draft;
+  if((c==='classes'||c==='backgrounds')&&dedit.ftx!=null)return(dedit.draft.feats||[])[dedit.ftx]||null;return null}
+const spEditing=()=>!!spTarget();
 const SPR={
   title:['ผลของเวท (ตั้งเองได้)','Spell effects (free-form)'],
   hint:['กำหนดว่าเวทนี้ทำอะไร: ทอยโจมตีเวทหรือให้เป้าหมายเซฟ แล้วเกิดผลอะไรบ้าง (ดาเมจ, ฮีล, Temp HP, ให้สถานะ…) เมื่อร่ายในการต่อสู้ ระบบจะทอยและแสดงผลตามที่ตั้งไว้ ถ้าไม่ตั้งอะไรเลย ระบบจะอ่านจากข้อความคำอธิบายเหมือนเดิม',
@@ -75,10 +79,10 @@ function spRuleEdit(el,d,D,val){
   return false}
 /* build rules from the description text (the way the combat card used to read it) */
 function spRulesFromDesc(d){
-  const info=taParseSpell(d,null,null,d.lvl||0),x=String(d.desc||'');
+  const SL=dedit&&dedit.cat==='spells'?d.lvl||0:0,info=taParseSpell(d,null,null,SL),x=String(d.desc||'');
   const dm=m=>({dice:`${m.n}d${m.s}${m.b?(m.b>0?'+':'-')+Math.abs(m.b):''}`,dtype:CR_DT.includes(m.type)?m.type:'force'});
-  const up=/(?:increases?|extra)[^.]{0,40}?(\d{1,2})d(\d{1,3})[^.]{0,50}?(?:slot )?level above/i.exec(x),upS=up&&(d.lvl||0)>0?`${up[1]}d${up[2]}`:'';
-  const dmg=m=>Object.assign({t:'dmg'},dm(m),{up:upS,cant:(d.lvl||0)===0?1:0});
+  const up=/(?:increases?|extra)[^.]{0,40}?(\d{1,2})d(\d{1,3})[^.]{0,50}?(?:slot )?level above/i.exec(x),upS=up&&SL>0?`${up[1]}d${up[2]}`:'';
+  const dmg=m=>Object.assign({t:'dmg'},dm(m),{up:upS,cant:SL===0?1:0});
   const heal=m=>({t:'heal',dice:`${m.n}d${m.s}${m.b?(m.b>0?'+':'-')+Math.abs(m.b):''}`,up:upS,cant:0});
   const R=[];
   if(info.save)R.push({id:uid(),who:'target',chk:{k:'save',ab:info.save.toUpperCase(),dc:0},half:info.dmg&&info.half?1:0,ok:[],no:info.dmg?[dmg(info.dmg)]:[]});

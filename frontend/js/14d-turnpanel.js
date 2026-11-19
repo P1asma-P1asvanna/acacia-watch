@@ -6,7 +6,11 @@
 let TURNS={};
 const TA={open:'',tgt:{},txt:{},xr:'',xw:'',mode:'normal',err:'',busy:false,sp:{},ft:{}};
 const TA_SL=['act','bon','rea','int'];
-const taBlank=()=>({s:{act:'',bon:'',rea:'',int:''},end:0});
+/* every combatant has `cap` of each slot (1 unless the GM changed it); l = what was used this turn; s[slot] is filled only when all of it is used up */
+const taBlank=old=>({s:{act:'',bon:'',rea:'',int:''},end:0,cap:Object.assign({act:1,bon:1,rea:1,int:1},old&&old.cap),l:{act:[],bon:[],rea:[],int:[]}});
+const taCap=(e,k)=>e&&e.cap&&e.cap[k]!=null?e.cap[k]:1;
+const taN=(e,k)=>e&&e.l&&e.l[k]?e.l[k].length:(e&&e.s&&e.s[k]?1:0);
+function taSync(e){e.l=e.l||{act:[],bon:[],rea:[],int:[]};e.cap=e.cap||{act:1,bon:1,rea:1,int:1};e.s=e.s||{};TA_SL.forEach(k=>{e.l[k]=e.l[k]||[];e.s[k]=e.l[k].length>=taCap(e,k)?(e.l[k][e.l[k].length-1]||'—'):''});return e}
 const taRm=rid=>isAdmin()?rooms.find(r=>r.id===rid):prooms.find(r=>r.id===rid);
 const taCur=rid=>{const rm=taRm(rid);return rm?(isAdmin()?((rm.init&&rm.init.cur)||''):(rm.cur||'')):''};
 const taTn=rid=>{const rm=taRm(rid);return rm&&isAdmin()?Math.round(num(rm.init&&rm.init.tn)):0};
@@ -19,7 +23,7 @@ function taEnts(rid){
 function taSt(rid){
   const rm=taRm(rid);let st=isAdmin()?TURNS[rid]:(rm&&rm.turn);
   if(!st){st={cur:'',r:1,e:{},log:[]};if(isAdmin())TURNS[rid]=st}
-  if(isAdmin()){const cur=taCur(rid),r=taRound(rid),tn=taTn(rid);if(st.cur!==cur||st.r!==r||(st.tn||0)!==tn){st.cur=cur;st.r=r;st.tn=tn;if(cur)st.e[cur]=taBlank()}}
+  if(isAdmin()){const cur=taCur(rid),r=taRound(rid),tn=taTn(rid);if(st.cur!==cur||st.r!==r||(st.tn||0)!==tn){st.cur=cur;st.r=r;st.tn=tn;if(cur)st.e[cur]=taBlank(st.e[cur])}}
   return st}
 const taSl=(st,eid)=>(st.e[eid]||taBlank());
 function taDoc(rid,eid){
@@ -32,12 +36,14 @@ const taTarget=(rid,eid)=>{const n=taTname(rid,TA.tgt[eid]);return n?` → ${n}`
 /* ---- send one change: shown at once, then saved ---- */
 async function taPost(rid,eid,body){
   const st=taSt(rid),e=st.e[eid]=st.e[eid]||taBlank(),en=taEnts(rid).find(x=>x.id===eid)||{name:'—'};
-  if(body.op==='use'){if(body.slot!=='note'&&body.mark!==0)e.s[body.slot]=body.text||'✓';taLogLocal(st,eid,en.name,body.slot,body.text)}
-  else if(body.op==='undo')e.s[body.slot]='';
+  taSync(e);
+  if(body.op==='use'){if(body.slot!=='note'&&body.mark!==0){e.l[body.slot].push(body.text||'✓');taSync(e)}taLogLocal(st,eid,en.name,body.slot,body.text)}
+  else if(body.op==='undo'){e.l[body.slot].pop();taSync(e)}
+  else if(body.op==='cap'){e.cap[body.slot]=Math.max(0,Math.min(9,Math.round(Number(body.n))));taSync(e)}
   else if(body.op==='end'){e.end=1;taLogLocal(st,eid,en.name,'end',body.text||'')}
   TA.err='';render();
   try{await api('POST','api/turn',Object.assign({room:rid,eid},body))}
-  catch(err){TA.err=err&&err.code==='not_your_turn'?t('taNotTurn'):t('taFail')}
+  catch(err){TA.err=err&&err.code==='not_your_turn'?t('taNotTurn'):err&&err.code==='slot_used'?t('taSlotUsed'):t('taFail')}
   render()}
 function taLogLocal(st,eid,who,k,x){st.log=[{t:Math.floor(Date.now()/1000),r:st.r,eid,who,k,x:x||''},...(st.log||[])].slice(0,60)}
 const taUse=(rid,eid,slot,text,mark)=>taPost(rid,eid,{op:'use',slot,text:String(text||'').slice(0,160),mark:mark===0?0:1});
@@ -86,7 +92,7 @@ const taStdL=p=>lang==='th'?p[1]:p[0];
 const taTime=x=>{const d=new Date((x||0)*1000);return String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0')};
 function taDots(rid,eid){
   const st=taSt(rid),e=st.e[eid];if(!e)return'';
-  const dot=(k,l)=>{const used=!!e.s[k],cls='ta-dot'+(used?' on':''),tt=`${taSlotName(k)}: ${used?e.s[k]:t('taFree')}`;
+  const dot=(k,l)=>{const used=!!e.s[k],cap=taCap(e,k),n=taN(e,k),cls='ta-dot'+(used?' on':n?' part':''),tt=`${taSlotName(k)}${cap!==1?` ${n}/${cap}`:''}: ${used?e.s[k]:t('taFree')}`;
     return isAdmin()?`<button type="button" class="${cls}" data-act="ta-dot" data-id="${eid}" data-v="${k}" data-rid="${rid}" title="${esc(tt)}" aria-label="${esc(tt)}">${l}</button>`:`<i class="${cls}" title="${esc(tt)}" aria-label="${esc(tt)}">${l}</i>`};
   return`<span class="ta-dots">${dot('act','A')}${dot('bon','B')}${dot('rea','R')}${dot('int','I')}${e.end?`<i class="ta-dot end" title="${t('taEnd')}">⏹</i>`:''}</span>`}
 function taLogHtml(rid){
@@ -110,11 +116,11 @@ function taSection(rid,eid,slot,d){
     SP.forEach(x=>rows.push(spRow(x)));
     if(allSp.length&&!SP.length)rows.push(`<li class="ta-gl ta-none">${t('taNoSpellHere')}</li>`);
     if(slot!=='act'&&allSp.length>SP.length)other=`<details class="ta-std"><summary>${t('taOtherSp')}</summary><ul class="ta-list">${allSp.filter(x=>!fits(x)).map(spRow).join('')}</ul></details>`;
-    if(typeof featList==='function')featList(d).filter(f=>slot==='act'?f.tk==='action':taFeatKind(f)===(slot==='bon'?'bonus':'reaction')).forEach(f=>rows.push(`<li><span class="ta-ic">★</span><div class="ta-nm"><b>${esc(f.name)}</b></div><div class="ta-bt">${btn('ta-free',t('taUse'),`data-v="${esc(f.name)}" data-k="${slot}"`,'primary')}</div></li>`));
+    if(typeof featList==='function')featList(d).filter(f=>slot==='act'?f.tk==='action':taFeatKind(f)===(slot==='bon'?'bonus':'reaction')).forEach(f=>rows.push(`<li><span class="ta-ic">★</span><div class="ta-nm"><b>${esc(f.name)}</b>${(f.rules||[]).length?`<small>⚙ ${esc(f.from||'')}</small>`:''}</div><div class="ta-bt">${(f.rules||[]).length?btn('ta-feat',t('taUse'),`data-v="${esc(f.id||f.name)}" data-k="${slot}"`,'primary'):btn('ta-free',t('taUse'),`data-v="${esc(f.name)}" data-k="${slot}"`,'primary')}</div></li>`));
     (d.res||[]).forEach(r=>{const mx=resMax(d,r),u=Math.min(mx,Math.max(0,Math.round(num(r.used))));
       rows.push(`<li><span class="ta-ic">◆</span><div class="ta-nm"><b>${esc(r.name)}</b><small>${mx-u}/${mx}</small></div><div class="ta-bt"><button type="button" class="btn small primary" data-act="ta-res" ${eidA} data-v="${esc(r.id)}" data-k="${slot}" ${u>=mx||TA.busy?'disabled':''}>${t('taUse')}</button></div></li>`)})}
   let h='';
-  if(cur.s[slot])h+=`<div class="ta-usedline"><span>${TA.card[eid]?'✔':'✔ '+esc(cur.s[slot])}</span>${btn('ta-undo',t('taUndo'),`data-k="${slot}"`)}</div>`;
+  if(taN(cur,slot)>0)h+=`<div class="ta-usedline"><span>${TA.card[eid]?'✔':'✔ '+esc((cur.l&&cur.l[slot]&&cur.l[slot][cur.l[slot].length-1])||cur.s[slot]||'✓')}${taCap(cur,slot)!==1?` · ${taN(cur,slot)}/${taCap(cur,slot)}`:''}</span>${btn('ta-undo',t('taUndo'),`data-k="${slot}"`)}</div>`;
   h+=taTargetSel(rid,eid);
   if(rows.length)h+=`<ul class="ta-list">${rows.join('')}</ul>`;
   h+=other;
@@ -123,11 +129,13 @@ function taSection(rid,eid,slot,d){
   return h}
 function taPanel(rid,eid){
   const st=taSt(rid),cur=taSl(st,eid),en=taEnts(rid).find(x=>x.id===eid);if(!en)return'';const d=taDoc(rid,eid),gm=isAdmin();
-  const meters=TA_SL.map(k=>{const u=cur.s[k];return`<button type="button" class="ta-m ${u?'used':''}" data-act="ta-open" data-v="${k}" aria-expanded="${TA.open===k}"><b>${taSlotName(k)}</b><small>${u?'✔ '+esc(u):t('taFree')}</small></button>`}).join('');
+  const meters=TA_SL.map(k=>{const u=cur.s[k],cap=taCap(cur,k),n=taN(cur,k),sm=cap===0?'✗ 0':u?'✔ '+esc(u):n?`${n}/${cap} · ${t('taFree')} ${cap-n}`:cap>1?`${t('taFree')} ×${cap}`:t('taFree');
+    return`<button type="button" class="ta-m ${u?'used':n?'part':''}" data-act="ta-open" data-v="${k}" aria-expanded="${TA.open===k}"><b>${taSlotName(k)}${cap!==1?` <i class="ta-cap">${cap-Math.min(n,cap)}/${cap}</i>`:''}</b><small>${sm}</small></button>`}).join('');
+  const capEd=gm&&!String(en.ref||'').startsWith('pc:')?`<details class="ta-std ta-capd"><summary>⚙ ${t('taCaps')}</summary><div class="ta-caps">${TA_SL.map(k=>`<div class="ta-capr"><span>${taSlotName(k)}</span><button type="button" class="btn small" data-act="ta-cap" data-rid="${rid}" data-id="${eid}" data-v="${k}" data-n="${taCap(cur,k)-1}" ${taCap(cur,k)<=0?'disabled':''} aria-label="−">−</button><b>${taCap(cur,k)}</b><button type="button" class="btn small" data-act="ta-cap" data-rid="${rid}" data-id="${eid}" data-v="${k}" data-n="${taCap(cur,k)+1}" ${taCap(cur,k)>=9?'disabled':''} aria-label="+">+</button></div>`).join('')}</div></details>`:'';
   const modeSel=`<div class="field sm"><label for="ta_mode">${t('mode')}</label><select id="ta_mode" data-ta="mode"><option value="normal" ${TA.mode==='normal'?'selected':''}>${t('normal')}</option><option value="adv" ${TA.mode==='adv'?'selected':''}>${t('adv')}</option><option value="dis" ${TA.mode==='dis'?'selected':''}>${t('dis')}</option></select></div>`;
   const ended=cur.end?(gm?`<div class="ta-ended" role="status">⏹ ${fill(t('taEnded'),{n:esc(en.name)})}<button class="btn small" data-act="ini-next">${t('taNext')}</button></div>`:`<div class="ta-ended" role="status">⏹ ${t('taWait')}</div>`):'';
   return`<div class="ta" data-ta-room="${rid}"><div class="ta-head"><h3>▶ ${fill(t('taTitle'),{n:esc(en.name)})}</h3></div>${ended}
-   <div class="ta-meters" role="group">${meters}</div>
+   <div class="ta-meters" role="group">${meters}</div>${capEd}
    ${taCardHtml(eid)}
    ${TA.err?`<p class="err" role="alert">${esc(TA.err)}</p>`:''}
    ${TA.open?`<div class="ta-body">${taSection(rid,eid,TA.open,d)}</div>`:`<p class="note ta-pick">${t('taHint')}</p>`}
@@ -152,11 +160,13 @@ function taClick(a,b){
   if(a==='ta-more'){taSpellMore(rid,eid);return}
   if(a==='ta-open'){TA.open=TA.open===v?'':v;render();return}
   if(a==='ta-reaopen'){TA.open=TA.open==='rea:'+eid?'':'rea:'+eid;render();return}
-  if(a==='ta-dot'){const e=taSl(taSt(rid),eid);taPost(rid,eid,e.s[v]?{op:'undo',slot:v}:{op:'use',slot:v,text:'✓',mark:1});return}
+  if(a==='ta-dot'){const e=taSl(taSt(rid),eid);taPost(rid,eid,taN(e,v)>=taCap(e,v)?{op:'undo',slot:v}:{op:'use',slot:v,text:'✓',mark:1});return}
+  if(a==='ta-cap'){taPost(rid,eid,{op:'cap',slot:v,n:Number(b.dataset.n)});return}
   if(a==='ta-undo'){taPost(rid,eid,{op:'undo',slot:k});return}
   const slot=TA.open.startsWith('rea:')?'rea':(TA.open||k);
   if(a==='ta-w'){taWeapon(rid,eid,v,k);return}
   if(a==='ta-cast'){taCast(rid,eid,k,v);return}
+  if(a==='ta-feat'){if(TA.busy)return;const d=taDoc(rid,eid),f=d&&featList(d).find(x=>(x.id||x.name)===v);if(f)taSpellFlow(rid,eid,k||slot,f.name||'—','',0,'',Object.assign({},f,{lvl:0,conc:0,desc:f.desc||''}));return}
   if(a==='ta-satk'){taSpellAtk(rid,eid,v);return}
   if(a==='ta-res'){taResUse(rid,eid,k,v);return}
   if(a==='ta-xroll'){taExtra(rid,eid);return}
@@ -178,3 +188,4 @@ Object.assign(TX.en,{taTitle:"{n}'s turn",taHint:'Tap Action / Bonus / Reaction 
  taXRoll:'Extra roll (e.g. 8d6+2)',taXPh:'d20+3',taXWhy:'What for (optional)',taBadDice:'Dice not understood, e.g. d20+3 or 8d6',taRollWord:'Roll',taLog:'Action log',taLogEmpty:'Nothing logged yet',taReaOf:"{n}'s Reaction",
  taAtk:'attack',taDmg:'damage',taCrit:'critical!',taMiss:'natural 1',taNotTurn:"It is not this character's turn",taFail:'Could not save, try again',taResOut:'That resource is used up',
  taTkL:'Time to use',taTkAuto:'Guess from the text',taTkAct:'Action',taTkBon:'Bonus Action',taTkRea:'Reaction',taTkNone:'None (passive)',taEndAlert:'{n} ended the turn',taTkHint:'Which button of the Turn panel this feature appears under ("Guess from the text" looks for "bonus action" / "reaction" in the description)'});
+Object.assign(TX.th,{taCaps:'ปรับจำนวน Action ของตัวนี้',taSlotUsed:'ใช้ช่องนี้ครบแล้ว'});Object.assign(TX.en,{taCaps:'Adjust this one\'s number of actions',taSlotUsed:'This slot is used up'});

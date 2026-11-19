@@ -129,16 +129,16 @@ async function taSpellTarget(rid,eid,card){
     if(D){const row={k:'dmg',amt:D.total,detail:`${taDiceTxt(info.dmg)} = ${D.total}`,dtype:info.dmg.type,tgt:tg&&tg.name};card.rows.push(row);taPushApply(card,row,tg);txt=`${D.total} ${info.dmg.type}${tg?' → '+tg.name:''}`}}
   try{await rxOpen(rid,eid,card,tg,from0,nm,true)}catch(e){console.error(e)}
   return txt}
-async function taSpellFlow(rid,eid,slot,name,lead,castLv,force){
-  const d=taDoc(rid,eid),sp=spellOf(name),I=d&&typeof spellInfo==='function'?spellInfo(d):null;
+async function taSpellFlow(rid,eid,slot,name,lead,castLv,force,spObj){
+  const d=taDoc(rid,eid),sp=spObj||spellOf(name),I=d&&typeof spellInfo==='function'?spellInfo(d):null;
   TA.busy=true;render();
   const info=taParseSpell(sp,d,I,castLv||(sp?sp.lvl:0));if(force==='atk')info.atk=true;
-  const meta=sp?[sp.lvl?t('spLv')+' '+sp.lvl:t('spCantrip'),sp.school,sp.time,sp.range,sp.dur].filter(Boolean).join(' · '):'';
+  const meta=spObj?(spObj.from||''):sp?[sp.lvl?t('spLv')+' '+sp.lvl:t('spCantrip'),sp.school,sp.time,sp.range,sp.dur].filter(Boolean).join(' · '):'';
   const card=TA.card[eid]={title:name,sub:meta,desc:sp&&sp.desc||'',rows:[],apply:[],
     spell:{name,info,atk:I?I.atk:0,dc:I?I.dc:8,dmg:null,sp,castLv:castLv||(sp?sp.lvl:0)||0,rules:(sp&&sp.rules)||[],more:!!(info.atk||info.save||(sp&&(sp.rules||[]).some(r=>r.who!=='self'))),slot}};
   let txt='';try{txt=await taSpellTarget(rid,eid,card)}catch(e){console.error('taSpellTarget',e)}
   TA.busy=false;
-  await taUse(rid,eid,slot,`${t('spCast')} ${name}${lead||''}${txt?': '+txt:''}`.slice(0,160))}
+  await taUse(rid,eid,slot,`${spObj?t('taUse'):t('spCast')} ${name}${lead||''}${txt?': '+txt:''}`.slice(0,160))}
 async function taSpellMore(rid,eid){
   const card=TA.card[eid];if(!card||!card.spell||TA.busy)return;TA.busy=true;render();
   let txt='';try{txt=await taSpellTarget(rid,eid,card)}catch(e){console.error('taSpellTarget',e)}

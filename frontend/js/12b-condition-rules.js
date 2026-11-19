@@ -157,10 +157,10 @@ const crNewAct=t=>({dmg:{t,dice:'1d4',dtype:'fire'},heal:{t,dice:'1d4'},temp:{t,
 const crNewRule=()=>({id:uid(),when:'start',unit:'turn',every:1,rest:'any',chk:null,ok:[crNewAct('dmg')],no:[]});
 function crPrev(el,r){const p=el.closest('.crrule')?.querySelector('.crprev');if(p)p.textContent=(spEditing()?spRuleText:crRuleText)(r)}
 function condRuleEdit(el){   /* typing / choosing inside the rules editor; returns true if it was one of ours */
-  const d=dedit&&dedit.draft;if(!d||(dedit.cat!=='conditions'&&dedit.cat!=='spells'))return false;
+  const T=spTarget(),d=T||(dedit&&dedit.draft);if(!d||(!T&&dedit.cat!=='conditions'))return false;
   const D=el.dataset,val=el.type==='checkbox'?el.checked:el.value;
-  if(dedit.cat==='spells'&&(D.rxk||D.sr||D.sk))return spRuleEdit(el,d,D,val);
-  if(dedit.cat==='spells'&&(D.cd||D.cl||D.rf||D.ck))return false;
+  if(T&&(D.rxk||D.sr||D.sk))return spRuleEdit(el,d,D,val);
+  if(T&&(D.cd||D.cl||D.rf||D.ck))return false;
   if(D.cd){d.dur=d.dur||{u:'',n:0};if(D.cd==='u'){d.dur.u=val;d.dur.n=val?Math.max(1,d.dur.n||1):0}else d.dur.n=Math.max(1,Math.min(999,Number(val)||1));if(D.rr)render();return true}
   if(D.cl){if(D.cl==='stack')d.stack=val;else if(D.cl==='maxLv')d.maxLv=Math.max(1,Math.min(20,Number(val)||6));
     else if(D.cl==='end'){const a=d.ends=d.ends||[],i=a.indexOf(D.e);if(val&&i<0)a.push(D.e);if(!val&&i>=0)a.splice(i,1)}
@@ -183,7 +183,7 @@ function condRuleEdit(el){   /* typing / choosing inside the rules editor; retur
     if(D.rr)render();else crPrev(el,r);return true}
   return false}
 function condRuleClick(a,b){
-  if(dedit.cat==='spells'){spRuleClick(a,b,dedit.draft);return}
+  const T=spTarget();if(T){spRuleClick(a,b,T);return}
   const d=dedit.draft,ri=Number(b.dataset.ri),ai=Number(b.dataset.ai),l=b.dataset.l;d.rules=d.rules||[];
   if(a==='cr-add')d.rules.push(crNewRule());
   else if(a==='cr-del')d.rules.splice(ri,1);

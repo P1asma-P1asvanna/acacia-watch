@@ -1,6 +1,9 @@
 """Turn actions: what each combatant has used this turn (Action, Bonus Action, Reaction, Interaction), whether the turn was ended by
 its player, and a short shared log ("Tessa: Action - Dagger attack 19 vs Goblin 1").
-Stored in kv "turn:<room id>" = {cur, r, e:{entry id: {s:{act,bon,rea,int}, end}}, log:[{t,r,eid,who,k,x}]}.
+Stored in kv "turn:<room id>" = {cur, r, e:{entry id: {s, l, cap, end}}, log:[{t,r,eid,who,k,x}]}.
+How many of each the combatant has: cap {act,bon,rea,int} (default 1 each, the GM can change it per combatant, 0..9, it stays across turns);
+l {slot: [what was done, ...]} is what was used this turn; s {slot: text} is only filled while the slot is used up (all `cap` of them),
+so "s[slot] is empty" still means "there is one left".
 Threats ("th"): when the GM's attack / spell lands on a player character, the GM's page opens a threat; the target and the allies that
 have a reaction see it, answer with a defensive spell / feature (op "react") or pass (op "pass"), and the GM's card shows the new outcome.
 The marker (initiative) belongs to the GM; this state follows it: when the current combatant or the round changes, that combatant's
@@ -18,8 +21,32 @@ FX_KINDS = ("ac", "res", "red", "half", "neg", "note", "take", "sub", "dis", "re
 ACTION_SLOTS = ("act", "bon", "int")  # these can only be used on the combatant's own turn (a Reaction can happen any time)
 
 
-def _blank():
-    return {"s": {k: "" for k in SLOTS}, "end": 0}
+def _caps(v):
+    v = v if isinstance(v, dict) else {}
+    return {k: (1 if v.get(k) is None else clampi(v.get(k), 0, 9, 1)) for k in SLOTS}
+
+
+def _sync(e):
+    """s[slot] = the last thing done once the slot is used up (or "—" when the combatant has none of it), otherwise empty."""
+    e["s"] = {k: ((e["l"][k][-1] if e["l"][k] else "—") if len(e["l"][k]) >= e["cap"][k] else "") for k in SLOTS}
+    return e
+
+
+def _blank(cap=None):
+    return _sync({"s": {}, "end": 0, "cap": _caps(cap), "l": {k: [] for k in SLOTS}})
+
+
+def _norm(v):
+    """One stored entry -> the current shape (older saves only had s)."""
+    lv = v.get("l") if isinstance(v.get("l"), dict) else {}
+    sv = v.get("s") if isinstance(v.get("s"), dict) else {}
+    l = {}
+    for k in SLOTS:
+        L = [str(x)[:80] for x in (lv.get(k) if isinstance(lv.get(k), list) else [])][:9]
+        if not L and sv.get(k) and k not in lv:
+            L = [str(sv[k])[:80]]
+        l[k] = L
+    return _sync({"s": {}, "end": 1 if v.get("end") else 0, "cap": _caps(v.get("cap")), "l": l})
 
 
 def view(state, ini):
@@ -33,10 +60,10 @@ def view(state, ini):
     old = st.get("e") if isinstance(st.get("e"), dict) else {}
     for k, v in old.items():
         if isinstance(v, dict) and isinstance(v.get("s"), dict):
-            out["e"][str(k)] = {"s": {s: str(v["s"].get(s) or "")[:80] for s in SLOTS}, "end": 1 if v.get("end") else 0}
+            out["e"][str(k)] = _norm(v)
     if str(st.get("cur") or "") != cur or clampi(st.get("r"), 1, 9999, 1) != rnd or clampi(st.get("tn"), 0, 10 ** 9, 0) != tn:
         if cur:
-            out["e"][cur] = _blank()  # the new turn starts: everything is available again (Reaction too)
+            out["e"][cur] = _blank((out["e"].get(cur) or {}).get("cap"))  # the new turn starts: everything is available again (Reaction too)
     return out
 
 
@@ -94,16 +121,27 @@ def apply(st, ini, entry, who, admin, mine, b):
     text = " ".join(str(b.get("text") or "").split())[:160]
     is_cur = eid == str(ini.get("cur") or "")
     e = st["e"].setdefault(eid, _blank())
-    if op in ("use", "undo") and slot not in SLOTS and not (op == "use" and slot == "note"):
+    if op in ("use", "undo", "cap") and slot not in SLOTS and not (op == "use" and slot == "note"):
         raise Err(400, "bad_slot")
     if op == "use":
         if not admin and slot in ACTION_SLOTS and not is_cur:
             raise Err(403, "not_your_turn")
         if slot != "note" and b.get("mark", 1):
-            e["s"][slot] = text or "✓"
+            if not admin and len(e["l"][slot]) >= e["cap"][slot]:
+                raise Err(409, "slot_used")
+            e["l"][slot].append(text or "✓")
+            e["l"][slot] = e["l"][slot][-9:]
+            _sync(e)
         _log(st, eid, who, slot, text)
     elif op == "undo":
-        e["s"][slot] = ""
+        if e["l"][slot]:
+            e["l"][slot].pop()
+        _sync(e)
+    elif op == "cap":  # the GM decides how many Actions / Bonus Actions / Reactions / Interactions a combatant has
+        if not admin:
+            raise Err(403, "not_yours")
+        e["cap"][slot] = clampi(b.get("n"), 0, 9, 1)
+        _sync(e)
     elif op == "end":
         if not admin and not is_cur:
             raise Err(403, "not_your_turn")
@@ -170,7 +208,8 @@ def _threat_op(st, ini, entry, who, admin, op, b):
         fx = _fx(b.get("fx"))
         if not fx:
             raise Err(400, "bad_fx")
-        e["s"]["rea"] = (name + (" — " + text if text else ""))[:80] or "✓"
+        e["l"]["rea"].append((name + (" — " + text if text else ""))[:80] or "✓")
+        _sync(e)
         t["ans"].append({"eid": eid, "n": name, "name": who, "fx": fx, "txt": text})
         _log(st, eid, who, "rea", ("%s → %s: %s" % (name, t.get("tn") or "", text)).strip(": ")[:160])
     else:

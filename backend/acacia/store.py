@@ -53,8 +53,9 @@ def clean_cat(c, v):
             if isinstance(x, dict):
                 conditions.clean_condition(x, ids)
     v["abMax"] = feats.ab_max(v)
-    feats.clean_cat_feats(v)
-    spells.clean_cat_spells(v, {x.get("id") for x in (v.get("conditions") or []) if isinstance(x, dict)})
+    cids = {x.get("id") for x in (v.get("conditions") or []) if isinstance(x, dict)}
+    feats.clean_cat_feats(v, cids)
+    spells.clean_cat_spells(v, cids)
     gear.clean_cat_gear(v)
     for k in ("races", "backgrounds"):
         for x in v.get(k) or []:
@@ -163,6 +164,27 @@ def members(c):
     return out
 
 
+def strip_gm(cat):
+    """The catalog without what is marked GM-only (secret spells / feats / classes, and class features), for the players."""
+    if not isinstance(cat, dict):
+        return cat
+    out = dict(cat)
+    hid = lambda x: isinstance(x, dict) and x.get("gm")
+    for k in ("spells", "feats", "classes"):
+        if isinstance(out.get(k), list):
+            out[k] = [x for x in out[k] if not hid(x)]
+    clean = []
+    for c in out.get("classes") or []:
+        if isinstance(c, dict):
+            c = dict(c)
+            c["feats"] = [f for f in (c.get("feats") or []) if not hid(f)]
+            c["subs"] = [dict(s, feats=[f for f in (s.get("feats") or []) if not hid(f)]) if isinstance(s, dict) else s for s in (c.get("subs") or [])]
+        clean.append(c)
+    if "classes" in out:
+        out["classes"] = clean
+    return out
+
+
 def boot_state(c, me):
     # the version is read BEFORE the data: if somebody saves in between, the next poll sees a newer version and refreshes
     out = {"v": live.current(), "me": None, "hasUsers": c.execute("SELECT 1 FROM users LIMIT 1").fetchone() is not None,
@@ -170,7 +192,7 @@ def boot_state(c, me):
     if not me:
         return out
     out["me"] = user_pub(me)
-    out["cat"] = kv_get(c, "cat")
+    out["cat"] = kv_get(c, "cat") if me["role"] == "admin" else strip_gm(kv_get(c, "cat"))
     out["prefs"] = kv_get(c, "prefs:" + me["id"]) or {}
     out["fb"] = feedback.view(kv_get(c, "fb"), me, me["role"] == "admin")
     out["members"] = members(c)

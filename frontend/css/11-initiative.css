@@ -139,3 +139,29 @@ button.ta-dot{cursor:pointer}
 .rxp{display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin-top:6px}.rxp>b{flex:1 0 100%}
 .rxb{display:grid;gap:1px;text-align:left}.rxb small{color:var(--muted);font-weight:400}
 .tr.rx .rx-ans{margin:4px 0 0;padding-left:18px}.rx-pass{color:var(--muted)}
+/* several actions of a kind */
+.ta-cap{font-style:normal;font-weight:700;font-size:.72rem;padding:0 6px;border-radius:8px;background:var(--surface-2,rgba(255,255,255,.12));margin-left:4px}
+.ta-m.part{border-style:dashed}.ta-dot.part{opacity:.85;border-style:dashed}
+.ta-caps{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:8px;padding:6px 0}
+.ta-capr{display:flex;align-items:center;gap:8px}.ta-capr span{flex:1}.ta-capr b{min-width:1.4em;text-align:center}
+/* ---- tidy turn panel: one card, a header, four even tiles, uniform tool rows, the end-turn button last ---- */
+.taw>.ta{margin-top:12px}
+.ta:not(.ta-rea){display:flex;flex-direction:column;gap:10px;padding:14px;border-radius:calc(var(--r) + 2px);border:1px solid var(--line,#444);background:var(--surface-2,rgba(128,128,128,.10))}
+.ta:not(.ta-rea)>*{margin:0}
+.ta-head{display:flex;align-items:center;justify-content:space-between;gap:8px;padding-bottom:8px;border-bottom:1px solid var(--line,#444)}
+.ta-head h3{margin:0;font-size:1.1rem;line-height:1.25}
+.ta-meters{grid-template-columns:repeat(4,minmax(0,1fr));gap:6px;margin:0}
+.ta-m{min-height:54px;padding:8px 10px;border-width:1.5px;justify-content:center}
+.ta-m b{font-size:.92rem;display:flex;align-items:center;gap:4px;flex-wrap:wrap;line-height:1.2}
+.ta-m small{font-size:.74rem}
+@media(max-width:640px){.ta-meters{grid-template-columns:repeat(2,minmax(0,1fr))}}
+.ta-pick{margin:0;text-align:center;font-size:.85rem;opacity:.8;padding:6px 0}
+.ta-body{margin:0;padding:12px;border:1px solid var(--line,#444);border-radius:var(--r);background:rgba(128,128,128,.07)}
+.ta-body>*+*{margin-top:2px}
+.ta>details.ta-std,.ta>details.ta-more,.ta>details.ta-capd,.ta-body details.ta-std{margin:0;border:1px solid var(--line,#444);border-radius:var(--r);padding:0 12px;background:rgba(128,128,128,.05)}
+.ta>details>summary,.ta-body details.ta-std>summary{padding:10px 0;font-size:.9rem;opacity:.9}
+.ta>details[open]{padding-bottom:10px}
+.ta-list li{padding:8px 10px;background:var(--surface,rgba(128,128,128,.14))}
+.ta-endbtn{margin-top:2px;min-height:48px}
+.ta-ended{margin:0}
+.ta-log{margin:12px 16px 14px;padding:10px 12px;border:1px solid var(--line,#444);border-radius:var(--r)}

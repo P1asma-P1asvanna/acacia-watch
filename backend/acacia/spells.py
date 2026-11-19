@@ -39,7 +39,7 @@ def clean_cat_spells(v, cond_ids=()):
                     "timeK": _k(x.get("timeK"), TIME_K, "special"), "timeN": _n(x.get("timeN")), "timeX": str(x.get("timeX") or "")[:80],
                     "durK": _k(x.get("durK"), DUR_K, "special"), "durN": _n(x.get("durN")), "durX": str(x.get("durX") or "")[:80],
                     "desc": str(x.get("desc") or "")[:8000],
-                    "rules": conditions.clean_spell_rules(x.get("rules"), cond_ids), "rx": conditions.clean_rx(x.get("rx"))})
+                    "gm": 1 if x.get("gm") in (1, True, "1") else 0, "rules": conditions.clean_spell_rules(x.get("rules"), cond_ids), "rx": conditions.clean_rx(x.get("rx"))})
     v["spells"] = out
 
 

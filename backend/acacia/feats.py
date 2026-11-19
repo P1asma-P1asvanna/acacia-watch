@@ -7,6 +7,7 @@ The base scores in `abil` are never changed; totals are computed from them. The 
 """
 import re
 
+from . import conditions
 from .numbers import clampi
 
 ABS = ("str", "dex", "con", "int", "wis", "cha")
@@ -91,7 +92,26 @@ def clean_featcats(v):
     return out
 
 
-def clean_cat_feats(v):
+def clean_features(L, cond_ids=()):
+    """Class / subclass / background features: keep what the editor writes, plus the GM-only flag, the use cost and the effect rules."""
+    out = []
+    for f in (L if isinstance(L, list) else [])[:200]:
+        if not isinstance(f, dict):
+            continue
+        g = dict(f)
+        g["id"] = str(f.get("id") or "")[:40]
+        g["name"] = str(f.get("name") or "")[:120]
+        g["desc"] = str(f.get("desc") or "")[:6000]
+        g["lvl"] = clampi(f.get("lvl"), 1, 20, 1)
+        g["gm"] = 1 if f.get("gm") in (1, True, "1") else 0
+        g["tk"] = f.get("tk") if f.get("tk") in ("action", "bonus", "reaction", "none") else ""
+        g["rules"] = conditions.clean_spell_rules(f.get("rules"), cond_ids)
+        g["rx"] = conditions.clean_rx(f.get("rx"))
+        out.append(g)
+    return out
+
+
+def clean_cat_feats(v, cond_ids=()):
     """Clean the feat list, the class `asiLv` and the background `originFeat` inside a catalog."""
     clean_sources(v)
     extra = {c["id"] for c in clean_featcats(v)}
@@ -110,14 +130,20 @@ def clean_cat_feats(v):
                     "asi": ",".join(abil_list(x.get("asi"))), "rep": 1 if x.get("rep") in (1, True, "1") else 0,
                     "pts": 2 if clampi(x.get("pts"), 1, 2, 1) == 2 else 1,
                     "cap": clampi(x.get("cap"), 20, 30, 30 if x.get("cat") == "epic" else 20),
-                    "fx": clean_fx(x.get("fx")), "seed": 1 if x.get("seed") in (1, True, "1") else 0, "desc": str(x.get("desc") or "")[:6000]})
+                    "gm": 1 if x.get("gm") in (1, True, "1") else 0, "rules": conditions.clean_spell_rules(x.get("rules"), cond_ids), "rx": conditions.clean_rx(x.get("rx")), "fx": clean_fx(x.get("fx")), "seed": 1 if x.get("seed") in (1, True, "1") else 0, "desc": str(x.get("desc") or "")[:6000]})
     v["feats"] = out
     for c in v.get("classes") or []:
         if isinstance(c, dict):
             c["asiLv"] = clean_asi_text(c.get("asiLv"))
+            c["feats"] = clean_features(c.get("feats"), cond_ids)
+            for s in c.get("subs") or []:
+                if isinstance(s, dict) and "feats" in s:
+                    s["feats"] = clean_features(s.get("feats"), cond_ids)
     for b in v.get("backgrounds") or []:
         if isinstance(b, dict):
             b["originFeat"] = str(b.get("originFeat") or "")[:80]
+            if "feats" in b:
+                b["feats"] = clean_features(b.get("feats"), cond_ids)
     return v
 
 
