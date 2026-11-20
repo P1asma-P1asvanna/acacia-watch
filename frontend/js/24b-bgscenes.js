@@ -31,6 +31,28 @@ const BG_PHYS=['F = ma','E = mc²','g = 9.8 m/s²','V = IR','F = Gm₁m₂/r²',
 function bgGear(teeth,r1,r2,hole){const pts=[];const st=Math.PI*2/teeth;
   for(let i=0;i<teeth;i++){const a=i*st;[[0,r1],[.18,r2],[.5,r2],[.68,r1]].forEach(([f,r])=>pts.push(`${bgF(50+r*Math.cos(a+f*st),1)},${bgF(50+r*Math.sin(a+f*st),1)}`))}
   return BGP(`<polygon points="${pts.join(' ')}" stroke="currentColor" stroke-width="2" fill="none" stroke-linejoin="round"/><circle cx="50" cy="50" r="${hole}" stroke="currentColor" stroke-width="2" fill="none"/><path d="M50 ${50-hole}V${50+hole}M${50-hole} 50H${50+hole}" stroke="currentColor" stroke-width="2"/>`,'0 0 100 100','fill="none"')}
+/* ---- flame textures: value-noise fire painted once per colour / quality, tileable sideways, 4 frames that loop in time ---- */
+const BG_FIRE={};
+function bgRgb(c){const k=document.createElement('canvas');k.width=k.height=1;const x=k.getContext('2d');x.fillStyle='#000';x.fillStyle=c;x.fillRect(0,0,1,1);const d=x.getImageData(0,0,1,1).data;return[d[0],d[1],d[2]]}
+function bgFireFrames([W,Hh],el){
+  const pal=[1,2,3].map(i=>getComputedStyle(el).getPropertyValue('--bc'+i).trim()),key=pal.join('|')+W;
+  if(BG_FIRE[key])return BG_FIRE[key];
+  const [o,a,r]=pal.map(bgRgb),mixc=(x,y,t)=>x.map((v,i)=>v+(y[i]-v)*t),W3=[255,255,255];
+  const ramp=[[0,mixc(r,[50,0,0],.65)],[.3,mixc(r,[40,0,0],.15)],[.58,o],[.82,mixc(a,W3,.04)],[1,mixc(a,W3,.55)]];
+  const col=I=>{for(let i=1;i<ramp.length;i++)if(I<=ramp[i][0]){const t=(I-ramp[i-1][0])/(ramp[i][0]-ramp[i-1][0]);return mixc(ramp[i-1][1],ramp[i][1],t)}return ramp[4][1]};
+  const sm=t=>t*t*(3-2*t),N=4,Z=2;
+  const hs=(x,y,z)=>{let h=(Math.imul(x,374761393)+Math.imul(y,668265263)+Math.imul(z,1274126177))|0;h=Math.imul(h^(h>>>13),1274126177);return((h^(h>>>16))>>>0)/4294967296};
+  const vn=(x,y,z,px,pz)=>{const xi=Math.floor(x),yi=Math.floor(y),zi=Math.floor(z),fx=sm(x-xi),fy=sm(y-yi),fz=sm(z-zi),m=(v,p)=>((v%p)+p)%p,x0=m(xi,px),x1=m(xi+1,px),z0=m(zi,pz),z1=m(zi+1,pz),L=(a,b,t)=>a+(b-a)*t;
+    return L(L(L(hs(x0,yi,z0),hs(x1,yi,z0),fx),L(hs(x0,yi+1,z0),hs(x1,yi+1,z0),fx),fy),L(L(hs(x0,yi,z1),hs(x1,yi,z1),fx),L(hs(x0,yi+1,z1),hs(x1,yi+1,z1),fx),fy),fz)};
+  const fbm=(x,y,z)=>{let s=0,am=.5,f=1;for(let k=0;k<3;k++){s+=am*vn(x*f,y*f,z*f,6*f,Z*f);am*=.5;f*=2}return s};
+  const out=[],cv=document.createElement('canvas');cv.width=W;cv.height=Hh;const cx=cv.getContext('2d'),img=cx.createImageData(W,Hh),D=img.data;
+  for(let f=0;f<N;f++){const z=f*Z/N;
+    for(let py=0;py<Hh;py++){const v=py/Hh,base=Math.pow(v,1.1);
+      for(let px=0;px<W;px++){const u=px/W,wv=(vn(u*3,v*2.2,z,3,Z)-.5)*1.9*(1-v*.6),n=fbm(u*6+wv,v*1.7,z+.5);
+        let I=base*1.3+(n-.5)*1.9-.2;if(v>.9)I=Math.max(I,1.1*((v-.9)/.1)+I*.0);I=I<0?0:I>1?1:I;
+        const c=col(I),al=sm(Math.min(1,Math.max(0,(I-.03)/.3))),p=(py*W+px)*4;D[p]=c[0];D[p+1]=c[1];D[p+2]=c[2];D[p+3]=al*255}}
+    cx.putImageData(img,0,0);out.push(cv.toDataURL('image/png'))}
+  return BG_FIRE[key]=out}
 const BGX={
 /* ---------- big city at night ---------- */
 city(q,el,H){
@@ -64,25 +86,35 @@ code(q,el,H){
     for(let r=0;r<rows;r++)s+=(bin?(bgRand()<.5?'0':'1'):bgPick(BG_TOK))+'\n';
     const d=bgR(9,22);add('bgcode',bgEsc(s.trimEnd()),`--x:${bgF(i*(100/n)+bgR(0,2.5),1)}%;--s:${bgF(bgR(12,18),0)}px;--d:${bgF(d)}s;--dl:-${bgF(bgRand()*d)}s;--o:${bgF(bgR(.25,.6),2)};--c:var(--bc${bin?1:2+Math.floor(bgRand()*2)})`)}
   rise('bgcs',9,()=>bgEsc(bgPick(BG_SNIP)),{s0:46,s1:84,d0:30,d1:55,o0:.25,o1:.5})},
-/* ---------- nature: sun, trees, flowers, falling petals ---------- */
+/* ---------- nature: a flower garden under the sun, with butterflies and falling petals ---------- */
 nature(q,el,H){
-  const {add,hi,cnt}=H;
-  add('bgsun-r');add('bgsun');add('bgnat-g');
-  const pine=BGP('<path d="M20 2l11 14h-6l9 12H25l8 10H7l8-10H6l9-12H9z"/><rect x="18" y="36" width="4" height="4"/>'),
-        oak=BGP('<circle cx="20" cy="14" r="11"/><circle cx="11" cy="21" r="8"/><circle cx="29" cy="21" r="8"/><rect x="18" y="26" width="4" height="14"/>'),
-        flw=()=>{const c=3+Math.floor(bgRand()*3);let p='';for(let i=0;i<c+2;i++){const a=i*Math.PI*2/(c+2);p+=`<ellipse cx="${bgF(20+8*Math.cos(a),1)}" cy="${bgF(10+8*Math.sin(a),1)}" rx="5" ry="3.4" transform="rotate(${bgF(a*180/Math.PI,0)} ${bgF(20+8*Math.cos(a),1)} ${bgF(10+8*Math.sin(a),1)})"/>`}
-          return BGP(`${p}<circle cx="20" cy="10" r="3.6" fill-opacity=".9"/><path d="M20 14V50" stroke="currentColor" stroke-width="1.6"/><path d="M20 36c-6-1-9-4-9-8 5 0 8 3 9 8z"/>`,'0 0 40 52')};
-  const nT=cnt(10);for(let i=0;i<nT;i++){const far=i%2===0,s=far?bgR(80,150):bgR(130,230),d=bgR(5,9);
-    add('bgtree',bgRand()<.6?pine:oak,`--x:${bgF(bgR(-2,98),1)}%;--s:${bgF(s,0)}px;--d:${bgF(d)}s;--dl:-${bgF(bgRand()*d)}s;--c:var(--bc2);--o:${far?.2:.38}`)}
-  const nF=cnt(16);for(let i=0;i<nF;i++){const d=bgR(3,6);add('bgflw',flw(),`--x:${bgF(bgR(1,97),1)}%;--s:${bgF(bgR(26,44),0)}px;--d:${bgF(d)}s;--dl:-${bgF(bgRand()*d)}s;--c:var(--bc${bgRand()<.5?3:1});--o:.6`)}
+  const {add,hi,cnt}=H,G='<g style="color:var(--bc2)" stroke="currentColor" fill="none" stroke-width="1.7" stroke-linecap="round">',
+    petals=(n,rx,ry,r0,cx,cy)=>{let p='';for(let i=0;i<n;i++){const a=i*360/n;p+=`<ellipse cx="${cx}" cy="${cy-r0}" rx="${rx}" ry="${ry}" transform="rotate(${bgF(a,0)} ${cx} ${cy})"/>`}return p},
+    leaf=(y,d)=>`<path d="M20 ${y}c${d*9} -1 ${d*14} -6 ${d*14} -12 ${-d*7} 1 ${-d*13} 5 ${-d*14} 12z" fill="currentColor" fill-opacity=".7"/>`,
+    stem=h=>`${G}<path d="M20 ${h}V80"/>${leaf(66,1)}${leaf(58,-1)}</g>`,
+    F=[ /* daisy */()=>BGP(`${stem(24)}${petals(12,2.6,6.5,6.5,20,20)}<circle cx="20" cy="20" r="4.4" fill="#f2b705" style="color:#f2b705"/>`,'0 0 40 80'),
+      /* sunflower */()=>BGP(`${stem(26)}${petals(16,2.8,8,8,20,22)}<circle cx="20" cy="22" r="7.4" fill="#5a3a1a" style="color:#5a3a1a"/><circle cx="20" cy="22" r="3" fill="#8a5a2a" style="color:#8a5a2a"/>`,'0 0 40 80'),
+      /* tulip */()=>BGP(`${stem(26)}<path d="M11 8c0 12 4 20 9 20s9-8 9-20l-4.5 5L20 5l-4.5 8z"/>`,'0 0 40 80'),
+      /* lavender */()=>BGP(`${stem(10)}${[12,19,26,33,40].map((y,i)=>`<ellipse cx="${i%2?23:17}" cy="${y}" rx="3.2" ry="4.4"/>`).join('')}<ellipse cx="20" cy="7" rx="2.8" ry="4.6"/>`,'0 0 40 80'),
+      /* poppy / rose */()=>BGP(`${stem(26)}<circle cx="20" cy="18" r="10"/><circle cx="15" cy="15" r="5.6" fill-opacity=".55" style="color:#fff"/><circle cx="23" cy="19" r="4.4" fill-opacity=".4" style="color:#000"/>`,'0 0 40 80'),
+      /* bluebell */()=>BGP(`${stem(14)}<path d="M20 14c-6 0-9-3-9-3 0 7 3 12 9 12s9-5 9-12c0 0-3 3-9 3z" transform="translate(-6 6)"/><path d="M20 14c-6 0-9-3-9-3 0 7 3 12 9 12s9-5 9-12c0 0-3 3-9 3z" transform="translate(5 14)"/>`,'0 0 40 80')],
+    hue=['var(--bc1)','var(--bc3)','var(--bc3)','var(--bc1)','var(--bc3)','var(--bc1)'];
+  add('bgsun-r');add('bgsun');add('bgnat-g');add('bgnat-hill','',`--o:.14;--w:150vw;--h:44vh;--x:30%`);add('bgnat-hill','',`--o:.22;--w:130vw;--h:30vh;--x:72%`);
+  const rows=[[cnt(18),.3,28,46,.4,9],[cnt(12),.5,44,70,.3,7],[cnt(8),.85,74,128,.18,5]];
+  rows.forEach(([n,op,s0,s1,_,dsw],ri)=>{for(let i=0;i<n;i++){const k=Math.floor(bgRand()*F.length),d=bgR(dsw,dsw+4),s=bgR(s0,s1);
+    add('bgflw',F[k](),`--x:${bgF((i+bgR(.1,.9))*100/n,1)}%;--s:${bgF(s,0)}px;--d:${bgF(d)}s;--dl:-${bgF(bgRand()*d)}s;--c:${hue[k]};--o:${op};--b:${bgF(-ri*1.2,1)}vh`)}});
+  const wing=`<svg viewBox="0 0 40 30"><g fill="currentColor"><path d="M20 15C14 4 3 2 3 11c0 7 9 9 17 4z"/><path d="M20 15C26 4 37 2 37 11c0 7-9 9-17 4z"/><path d="M20 15C13 19 8 28 14 28c5 0 8-6 6-13z" fill-opacity=".8"/><path d="M20 15C27 19 32 28 26 28c-5 0-8-6-6-13z" fill-opacity=".8"/></g></svg>`;
+  for(let i=0;i<(hi?5:3);i++){const d=bgR(14,24);add('bgbf',wing,`left:${bgF(bgR(30,92),0)}%;top:${bgF(bgR(35,80),0)}%;--s:${bgF(bgR(22,34),0)}px;--d:${bgF(d)}s;--dl:-${bgF(bgRand()*d)}s;--x1:${bgF(bgR(-16,16))}vw;--y1:${bgF(bgR(-14,6))}vh;--x2:${bgF(bgR(-16,16))}vw;--y2:${bgF(bgR(-14,6))}vh;--fl:${bgF(bgR(.16,.3),2)}s;--c:var(--bc${[3,1,3,1,3][i]})`)}
   const pet=BGP('<path d="M20 4C30 10 30 28 20 36 10 28 10 10 20 4z"/>');
-  for(let i=0;i<cnt(16);i++){const d=bgR(14,26);add('bgpet',pet,`--x:${bgF(bgR(0,100),1)}%;--s:${bgF(bgR(12,24),0)}px;--d:${bgF(d)}s;--dl:-${bgF(bgRand()*d)}s;--dx:${bgF(bgR(-14,14))}vw;--r:${bgF(bgR(-300,300),0)}deg;--o:${bgF(bgR(.35,.7),2)};--c:var(--bc${bgRand()<.5?3:2})`)}},
-/* ---------- fire and soot ---------- */
+  for(let i=0;i<cnt(14);i++){const d=bgR(14,26);add('bgpet',pet,`--x:${bgF(bgR(0,100),1)}%;--s:${bgF(bgR(11,22),0)}px;--d:${bgF(d)}s;--dl:-${bgF(bgRand()*d)}s;--dx:${bgF(bgR(-14,14))}vw;--r:${bgF(bgR(-300,300),0)}deg;--o:${bgF(bgR(.4,.75),2)};--c:var(--bc${bgRand()<.6?3:1})`)}},
+/* ---------- fire and soot: a real flame texture (noise-based, drawn once on a canvas) that cross-fades between a few frames ---------- */
 fire(q,el,H){
-  const {add,rise,hi,cnt}=H;add('bgfi-g');
-  const n=cnt(26);for(let i=0;i<n;i++){const d=bgR(.9,2.1);add('bgfi-f',0,`--x:${bgF((i+.5)*100/n+bgR(-2,2),1)}%;--w:${bgF(bgR(6,12))}vw;--h:${bgF(bgR(18,42),0)}vh;--d:${bgF(d,2)}s;--dl:-${bgF(bgRand()*d,2)}s;--o:${bgF(bgR(.4,.75),2)}`)}
+  const {add,rise,hi}=H,fr=bgFireFrames(hi?[384,192]:[256,128],el);
+  add('bgfi-g');
+  const stack=(cls,T,dir)=>{const w=add('bgfi2 '+cls,0,`--T:${T}s`);fr.forEach((u,i)=>add('bgfi-fr',0,`background-image:url(${u});--dl:-${bgF(i*T/fr.length,2)}s`,w));return w};
+  stack('back',hi?3.4:4.2);stack('front',hi?2.3:3);
   rise('bgem',hi?30:14,()=>'',{s0:3,s1:9,d0:7,d1:16,o0:.5,o1:.95});
-  rise('bgsoot',hi?18:9,()=>'',{s0:4,s1:13,d0:12,d1:26,o0:.25,o1:.5});
+  rise('bgsoot',hi?16:8,()=>'',{s0:3,s1:11,d0:12,d1:26,o0:.25,o1:.5});
   for(let i=0;i<(hi?4:2);i++){const d=bgR(14,22);add('bgsmoke',0,`--x:${[18,42,66,86][i]}%;--d:${bgF(d)}s;--dl:-${bgF(bgRand()*d)}s;--dx:${bgF(bgR(-8,8))}vw`)}},
 /* ---------- medical / the mind: breathing circle, heartbeat line, calm icons ---------- */
 medical(q,el,H){
@@ -149,7 +181,7 @@ physics(q,el,H){
   add('bgph-gnd');
   rise('bgcs',hi?8:4,()=>bgEsc(bgPick(BG_PHYS)),{s0:44,s1:84,d0:30,d1:55,o0:.22,o1:.45})}
 };
-Object.assign(TX.th,{bg_space:'อวกาศและกาแล็กซี่',bg_fire:'เปลวไฟและเขม่า',bg_city:'เมืองใหญ่ยามค่ำคืน',bg_brick:'กำแพงอิฐเรืองแสง',bg_chess:'กระดานหมากรุก',bg_code:'โค้ดและเลขฐานสอง',bg_nature:'ธรรมชาติ ต้นไม้ ดอกไม้ แสงอาทิตย์',bg_medical:'การแพทย์และจิตใจ',bg_time:'กาลเวลาและเข็มนาฬิกา',bg_music:'ภาพคลื่นเสียงวงกลม',bg_physics:'ฟิสิกส์ แรงโน้มถ่วง สายฟ้า',
+Object.assign(TX.th,{bg_space:'อวกาศและกาแล็กซี่',bg_fire:'เปลวไฟและเขม่า',bg_city:'เมืองใหญ่ยามค่ำคืน',bg_brick:'กำแพงอิฐเรืองแสง',bg_chess:'กระดานหมากรุก',bg_code:'โค้ดและเลขฐานสอง',bg_nature:'สวนดอกไม้ ผีเสื้อ แสงอาทิตย์',bg_medical:'การแพทย์และจิตใจ',bg_time:'กาลเวลาและเข็มนาฬิกา',bg_music:'ภาพคลื่นเสียงวงกลม',bg_physics:'ฟิสิกส์ แรงโน้มถ่วง สายฟ้า',
   bgcCustom:'สีกำหนดเอง',bgcCustomOn:'ใช้สีนี้กับทุกฉาก',bgcReset:'กลับไปใช้สีของฉาก'});
-Object.assign(TX.en,{bg_space:'Space & galaxy',bg_fire:'Fire & soot',bg_city:'Big city at night',bg_brick:'Glowing brick wall',bg_chess:'Chess board',bg_code:'Code & binary',bg_nature:'Nature: trees, flowers, sun',bg_medical:'Medicine & mind',bg_time:'Time & clock hands',bg_music:'Circular music visualizer',bg_physics:'Physics: gravity & lightning',
+Object.assign(TX.en,{bg_space:'Space & galaxy',bg_fire:'Fire & soot',bg_city:'Big city at night',bg_brick:'Glowing brick wall',bg_chess:'Chess board',bg_code:'Code & binary',bg_nature:'Flower garden & sun',bg_medical:'Medicine & mind',bg_time:'Time & clock hands',bg_music:'Circular music visualizer',bg_physics:'Physics: gravity & lightning',
   bgcCustom:'Custom color',bgcCustomOn:'Use this color for every scene',bgcReset:'Back to the scene colors'});

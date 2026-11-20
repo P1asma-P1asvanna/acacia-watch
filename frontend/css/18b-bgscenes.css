@@ -33,19 +33,27 @@
 /* ---- nature ---- */
 .bgsun{right:-9vmax;top:-9vmax;width:46vmax;height:46vmax;border-radius:50%;background:radial-gradient(circle,#fff 0,var(--bc1) 14%,color-mix(in srgb,var(--bc1) 38%,transparent) 32%,transparent 66%);opacity:.9}
 .bgsun-r{right:-14vmax;top:-14vmax;width:56vmax;height:56vmax;border-radius:50%;background:repeating-conic-gradient(from 0deg,color-mix(in srgb,var(--bc1) 32%,transparent) 0 5deg,transparent 5deg 17deg);-webkit-mask-image:radial-gradient(circle,#000 8%,transparent 66%);mask-image:radial-gradient(circle,#000 8%,transparent 66%);animation:bgSpin 140s linear infinite}
-.bgtree{left:var(--x);bottom:-2px;width:var(--s);height:calc(var(--s)*1.5);color:var(--c);opacity:var(--o);transform-origin:50% 100%;animation:bgSway var(--d) ease-in-out var(--dl) infinite alternate}
 .bgtree svg,.bgflw svg{width:100%;height:100%;display:block}
-.bgflw{left:var(--x);bottom:-2px;width:var(--s);height:calc(var(--s)*1.7);color:var(--c);opacity:var(--o);transform-origin:50% 100%;animation:bgSway var(--d) ease-in-out var(--dl) infinite alternate}
-@keyframes bgSway{from{transform:rotate(-2.2deg)}to{transform:rotate(2.2deg)}}
+.bgflw{left:var(--x);bottom:var(--b,0);width:var(--s);height:calc(var(--s)*2);color:var(--c);opacity:var(--o);transform-origin:50% 100%;animation:bgSway var(--d) ease-in-out var(--dl) infinite alternate}
+@keyframes bgSway{from{transform:rotate(-2.6deg)}to{transform:rotate(2.6deg)}}
+.bgnat-hill{left:var(--x);bottom:-14vh;width:var(--w);height:var(--h);margin-left:calc(var(--w)/-2);border-radius:50% 50% 0 0/100% 100% 0 0;background:var(--bc2);opacity:var(--o)}
+.bgbf{width:var(--s);height:calc(var(--s)*.75);color:var(--c);opacity:.85;animation:bgFly var(--d) ease-in-out var(--dl) infinite alternate}
+.bgbf svg{width:100%;height:100%;display:block;transform-origin:50% 50%;animation:bgFlap var(--fl) ease-in-out infinite alternate}
+@keyframes bgFlap{from{transform:scaleX(1)}to{transform:scaleX(.2)}}
 .bgpet{left:var(--x);top:-40px;width:var(--s);height:var(--s);color:var(--c);opacity:0;animation:bgFall var(--d) linear var(--dl) infinite}
 .bgpet svg{width:100%;height:100%;display:block}
 @keyframes bgFall{0%{transform:translate3d(0,0,0) rotate(0);opacity:0}8%{opacity:var(--o)}50%{transform:translate3d(calc(var(--dx)*.5),55vh,0) rotate(calc(var(--r)*.5))}90%{opacity:var(--o)}100%{transform:translate3d(var(--dx),112vh,0) rotate(var(--r));opacity:0}}
 .bgnat-g{left:0;bottom:0;width:100%;height:30vh;background:linear-gradient(to top,color-mix(in srgb,var(--bc2) 18%,transparent),transparent)}
 /* ---- fire and soot ---- */
-.bgfi-g{left:0;bottom:0;width:100%;height:55vh;background:linear-gradient(to top,color-mix(in srgb,var(--bc3) 55%,transparent),color-mix(in srgb,var(--bc1) 18%,transparent) 55%,transparent);animation:bgGlow 3.2s ease-in-out infinite alternate}
+.bgfi-g{left:0;bottom:0;width:100%;height:50vh;background:linear-gradient(to top,color-mix(in srgb,var(--bc3) 55%,transparent),color-mix(in srgb,var(--bc1) 18%,transparent) 55%,transparent);animation:bgGlow 3.2s ease-in-out infinite alternate}
 @keyframes bgGlow{from{opacity:.65}to{opacity:1}}
-.bgfi-f{left:var(--x);bottom:-6vh;width:var(--w);height:var(--h);margin-left:calc(var(--w)/-2);border-radius:50% 50% 38% 38%/78% 78% 22% 22%;background:radial-gradient(ellipse at 50% 88%,#fff6d0 0,var(--bc2) 24%,var(--bc1) 52%,color-mix(in srgb,var(--bc3) 50%,transparent) 72%,transparent 82%);opacity:var(--o);transform-origin:50% 100%;animation:bgFlame var(--d) ease-in-out var(--dl) infinite alternate}
-@keyframes bgFlame{0%{transform:scale(1,1) skewX(0)}35%{transform:scale(.88,1.14) skewX(5deg)}70%{transform:scale(1.06,.9) skewX(-4deg)}100%{transform:scale(.92,1.2) skewX(3deg)}}
+.bgfi2{left:0;bottom:-2px;width:100%;height:var(--fh,46vh);transform-origin:50% 100%;animation:bgLick 1.7s ease-in-out infinite alternate}
+.bgfi2.back{--fh:40vh;opacity:.8;transform:scaleX(-1);animation-duration:2.3s}
+@keyframes bgLick{from{transform:scale(1,.94)}to{transform:scale(1,1.08)}}
+.bgfi2.back{animation-name:bgLickB}
+@keyframes bgLickB{from{transform:scale(-1,.92)}to{transform:scale(-1,1.1)}}
+.bgfi-fr{inset:0;background-size:auto 100%;background-position:0 100%;background-repeat:repeat-x;opacity:0;animation:bgFrame var(--T) linear var(--dl) infinite}
+@keyframes bgFrame{0%{opacity:1}25%{opacity:0}75%{opacity:0}100%{opacity:1}}
 .bgsoot{border-radius:46% 54% 40% 60%;background:color-mix(in srgb,var(--ink) 55%,transparent);box-shadow:none!important}
 .bgsmoke{left:var(--x);bottom:-10vh;width:30vmax;height:30vmax;margin-left:-15vmax;border-radius:50%;background:radial-gradient(circle,color-mix(in srgb,var(--ink) 20%,transparent) 0,transparent 65%);opacity:0;animation:bgSmoke var(--d) ease-out var(--dl) infinite}
 @keyframes bgSmoke{0%{transform:translate3d(0,0,0) scale(.4);opacity:0}15%{opacity:.8}100%{transform:translate3d(var(--dx),-85vh,0) scale(1.5);opacity:0}}
