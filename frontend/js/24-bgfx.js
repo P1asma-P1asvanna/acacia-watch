@@ -2,11 +2,18 @@
    Everything here only moves things with transform + opacity (the cheap kind, done by the graphics chip), the scene sits in its own
    fixed layer OUTSIDE #root (so the page redrawing never restarts it), pauses when the tab is hidden or a minigame is running,
    and quietly lowers its own quality if the device can't keep ~30 frames per second. */
-const BGFX_LIST=['','geo','dice','runes','light','aurora','gradient','stars','embers','fireflies','fog','rain','waves','bokeh'];
-const BGFX_ICON={'':'⛔',geo:'🔷',dice:'🎲',runes:'ᚱ',light:'🔦',aurora:'🌌',gradient:'🌈',stars:'✨',embers:'🔥',fireflies:'🪲',fog:'🌫️',rain:'🌧️',waves:'🌊',bokeh:'🫧'};
-const BGFX_PAL={geo:['#7aa2ff','#b08cff','#6fe0d0'],dice:['#e3b449','#f0d48a','#c9954a'],runes:['#a78bfa','#7dd3fc','#f0abfc'],light:['#ffe9b0','#ffd27a','#fff5d6'],aurora:['#3df5b0','#4aa8ff','#b46bff'],gradient:['#4f46e5','#06b6d4','#ec4899'],stars:['#ffffff','#bcd4ff','#ffe9c4'],embers:['#ff8a3d','#ffb347','#ff5a36'],fireflies:['#d8ff6a','#fff59d','#9dffb0'],fog:['#aab4c8','#aab4c8','#aab4c8'],rain:['#8fb4ff','#b8c9e8','#7aa0d8'],waves:['#3b82f6','#06b6d4','#6366f1'],bokeh:['#ffd27a','#ff9ec4','#9ad0ff']};
+const BGFX_LIST=['','geo','dice','runes','light','aurora','gradient','space','fire','fireflies','fog','rain','waves','bokeh','city','brick','chess','code','nature','medical','time','music','physics'];
+/* older saved choices keep working: the old stars / embers scenes became the richer space / fire scenes */
+const BGFX_ALIAS={stars:'space',embers:'fire'};
+const BGFX_ICON={'':'⛔',geo:'🔷',dice:'🎲',runes:'ᚱ',light:'🔦',aurora:'🌌',gradient:'🌈',stars:'✨',embers:'🔥',fireflies:'🪲',fog:'🌫️',rain:'🌧️',waves:'🌊',bokeh:'🫧',space:'🪐',fire:'🔥',city:'🌃',brick:'🧱',chess:'♟️',code:'💻',nature:'🌳',medical:'🩺',time:'⏳',music:'🎵',physics:'⚡'};
+const BGFX_PAL={geo:['#7aa2ff','#b08cff','#6fe0d0'],dice:['#e3b449','#f0d48a','#c9954a'],runes:['#a78bfa','#7dd3fc','#f0abfc'],light:['#ffe9b0','#ffd27a','#fff5d6'],aurora:['#3df5b0','#4aa8ff','#b46bff'],gradient:['#4f46e5','#06b6d4','#ec4899'],stars:['#ffffff','#bcd4ff','#ffe9c4'],embers:['#ff8a3d','#ffb347','#ff5a36'],fireflies:['#d8ff6a','#fff59d','#9dffb0'],fog:['#aab4c8','#aab4c8','#aab4c8'],rain:['#8fb4ff','#b8c9e8','#7aa0d8'],waves:['#3b82f6','#06b6d4','#6366f1'],bokeh:['#ffd27a','#ff9ec4','#9ad0ff'],space:['#a78bfa','#60a5fa','#f0abfc'],fire:['#ff7a1a','#ffb347','#ff3d2e'],city:['#ffd27a','#7aa2ff','#ff9ec4'],brick:['#ffb36b','#ff7a59','#ffd9a0'],chess:['#e3d3a8','#9ca3af','#d4a373'],code:['#34d399','#22d3ee','#a3e635'],nature:['#ffd54a','#7ddc6f','#ff8fb1'],medical:['#5eead4','#93c5fd','#f9a8d4'],time:['#e3b449','#cbd5e1','#a78bfa'],music:['#22d3ee','#a78bfa','#f472b6'],physics:['#7dd3fc','#c4b5fd','#fde68a']};
 const BGFX_TINT={blue:['#60a5fa','#38bdf8','#818cf8'],violet:['#a78bfa','#c084fc','#818cf8'],pink:['#f472b6','#fb7185','#f9a8d4'],green:['#34d399','#86efac','#6ee7b7'],gold:['#e3b449','#f0d48a','#fbbf24'],white:['#ffffff','#e5e7eb','#cbd5e1']};
 const WIN_LIST=['rise','fade','zoom','slide','drop','pop','blur','flip','none'];
+/* a colour picked by the person: three shades made from it */
+function bgShades(hex){const m=/^#([0-9a-f]{6})$/i.exec(hex||'');if(!m)return null;const n=parseInt(m[1],16),r=n>>16,g=n>>8&255,b=n&255,mx=Math.max(r,g,b)/255,mn=Math.min(r,g,b)/255,l=(mx+mn)/2;let h=0;const dl=mx-mn;
+  if(dl){const R=r/255,G=g/255,B=b/255;h=mx===R?((G-B)/dl)%6:mx===G?(B-R)/dl+2:(R-G)/dl+4;h=(h*60+360)%360}
+  const s=dl?dl/(1-Math.abs(2*l-1)):0,hsl=(hh,ss,ll)=>`hsl(${Math.round(hh)} ${Math.round(ss*100)}% ${Math.round(ll*100)}%)`;
+  return[hex,hsl(h,Math.min(1,s),Math.min(.85,l+.2)),hsl((h+32)%360,Math.min(1,s),l)]}
 const BG={key:'',rt:'',note:'',el:null,seed:7};
 const FX={key:'',ov:new Set()};
 const bgRank={off:0,mid:1,hi:2};
@@ -27,9 +34,11 @@ const DICE=[SV('<polygon points="20,4 37,34 3,34"/><path d="M20,4 L20,24 M3,34 L
 function runeSvg(){let p='M20 4V36';const n=2+Math.floor(bgRand()*3);for(let i=0;i<n;i++){const y1=6+Math.floor(bgRand()*24),y2=y1+8+Math.floor(bgRand()*10),right=bgRand()<.5,x=right?32:8;p+=bgRand()<.5?`M20 ${y1}L${x} ${y2}`:`M${x} ${y1}L20 ${y2}`}return SV(`<path d="${p}"/>`)}
 /* ----- builders ----- */
 function bgBuild(style,q,el){
-  const k=q==='hi'?1:.5,cnt=n=>Math.max(3,Math.round(n*k)),add=(cls,html,css)=>{const i=document.createElement('i');i.className=cls;if(html)i.innerHTML=html;if(css)i.style.cssText=css;el.appendChild(i);return i};
+  const k=q==='hi'?1:.5,cnt=n=>Math.max(3,Math.round(n*k)),add=(cls,html,css,par)=>{const i=document.createElement('i');i.className=cls;if(html)i.innerHTML=html;if(css)i.style.cssText=css;(par||el).appendChild(i);return i};
   const rise=(cls,n,mk,o={})=>{for(let i=0;i<cnt(n);i++){const d=bgR(o.d0||20,o.d1||40),s=bgR(o.s0||16,o.s1||56);
     add('bgp '+cls,mk(i),`--x:${bgR(2,96).toFixed(1)}%;--s:${s.toFixed(0)}px;--d:${d.toFixed(1)}s;--dl:-${(bgRand()*d).toFixed(1)}s;--dx:${bgR(-9,9).toFixed(1)}vw;--r:${bgR(-200,200).toFixed(0)}deg;--o:${bgR(o.o0||.25,o.o1||.55).toFixed(2)};--c:var(--bc${1+Math.floor(bgRand()*3)});${o.dy?`--dy:${o.dy};`:''}`)}};
+  const H={add,rise,cnt,hi:q==='hi'};
+  if(BGX[style]){BGX[style](q,el,H);return}
   switch(style){
     case'geo':rise('bgg',26,()=>bgPick(GEO));break;
     case'dice':rise('bgg',16,()=>bgPick(DICE),{s0:26,s1:70,d0:26,d1:50,o0:.22,o1:.45});break;
@@ -58,11 +67,11 @@ function bgBuild(style,q,el){
 }
 /* ----- apply: called from applySite() on every render, so it must be cheap when nothing changed ----- */
 function bgApply(s){
-  const h=document.documentElement,style=BGFX_LIST.includes(s.bgfx)?s.bgfx:'';
+  const h=document.documentElement,style0=BGFX_ALIAS[s.bgfx]||s.bgfx,style=BGFX_LIST.includes(style0)?style0:'';
   let q=bgRank[s.bgq]!==undefined?s.bgq:bgAuto();if(BG.rt&&bgRank[BG.rt]<bgRank[q])q=BG.rt;
   h.dataset.win=WIN_LIST.includes(s.win)?s.win:'rise';
   h.style.setProperty('--win-ms',(Math.max(150,Math.min(900,Number(s.winms)||380)))+'ms');
-  const on=!!style&&q!=='off',pal=(BGFX_TINT[s.bgc]||BGFX_PAL[style]||BGFX_PAL.geo),key=style+'|'+q+'|'+(s.bgc||'');
+  const on=!!style&&q!=='off',cc=bgShades(s.bgcc),pal=(cc||BGFX_TINT[s.bgc]||BGFX_PAL[style]||BGFX_PAL.geo),key=style+'|'+q+'|'+(cc?s.bgcc:s.bgc||'');
   h.classList.toggle('has-bgfx',on);
   if(!on&&!BG.el)return;
   const el=bgEl();el.style.setProperty('--bgi',String(Math.max(10,Math.min(100,Number(s.bgi)||60))/100));
@@ -112,9 +121,10 @@ Object.assign(TX.en,{sBgfx:'Background scene & window effects',sBgfxNote:'Only f
 function renderBgfxPanel(d){
   const sel=(k,list,pre,def)=>`<select id="s_${k}" data-s="${k}">${list.map(o=>`<option value="${o}" ${(d[k]||def||'')===o?'selected':''}>${t(pre+(o||'auto'))}</option>`).join('')}</select>`;
   return`<section class="panel" data-w="bgfx">${wc('site','bgfx')}<div class="ph"><h2>${t('sBgfx')}</h2><span class="note">${t('sBgfxNote')}</span></div>
-   <div class="bgfxrow" role="group" aria-label="${t('sBgfx')}">${BGFX_LIST.map(k=>`<button type="button" class="bgchip" aria-pressed="${(d.bgfx||'')===k}" data-act="bgset" data-v="${k}">${BGFX_ICON[k]} ${t('bg_'+(k||'none'))}</button>`).join('')}</div>
+   <div class="bgfxrow" role="group" aria-label="${t('sBgfx')}">${BGFX_LIST.map(k=>`<button type="button" class="bgchip" aria-pressed="${(BGFX_ALIAS[d.bgfx]||d.bgfx||'')===k}" data-act="bgset" data-v="${k}">${BGFX_ICON[k]} ${t('bg_'+(k||'none'))}</button>`).join('')}</div>
    <div class="grid wide">
     <div class="field"><label for="s_bgc">${t('bgColor')}</label>${sel('bgc',['','blue','violet','pink','green','gold','white'],'bgc_')}</div>
+    <div class="field"><label for="sk_bgcc">${t('bgcCustom')} <span class="hex" id="hx_bgcc">${esc(d.bgcc||'')}</span></label><div class="bgcc-row"><input id="sk_bgcc" type="color" data-sk="bgcc" value="${/^#[0-9a-f]{6}$/i.test(d.bgcc||'')?d.bgcc:'#7aa2ff'}" aria-label="${t('bgcCustom')}"><button type="button" class="btn small" data-act="bgcreset">${t('bgcReset')}</button></div></div>
     <div class="field"><label for="s_bgq">${t('bgQual')}</label>${sel('bgq',['','hi','mid','off'],'bgq_')}</div>
     <div class="field"><label for="s_bgi">${t('bgInt')}: <span id="v_bgi">${d.bgi??60}</span>%</label><input id="s_bgi" data-s="bgi" type="range" min="10" max="100" step="5" value="${d.bgi??60}" style="padding:0"></div>
     <div class="field"><label for="s_win">${t('winFx')}</label>${sel('win',WIN_LIST,'win_','rise')}</div>
@@ -123,3 +133,6 @@ function renderBgfxPanel(d){
    <p class="note" id="bgNote" style="padding:0 16px 14px">${BG.note?t('bgAutoDown_'+BG.note):''}</p></section>`}
 window.addEventListener('click',e=>{const b=e.target.closest&&e.target.closest('[data-act=bgset]');if(!b||typeof siteDraft==='undefined'||!siteDraft)return;e.stopPropagation();e.preventDefault();
   siteDraft.bgfx=b.dataset.v;BG.rt='';BG.note='';applySite(siteDraft);document.querySelectorAll('[data-act=bgset]').forEach(x=>x.setAttribute('aria-pressed',String(x.dataset.v===b.dataset.v)))},true);
+window.addEventListener('click',e=>{const b=e.target.closest&&e.target.closest('[data-act=bgcreset]');if(!b||typeof siteDraft==='undefined'||!siteDraft)return;e.stopPropagation();e.preventDefault();
+  siteDraft.bgcc='';const c=document.getElementById('sk_bgcc'),hx=document.getElementById('hx_bgcc');if(hx)hx.textContent='';if(c)c.value='#7aa2ff';applySite(siteDraft)},true);
+window.addEventListener('change',e=>{if(e.target&&e.target.id==='s_bgc'&&typeof siteDraft!=='undefined'&&siteDraft&&siteDraft.bgcc){siteDraft.bgcc='';const hx=document.getElementById('hx_bgcc');if(hx)hx.textContent='';applySite(siteDraft)}},true);

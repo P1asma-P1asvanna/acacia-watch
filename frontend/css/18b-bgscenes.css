@@ -1,0 +1,107 @@
+/* ---------- more background scenes (js/24b-bgscenes.js): city, brick, chess, code, nature, fire, medical, time, space, music, physics ----------
+   Same rules as 18-bgfx.css: only transform / opacity move; everything else is drawn once. */
+.bgcs{width:auto!important;height:auto!important;font:600 calc(var(--s)*.3) ui-monospace,Menlo,Consolas,monospace;white-space:nowrap;color:var(--c)}
+/* ---- big city at night ---- */
+.bgcy{left:0;bottom:0;width:100%;height:64vh;display:block}
+.bgcy svg{width:100%;height:100%;display:block}
+.bgcy rect{fill:var(--ink);fill-opacity:.2}.bgcy.far rect{fill-opacity:.08}
+.bgcy rect.win{fill:var(--bc1);fill-opacity:.9}.bgcy.far rect.win{fill-opacity:.45}
+.bgcy rect.wk{fill:var(--bc1);fill-opacity:.95;animation:bgBlinkW var(--d) steps(1,end) var(--dl) infinite}
+@keyframes bgBlinkW{0%,60%{opacity:1}61%,100%{opacity:.05}}
+.bgcy-sky{inset:0;background:radial-gradient(ellipse 90% 50% at 50% 100%,color-mix(in srgb,var(--bc2) 30%,transparent),transparent 70%)}
+.bgcy-moon{right:12vw;top:9vh;width:9vmin;height:9vmin;border-radius:50%;background:radial-gradient(circle at 35% 35%,#fff,var(--bc1) 70%);box-shadow:0 0 60px 14px color-mix(in srgb,var(--bc1) 40%,transparent);opacity:.7}
+.bgcar{left:0;bottom:calc(1.2vh + var(--y,0vh));width:16px;height:3px;border-radius:2px;background:var(--c);box-shadow:0 0 8px 2px var(--c);animation:bgCar var(--d) linear var(--dl) infinite}
+@keyframes bgCar{from{transform:translate3d(-8vw,0,0)}to{transform:translate3d(108vw,0,0)}}
+.bgcar.rev{animation-direction:reverse}
+/* ---- brick wall lit along its mortar ---- */
+.bgbr-base,.bgbr-lit{inset:0;-webkit-mask:url("data:image/svg+xml;utf8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='80' height='40'%3E%3Cpath d='M0 1H80M0 21H80M40 1V21M0 21V41M80 21V41' stroke='white' stroke-width='2' fill='none'/%3E%3C/svg%3E") 0 0/80px 40px;mask:url("data:image/svg+xml;utf8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='80' height='40'%3E%3Cpath d='M0 1H80M0 21H80M40 1V21M0 21V41M80 21V41' stroke='white' stroke-width='2' fill='none'/%3E%3C/svg%3E") 0 0/80px 40px}
+.bgbr-base{background:var(--ink);opacity:.14}
+.bgbr-lit{overflow:hidden}
+.bgbr-lit .bgbr-b{width:60vmax;height:44vmax;margin:-22vmax 0 0 -30vmax;left:var(--x);top:var(--y);border-radius:50%;background:radial-gradient(circle,var(--c) 0,transparent 66%);animation:bgPool var(--d) ease-in-out var(--dl) infinite alternate}
+.bgbr-lit .bgbr-sw{left:0;top:-10vh;width:18vw;height:120vh;background:linear-gradient(90deg,transparent,var(--bc1),transparent);transform:skewX(-14deg);animation:bgSweep var(--d) linear var(--dl) infinite}
+@keyframes bgSweep{from{transform:translate3d(-30vw,0,0) skewX(-14deg)}to{transform:translate3d(120vw,0,0) skewX(-14deg)}}
+.bgbr-wash{inset:0;background:linear-gradient(to bottom,transparent 40%,color-mix(in srgb,var(--ink) 10%,transparent))}
+/* ---- chess ---- */
+.bgch-wrap{inset:0;perspective:900px;overflow:hidden}
+.bgch{left:-60vmax;top:20vh;width:220vmax;height:220vmax;background:conic-gradient(var(--ink) 25%,transparent 0 50%,var(--ink) 0 75%,transparent 0) 0 0/240px 240px;opacity:.17;transform-origin:50% 0;transform:rotateX(64deg) translate3d(0,0,0);animation:bgChess 18s linear infinite}
+@keyframes bgChess{to{transform:rotateX(64deg) translate3d(0,240px,0)}}
+.bgchess{filter:drop-shadow(0 0 5px var(--c))}
+.bgchess svg{fill:currentColor;stroke:none}
+/* ---- code rain ---- */
+.bgcode{top:0;left:var(--x);font:600 var(--s) ui-monospace,Menlo,Consolas,monospace;line-height:1.25;color:var(--c);white-space:pre;text-align:center;text-shadow:0 0 6px var(--c);-webkit-mask-image:linear-gradient(to bottom,transparent,#000 75%);mask-image:linear-gradient(to bottom,transparent,#000 75%);opacity:var(--o);animation:bgCode var(--d) linear var(--dl) infinite}
+@keyframes bgCode{from{transform:translate3d(0,-105%,0)}to{transform:translate3d(0,100vh,0)}}
+/* ---- nature ---- */
+.bgsun{right:-9vmax;top:-9vmax;width:46vmax;height:46vmax;border-radius:50%;background:radial-gradient(circle,#fff 0,var(--bc1) 14%,color-mix(in srgb,var(--bc1) 38%,transparent) 32%,transparent 66%);opacity:.9}
+.bgsun-r{right:-14vmax;top:-14vmax;width:56vmax;height:56vmax;border-radius:50%;background:repeating-conic-gradient(from 0deg,color-mix(in srgb,var(--bc1) 32%,transparent) 0 5deg,transparent 5deg 17deg);-webkit-mask-image:radial-gradient(circle,#000 8%,transparent 66%);mask-image:radial-gradient(circle,#000 8%,transparent 66%);animation:bgSpin 140s linear infinite}
+.bgtree{left:var(--x);bottom:-2px;width:var(--s);height:calc(var(--s)*1.5);color:var(--c);opacity:var(--o);transform-origin:50% 100%;animation:bgSway var(--d) ease-in-out var(--dl) infinite alternate}
+.bgtree svg,.bgflw svg{width:100%;height:100%;display:block}
+.bgflw{left:var(--x);bottom:-2px;width:var(--s);height:calc(var(--s)*1.7);color:var(--c);opacity:var(--o);transform-origin:50% 100%;animation:bgSway var(--d) ease-in-out var(--dl) infinite alternate}
+@keyframes bgSway{from{transform:rotate(-2.2deg)}to{transform:rotate(2.2deg)}}
+.bgpet{left:var(--x);top:-40px;width:var(--s);height:var(--s);color:var(--c);opacity:0;animation:bgFall var(--d) linear var(--dl) infinite}
+.bgpet svg{width:100%;height:100%;display:block}
+@keyframes bgFall{0%{transform:translate3d(0,0,0) rotate(0);opacity:0}8%{opacity:var(--o)}50%{transform:translate3d(calc(var(--dx)*.5),55vh,0) rotate(calc(var(--r)*.5))}90%{opacity:var(--o)}100%{transform:translate3d(var(--dx),112vh,0) rotate(var(--r));opacity:0}}
+.bgnat-g{left:0;bottom:0;width:100%;height:30vh;background:linear-gradient(to top,color-mix(in srgb,var(--bc2) 18%,transparent),transparent)}
+/* ---- fire and soot ---- */
+.bgfi-g{left:0;bottom:0;width:100%;height:55vh;background:linear-gradient(to top,color-mix(in srgb,var(--bc3) 55%,transparent),color-mix(in srgb,var(--bc1) 18%,transparent) 55%,transparent);animation:bgGlow 3.2s ease-in-out infinite alternate}
+@keyframes bgGlow{from{opacity:.65}to{opacity:1}}
+.bgfi-f{left:var(--x);bottom:-6vh;width:var(--w);height:var(--h);margin-left:calc(var(--w)/-2);border-radius:50% 50% 38% 38%/78% 78% 22% 22%;background:radial-gradient(ellipse at 50% 88%,#fff6d0 0,var(--bc2) 24%,var(--bc1) 52%,color-mix(in srgb,var(--bc3) 50%,transparent) 72%,transparent 82%);opacity:var(--o);transform-origin:50% 100%;animation:bgFlame var(--d) ease-in-out var(--dl) infinite alternate}
+@keyframes bgFlame{0%{transform:scale(1,1) skewX(0)}35%{transform:scale(.88,1.14) skewX(5deg)}70%{transform:scale(1.06,.9) skewX(-4deg)}100%{transform:scale(.92,1.2) skewX(3deg)}}
+.bgsoot{border-radius:46% 54% 40% 60%;background:color-mix(in srgb,var(--ink) 55%,transparent);box-shadow:none!important}
+.bgsmoke{left:var(--x);bottom:-10vh;width:30vmax;height:30vmax;margin-left:-15vmax;border-radius:50%;background:radial-gradient(circle,color-mix(in srgb,var(--ink) 20%,transparent) 0,transparent 65%);opacity:0;animation:bgSmoke var(--d) ease-out var(--dl) infinite}
+@keyframes bgSmoke{0%{transform:translate3d(0,0,0) scale(.4);opacity:0}15%{opacity:.8}100%{transform:translate3d(var(--dx),-85vh,0) scale(1.5);opacity:0}}
+/* ---- medical / mind ---- */
+.bgmd-b{left:50%;top:50%;width:46vmin;height:46vmin;margin:-23vmin 0 0 -23vmin;border-radius:50%;border:2px solid color-mix(in srgb,var(--c) 70%,transparent);background:radial-gradient(circle,color-mix(in srgb,var(--c) 14%,transparent),transparent 70%);opacity:.7;animation:bgBreath 9s ease-in-out var(--dl) infinite}
+@keyframes bgBreath{0%,100%{transform:scale(.62);opacity:.25}50%{transform:scale(1.18);opacity:.75}}
+.bgmd-e{left:0;bottom:10vh;width:200vw;height:90px;color:var(--bc1);opacity:.65;-webkit-mask-image:linear-gradient(90deg,transparent,#000 12%,#000 88%,transparent);mask-image:linear-gradient(90deg,transparent,#000 12%,#000 88%,transparent);animation:bgWave 16s linear infinite}
+.bgmd-e svg{width:100%;height:100%;display:block;overflow:visible}
+.bgmd-e path{fill:none;stroke:currentColor;stroke-width:2;vector-effect:non-scaling-stroke;stroke-linejoin:round}
+/* ---- time ---- */
+.bgtm-c{right:-6vmin;top:50%;width:92vmin;height:92vmin;margin-top:-46vmin;color:var(--bc1);opacity:.55}
+.bgtm-c svg{width:100%;height:100%;display:block;overflow:visible}
+.bgtm-h{transform-origin:0 0;animation:bgHand var(--d) linear infinite}
+@keyframes bgHand{from{transform:rotate(var(--a0))}to{transform:rotate(calc(var(--a0) + 360deg))}}
+.bgtm-gear{left:var(--x);top:var(--y);width:var(--s);height:var(--s);margin:calc(var(--s)/-2) 0 0 calc(var(--s)/-2);color:var(--c);opacity:var(--o);animation:bgSpin var(--d) linear infinite var(--dr)}
+.bgtm-gear svg{width:100%;height:100%;display:block}
+/* ---- space ---- */
+.bgsp-rot{left:50%;top:50%;width:170vmax;height:170vmax;margin:-85vmax 0 0 -85vmax;animation:bgSpin 900s linear infinite}
+.bgsp-rot .bgs{box-shadow:0 0 calc(var(--s)*3) var(--c)}
+.bgsp-t{right:3vw;top:10vh;width:84vmin;height:84vmin;transform:rotate(-18deg) scaleY(.42)}
+.bgsp-gal{inset:0;animation:bgSpin 260s linear infinite}
+.bgsp-gal svg{width:100%;height:100%;display:block}
+.bgsp-p{left:32vw;top:64vh;width:17vmin;height:17vmin;border-radius:50%;background:radial-gradient(circle at 32% 30%,color-mix(in srgb,var(--bc2) 55%,#fff),var(--bc1) 48%,color-mix(in srgb,var(--bc3) 40%,#000) 100%);box-shadow:inset -1.6vmin -1vmin 3vmin rgba(0,0,0,.55),0 0 40px color-mix(in srgb,var(--bc1) 30%,transparent);animation:bgPlanet 60s ease-in-out infinite alternate}
+.bgsp-p::after{content:"";position:absolute;left:-30%;top:36%;width:160%;height:28%;border:2px solid color-mix(in srgb,var(--bc2) 70%,transparent);border-radius:50%;transform:rotate(-16deg)}
+@keyframes bgPlanet{from{transform:translate3d(0,0,0)}to{transform:translate3d(5vw,-5vh,0)}}
+/* ---- circular music visualizer ---- */
+.bgmu{left:50%;top:50%;width:var(--mu);height:var(--mu);margin:calc(var(--mu)/-2) 0 0 calc(var(--mu)/-2);--mu:min(88vmin,940px);animation:bgSpin 70s linear infinite}
+.bgmu-bar{left:calc(50% - 2px);top:50%;width:4px;height:calc(var(--mu)*.28);border-radius:3px;background:var(--c);box-shadow:0 0 10px var(--c);transform-origin:50% 0;animation:bgMuBar var(--d) ease-in-out var(--dl) infinite alternate;transform:rotate(var(--a)) translateY(calc(var(--mu)*.2)) scaleY(.2)}
+@keyframes bgMuBar{from{transform:rotate(var(--a)) translateY(calc(var(--mu)*.2)) scaleY(var(--lo))}to{transform:rotate(var(--a)) translateY(calc(var(--mu)*.2)) scaleY(var(--hi))}}
+.bgmu-c{left:50%;top:50%;border-radius:50%;border:1.5px solid color-mix(in srgb,var(--bc1) 60%,transparent);width:calc(var(--mu)*.38);height:calc(var(--mu)*.38);margin:calc(var(--mu)*-.19) 0 0 calc(var(--mu)*-.19)}
+.bgmu-c.d{border:2px dotted color-mix(in srgb,var(--bc2) 70%,transparent);width:calc(var(--mu)*.96);height:calc(var(--mu)*.96);margin:calc(var(--mu)*-.48) 0 0 calc(var(--mu)*-.48);animation:bgSpin 50s linear infinite reverse}
+.bgmu-core{left:50%;top:50%;width:calc(var(--mu)*.22);height:calc(var(--mu)*.22);margin:calc(var(--mu)*-.11) 0 0 calc(var(--mu)*-.11);border-radius:50%;background:radial-gradient(circle,#fff 0,var(--bc1) 35%,color-mix(in srgb,var(--bc2) 40%,transparent) 70%,transparent 72%);animation:bgBeat .62s ease-in-out infinite alternate}
+@keyframes bgBeat{from{transform:scale(.8);opacity:.7}to{transform:scale(1.12);opacity:1}}
+.bgmu-rip{left:50%;top:50%;width:calc(var(--mu)*.38);height:calc(var(--mu)*.38);margin:calc(var(--mu)*-.19) 0 0 calc(var(--mu)*-.19);border-radius:50%;border:2px solid var(--bc3);opacity:0;animation:bgRip 3.6s ease-out var(--dl) infinite}
+@keyframes bgRip{from{transform:scale(.7);opacity:.7}to{transform:scale(2.4);opacity:0}}
+.bgmu-fix{animation:none!important}
+/* ---- physics ---- */
+.bgph-bolt{left:var(--x);top:-4vh;width:22vw;height:108vh;margin-left:-11vw;color:var(--c);opacity:0;filter:drop-shadow(0 0 6px var(--c)) drop-shadow(0 0 16px var(--c));animation:bgBolt var(--d) linear var(--dl) infinite}
+.bgph-bolt svg{width:100%;height:100%;display:block;overflow:visible}
+.bgph-bolt path{fill:none;stroke:currentColor;stroke-width:2;vector-effect:non-scaling-stroke;stroke-linejoin:round;stroke-linecap:round}
+.bgph-bolt path.br{stroke-width:1;opacity:.7}
+@keyframes bgBolt{0%,100%{opacity:0}1%{opacity:1}2.2%{opacity:.15}3.4%{opacity:.9}6%{opacity:0}}
+.bgph-fl{inset:0;background:color-mix(in srgb,var(--c) 26%,transparent);opacity:0;animation:bgFlash var(--d) linear var(--dl) infinite}
+@keyframes bgFlash{0%,100%{opacity:0}1%{opacity:.8}2.2%{opacity:.1}3.4%{opacity:.6}8%{opacity:0}}
+.bgph-ring{left:var(--x);top:var(--y);width:50vmin;height:50vmin;margin:-25vmin 0 0 -25vmin;border-radius:50%;border:1.5px solid var(--c);opacity:0;animation:bgWell var(--d) ease-in var(--dl) infinite}
+@keyframes bgWell{from{transform:scale(1.2);opacity:0}30%{opacity:.5}to{transform:scale(.1);opacity:0}}
+.bgph-mass{left:var(--x);top:var(--y);width:7vmin;height:7vmin;margin:-3.5vmin 0 0 -3.5vmin;border-radius:50%;background:radial-gradient(circle at 35% 35%,#fff,var(--c) 60%,color-mix(in srgb,var(--c) 40%,#000));box-shadow:0 0 30px var(--c)}
+.bgph-orb{width:12px;height:12px;border-radius:50%;background:var(--c);box-shadow:0 0 10px var(--c);offset-rotate:0deg;animation:bgOffs var(--d) linear var(--dl) infinite}
+@keyframes bgOffs{from{offset-distance:0%}to{offset-distance:100%}}
+.bgph-at{left:var(--x);top:var(--y);width:180px;height:180px;margin:-90px 0 0 -90px;transform:rotate(var(--a))}
+.bgph-at .ring{inset:0;border:1px solid var(--c);border-radius:50%;opacity:.55;transform:scaleY(.36)}
+.bgph-at .nuc{left:50%;top:50%;width:18px;height:18px;margin:-9px 0 0 -9px;border-radius:50%;background:radial-gradient(circle at 35% 35%,#fff,var(--c));box-shadow:0 0 16px var(--c)}
+.bgph-ball{left:var(--x);bottom:1vh;width:var(--s);height:var(--s);border-radius:50%;background:radial-gradient(circle at 35% 30%,#fff,var(--c) 55%);opacity:.8;animation:bgBounce var(--d) linear var(--dl) infinite}
+@keyframes bgBounce{0%{transform:translate3d(0,0,0);animation-timing-function:cubic-bezier(.2,.6,.4,1)}50%{transform:translate3d(0,calc(var(--h)*-1),0);animation-timing-function:cubic-bezier(.6,0,.8,.4)}100%{transform:translate3d(0,0,0)}}
+.bgph-gnd{left:0;bottom:0;width:100%;height:1px;background:linear-gradient(90deg,transparent,var(--bc1),transparent);opacity:.5}
+@media(prefers-reduced-motion:reduce){#bgfx i{animation:none!important}.bgph-bolt{display:none}}
+.bgcc-row{display:flex;gap:8px;align-items:center}
+.bgcc-row input[type=color]{width:46px;height:36px;padding:2px;border:1px solid var(--line);border-radius:8px;background:transparent;cursor:pointer}
+.bgcc-row .hex{font:600 .82rem ui-monospace,monospace;opacity:.8}
