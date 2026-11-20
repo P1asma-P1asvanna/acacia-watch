@@ -47,15 +47,12 @@
 /* ---- fire and soot ---- */
 .bgfi-g{left:0;bottom:0;width:100%;height:50vh;background:linear-gradient(to top,color-mix(in srgb,var(--bc3) 55%,transparent),color-mix(in srgb,var(--bc1) 18%,transparent) 55%,transparent);animation:bgGlow 3.2s ease-in-out infinite alternate}
 @keyframes bgGlow{from{opacity:.65}to{opacity:1}}
-.bgfi2{left:0;bottom:-2px;width:100%;height:var(--fh,46vh);transform-origin:50% 100%;animation:bgLick 1.7s ease-in-out infinite alternate}
-.bgfi2.back{--fh:40vh;opacity:.8;transform:scaleX(-1);animation-duration:2.3s}
-@keyframes bgLick{from{transform:scale(1,.94)}to{transform:scale(1,1.08)}}
-.bgfi2.back{animation-name:bgLickB}
-@keyframes bgLickB{from{transform:scale(-1,.92)}to{transform:scale(-1,1.1)}}
-.bgfi-fr{inset:0;background-size:auto 100%;background-position:0 100%;background-repeat:repeat-x;opacity:0;animation:bgFrame var(--T) linear var(--dl) infinite}
-@keyframes bgFrame{0%{opacity:1}25%{opacity:0}75%{opacity:0}100%{opacity:1}}
+.bgfi2{left:50%;bottom:-2px;width:max(100%,calc(var(--fh,44vh)*4));height:var(--fh,44vh);transform:translateX(-50%)}
+.bgfi2.back{--fh:36vh;opacity:.7;transform:translateX(-50%) scaleX(-1)}
+.bgfi-fr{inset:0;background-size:100% 100%;background-repeat:no-repeat;opacity:0;animation:bgFrame var(--T) linear var(--dl) infinite}
+@keyframes bgFrame{0%{opacity:1}33.3%{opacity:0}66.7%{opacity:0}100%{opacity:1}}
 .bgsoot{border-radius:46% 54% 40% 60%;background:color-mix(in srgb,var(--ink) 55%,transparent);box-shadow:none!important}
-.bgsmoke{left:var(--x);bottom:-10vh;width:30vmax;height:30vmax;margin-left:-15vmax;border-radius:50%;background:radial-gradient(circle,color-mix(in srgb,var(--ink) 20%,transparent) 0,transparent 65%);opacity:0;animation:bgSmoke var(--d) ease-out var(--dl) infinite}
+.bgsmoke{left:var(--x);bottom:-10vh;width:22vmax;height:22vmax;margin-left:-11vmax;border-radius:50%;background:radial-gradient(circle,color-mix(in srgb,var(--ink) 20%,transparent) 0,transparent 65%);opacity:0;animation:bgSmoke var(--d) ease-out var(--dl) infinite}
 @keyframes bgSmoke{0%{transform:translate3d(0,0,0) scale(.4);opacity:0}15%{opacity:.8}100%{transform:translate3d(var(--dx),-85vh,0) scale(1.5);opacity:0}}
 /* ---- medical / mind ---- */
 .bgmd-b{left:50%;top:50%;width:46vmin;height:46vmin;margin:-23vmin 0 0 -23vmin;border-radius:50%;border:2px solid color-mix(in srgb,var(--c) 70%,transparent);background:radial-gradient(circle,color-mix(in srgb,var(--c) 14%,transparent),transparent 70%);opacity:.7;animation:bgBreath 9s ease-in-out var(--dl) infinite}

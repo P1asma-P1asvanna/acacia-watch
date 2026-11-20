@@ -36,23 +36,28 @@ const BG_FIRE={};
 function bgRgb(c){const k=document.createElement('canvas');k.width=k.height=1;const x=k.getContext('2d');x.fillStyle='#000';x.fillStyle=c;x.fillRect(0,0,1,1);const d=x.getImageData(0,0,1,1).data;return[d[0],d[1],d[2]]}
 function bgFireFrames([W,Hh],el){
   const pal=[1,2,3].map(i=>getComputedStyle(el).getPropertyValue('--bc'+i).trim()),key=pal.join('|')+W;
-  if(BG_FIRE[key])return BG_FIRE[key];
+  if(BG_FIRE[key])return Promise.resolve(BG_FIRE[key]);
   const [o,a,r]=pal.map(bgRgb),mixc=(x,y,t)=>x.map((v,i)=>v+(y[i]-v)*t),W3=[255,255,255];
   const ramp=[[0,mixc(r,[50,0,0],.65)],[.3,mixc(r,[40,0,0],.15)],[.58,o],[.82,mixc(a,W3,.04)],[1,mixc(a,W3,.55)]];
   const col=I=>{for(let i=1;i<ramp.length;i++)if(I<=ramp[i][0]){const t=(I-ramp[i-1][0])/(ramp[i][0]-ramp[i-1][0]);return mixc(ramp[i-1][1],ramp[i][1],t)}return ramp[4][1]};
-  const sm=t=>t*t*(3-2*t),N=4,Z=2;
+  const sm=t=>t*t*(3-2*t),N=3,Z=2;
   const hs=(x,y,z)=>{let h=(Math.imul(x,374761393)+Math.imul(y,668265263)+Math.imul(z,1274126177))|0;h=Math.imul(h^(h>>>13),1274126177);return((h^(h>>>16))>>>0)/4294967296};
   const vn=(x,y,z,px,pz)=>{const xi=Math.floor(x),yi=Math.floor(y),zi=Math.floor(z),fx=sm(x-xi),fy=sm(y-yi),fz=sm(z-zi),m=(v,p)=>((v%p)+p)%p,x0=m(xi,px),x1=m(xi+1,px),z0=m(zi,pz),z1=m(zi+1,pz),L=(a,b,t)=>a+(b-a)*t;
     return L(L(L(hs(x0,yi,z0),hs(x1,yi,z0),fx),L(hs(x0,yi+1,z0),hs(x1,yi+1,z0),fx),fy),L(L(hs(x0,yi,z1),hs(x1,yi,z1),fx),L(hs(x0,yi+1,z1),hs(x1,yi+1,z1),fx),fy),fz)};
-  const fbm=(x,y,z)=>{let s=0,am=.5,f=1;for(let k=0;k<3;k++){s+=am*vn(x*f,y*f,z*f,6*f,Z*f);am*=.5;f*=2}return s};
+  const fbm=(x,y,z)=>{let s=0,am=.5,f=1;for(let k=0;k<3;k++){s+=am*vn(x*f,y*f,z*f,9*f,Z*f);am*=.5;f*=2}return s};
   const out=[],cv=document.createElement('canvas');cv.width=W;cv.height=Hh;const cx=cv.getContext('2d'),img=cx.createImageData(W,Hh),D=img.data;
-  for(let f=0;f<N;f++){const z=f*Z/N;
-    for(let py=0;py<Hh;py++){const v=py/Hh,base=Math.pow(v,1.1);
-      for(let px=0;px<W;px++){const u=px/W,wv=(vn(u*3,v*2.2,z,3,Z)-.5)*1.9*(1-v*.6),n=fbm(u*6+wv,v*1.7,z+.5);
-        let I=base*1.3+(n-.5)*1.9-.2;if(v>.9)I=Math.max(I,1.1*((v-.9)/.1)+I*.0);I=I<0?0:I>1?1:I;
-        const c=col(I),al=sm(Math.min(1,Math.max(0,(I-.03)/.3))),p=(py*W+px)*4;D[p]=c[0];D[p+1]=c[1];D[p+2]=c[2];D[p+3]=al*255}}
-    cx.putImageData(img,0,0);out.push(cv.toDataURL('image/png'))}
-  return BG_FIRE[key]=out}
+  /* painted a few rows at a time (about 6 ms per slice) so the page never freezes while the flames are made */
+  return new Promise(done=>{let f=0,py=0;
+    const step=()=>{const t0=performance.now();
+      while(f<N){const z=f*Z/N;
+        while(py<Hh){const v=py/Hh,base=Math.pow(v,1.1),top=sm(Math.min(1,v/.28));
+          for(let px=0;px<W;px++){const u=px/W,wv=(vn(u*3,v*2.2,z,3,Z)-.5)*1.9*(1-v*.6),n=fbm(u*9+wv,v*1.7,z+.5);
+            let I=base*1.3+(n-.5)*1.9-.2;if(v>.9)I=Math.max(I,1.1*((v-.9)/.1));I=(I<0?0:I>1?1:I)*top;
+            const c=col(I),al=sm(Math.min(1,Math.max(0,(I-.04)/.2))),p=(py*W+px)*4;D[p]=c[0];D[p+1]=c[1];D[p+2]=c[2];D[p+3]=al*255}
+          py++;if(performance.now()-t0>6){requestAnimationFrame(step);return}}
+        cx.putImageData(img,0,0);out.push(cv.toDataURL('image/png'));f++;py=0}
+      BG_FIRE[key]=out;done(out)};
+    step()})}
 const BGX={
 /* ---------- big city at night ---------- */
 city(q,el,H){
@@ -109,13 +114,14 @@ nature(q,el,H){
   for(let i=0;i<cnt(14);i++){const d=bgR(14,26);add('bgpet',pet,`--x:${bgF(bgR(0,100),1)}%;--s:${bgF(bgR(11,22),0)}px;--d:${bgF(d)}s;--dl:-${bgF(bgRand()*d)}s;--dx:${bgF(bgR(-14,14))}vw;--r:${bgF(bgR(-300,300),0)}deg;--o:${bgF(bgR(.4,.75),2)};--c:var(--bc${bgRand()<.6?3:1})`)}},
 /* ---------- fire and soot: a real flame texture (noise-based, drawn once on a canvas) that cross-fades between a few frames ---------- */
 fire(q,el,H){
-  const {add,rise,hi}=H,fr=bgFireFrames(hi?[384,192]:[256,128],el);
-  add('bgfi-g');
-  const stack=(cls,T,dir)=>{const w=add('bgfi2 '+cls,0,`--T:${T}s`);fr.forEach((u,i)=>add('bgfi-fr',0,`background-image:url(${u});--dl:-${bgF(i*T/fr.length,2)}s`,w));return w};
-  stack('back',hi?3.4:4.2);stack('front',hi?2.3:3);
-  rise('bgem',hi?30:14,()=>'',{s0:3,s1:9,d0:7,d1:16,o0:.5,o1:.95});
-  rise('bgsoot',hi?16:8,()=>'',{s0:3,s1:11,d0:12,d1:26,o0:.25,o1:.5});
-  for(let i=0;i<(hi?4:2);i++){const d=bgR(14,22);add('bgsmoke',0,`--x:${[18,42,66,86][i]}%;--d:${bgF(d)}s;--dl:-${bgF(bgRand()*d)}s;--dx:${bgF(bgR(-8,8))}vw`)}},
+  const {add,rise,hi}=H;add('bgfi-g');
+  const tok=String(Math.random());el.dataset.ftok=tok;
+  bgFireFrames(hi?[640,160]:[448,112],el).then(fr=>{if(el.dataset.ftok!==tok||!el.isConnected)return;
+    const stack=(cls,T)=>{const w=add('bgfi2 '+cls,0,`--T:${T}s`);fr.forEach((u,i)=>add('bgfi-fr',0,`background-image:url(${u});--dl:-${bgF(i*T/fr.length,2)}s`,w));w.style.opacity='';return w};
+    if(hi)stack('back',3.6);stack('front',2.4)});
+  rise('bgem',hi?22:10,()=>'',{s0:3,s1:8,d0:7,d1:16,o0:.5,o1:.95});
+  rise('bgsoot',hi?10:5,()=>'',{s0:3,s1:10,d0:12,d1:26,o0:.25,o1:.5});
+  if(hi)for(let i=0;i<2;i++){const d=bgR(14,22);add('bgsmoke',0,`--x:${[30,70][i]}%;--d:${bgF(d)}s;--dl:-${bgF(bgRand()*d)}s;--dx:${bgF(bgR(-8,8))}vw`)}},
 /* ---------- medical / the mind: breathing circle, heartbeat line, calm icons ---------- */
 medical(q,el,H){
   const {add,rise,hi}=H;
