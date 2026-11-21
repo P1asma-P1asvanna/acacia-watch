@@ -68,9 +68,10 @@ function bgBuild(style,q,el){
 /* ----- apply: called from applySite() on every render, so it must be cheap when nothing changed ----- */
 function bgApply(s){
   const h=document.documentElement,style0=BGFX_ALIAS[s.bgfx]||s.bgfx,style=BGFX_LIST.includes(style0)?style0:'';
-  let q=bgRank[s.bgq]!==undefined?s.bgq:bgAuto();if(BG.rt&&bgRank[BG.rt]<bgRank[q])q=BG.rt;
-  h.dataset.win=WIN_LIST.includes(s.win)?s.win:'rise';
-  h.style.setProperty('--win-ms',(Math.max(150,Math.min(900,Number(s.winms)||380)))+'ms');
+  perfApply(s);
+  let q=bgRank[s.bgq]!==undefined?s.bgq:bgAuto();if(BG.rt&&bgRank[BG.rt]<bgRank[q])q=BG.rt;q=perfCapQ(q);
+  h.dataset.win=perfWin(WIN_LIST.includes(s.win)?s.win:'rise');
+  h.style.setProperty('--win-ms',perfMs(Math.max(150,Math.min(900,Number(s.winms)||380)))+'ms');
   const on=!!style&&q!=='off',cc=bgShades(s.bgcc),pal=(cc||BGFX_TINT[s.bgc]||BGFX_PAL[style]||BGFX_PAL.geo),key=style+'|'+q+'|'+(cc?s.bgcc:s.bgc||'');
   h.classList.toggle('has-bgfx',on);
   if(!on&&!BG.el)return;
@@ -126,11 +127,12 @@ function renderBgfxPanel(d){
     <div class="field"><label for="s_bgc">${t('bgColor')}</label>${sel('bgc',['','blue','violet','pink','green','gold','white'],'bgc_')}</div>
     <div class="field"><label for="sk_bgcc">${t('bgcCustom')} <span class="hex" id="hx_bgcc">${esc(d.bgcc||'')}</span></label><div class="bgcc-row"><input id="sk_bgcc" type="color" data-sk="bgcc" value="${/^#[0-9a-f]{6}$/i.test(d.bgcc||'')?d.bgcc:'#7aa2ff'}" aria-label="${t('bgcCustom')}"><button type="button" class="btn small" data-act="bgcreset">${t('bgcReset')}</button></div></div>
     <div class="field"><label for="s_bgq">${t('bgQual')}</label>${sel('bgq',['','hi','mid','off'],'bgq_')}</div>
+    ${perfFieldHtml(d)}
     <div class="field"><label for="s_bgi">${t('bgInt')}: <span id="v_bgi">${d.bgi??60}</span>%</label><input id="s_bgi" data-s="bgi" type="range" min="10" max="100" step="5" value="${d.bgi??60}" style="padding:0"></div>
     <div class="field"><label for="s_win">${t('winFx')}</label>${sel('win',WIN_LIST,'win_','rise')}</div>
     <div class="field"><label for="s_winms">${t('winSpeed')}: <span id="v_winms">${d.winms||380}</span> ms</label><input id="s_winms" data-s="winms" type="range" min="150" max="900" step="50" value="${d.winms||380}" style="padding:0"></div>
     <div class="field" style="align-self:end"><button type="button" class="btn" data-act="fx-prev">▶ ${t('winPrev')}</button></div></div>
-   <p class="note" id="bgNote" style="padding:0 16px 14px">${BG.note?t('bgAutoDown_'+BG.note):''}</p></section>`}
+   <p class="note" id="bgNote" style="padding:0 16px 14px">${BG.note?t('bgAutoDown_'+BG.note):''}</p>${perfNoteHtml()}</section>`}
 window.addEventListener('click',e=>{const b=e.target.closest&&e.target.closest('[data-act=bgset]');if(!b||typeof siteDraft==='undefined'||!siteDraft)return;e.stopPropagation();e.preventDefault();
   siteDraft.bgfx=b.dataset.v;BG.rt='';BG.note='';applySite(siteDraft);document.querySelectorAll('[data-act=bgset]').forEach(x=>x.setAttribute('aria-pressed',String(x.dataset.v===b.dataset.v)))},true);
 window.addEventListener('click',e=>{const b=e.target.closest&&e.target.closest('[data-act=bgcreset]');if(!b||typeof siteDraft==='undefined'||!siteDraft)return;e.stopPropagation();e.preventDefault();

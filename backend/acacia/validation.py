@@ -49,7 +49,7 @@ def clean_prefs(v, own_imgs=()):
         out["anim"] = v["anim"]
     for k, allowed in (("bgfx", ("geo", "dice", "runes", "light", "aurora", "gradient", "stars", "embers", "fireflies", "fog", "rain", "waves", "bokeh",
                                  "space", "fire", "city", "brick", "chess", "code", "nature", "medical", "time", "music", "physics")),
-                       ("bgc", ("blue", "violet", "pink", "green", "gold", "white")), ("bgq", ("hi", "mid", "off")),
+                       ("bgc", ("blue", "violet", "pink", "green", "gold", "white")), ("bgq", ("hi", "mid", "off")), ("perf", ("hi", "mid", "low")),
                        ("win", ("rise", "fade", "zoom", "slide", "drop", "pop", "blur", "flip", "none"))):
         if v.get(k) in allowed:
             out[k] = v[k]

@@ -68,3 +68,9 @@ html[data-win=slide] .cpop.fx-ov,html[data-win=rise] .cpop.fx-ov{animation-name:
 .bgfxrow{display:flex;flex-wrap:wrap;gap:8px;padding:0 16px 8px}
 .bgchip{display:inline-flex;align-items:center;gap:6px;padding:8px 12px;border:1px solid var(--line);border-radius:999px;background:transparent;color:var(--ink);cursor:pointer;font:inherit;font-size:.92rem}
 .bgchip[aria-pressed=true]{border-color:var(--ink);box-shadow:0 0 0 1px var(--ink) inset;font-weight:700}
+
+/* ---------- performance levels (js/24c-perf.js) ---------- */
+html[data-perf=mid] .rv-card::after{display:none}
+html[data-perf=low] *,html[data-perf=low] *::before,html[data-perf=low] *::after{backdrop-filter:none!important;-webkit-backdrop-filter:none!important;transition-duration:.01ms!important}
+html[data-perf=low] .rv-card::after,html[data-perf=low] .rvchip.new,html[data-perf=low] .rv-card{animation:none!important}
+html[data-perf=low] .panel{box-shadow:none!important}

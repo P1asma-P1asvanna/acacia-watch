@@ -3,9 +3,9 @@
    opening one saves a text snapshot on the fight entry (`e.rv`), which the server passes to the players. Players see a chip per opened ability
    and a card like a game tooltip: keywords on the left, the effect text on the right. */
 const RVX={th:{rvTitle:'ความสามารถ (ซ่อนไว้จากผู้เล่น)',rvOpen:'เปิดเผย',rvHide:'ซ่อนกลับ',rvAll:'เปิดทั้งหมด',rvNone:'ซ่อนทั้งหมด',rvCnt:'เปิดแล้ว {n}/{m}',rvEmpty:'ตัวนี้ยังไม่มีความสามารถ',
-   rvFeature:'Feature',rvFeat:'Feat',rvSpell:'Spell',rvKw:'คีย์เวิร์ด',rvFx:'ผลของความสามารถ',rvClose:'ปิด',rvSeen:'ความสามารถที่เปิดเผยแล้ว',rvNew:'{who} เผยความสามารถ: {n}',rvLost:'ถูกซ่อนอีกครั้ง',rvLv:'เลเวล',rvCan:'Cantrip',rvConc:'ต้องจดจ่อ',rvPreview:'ดูตัวอย่างการ์ด',rvNoKw:'ไม่มีคีย์เวิร์ด'},
+   rvFeature:'Feature',rvFeat:'Feat',rvSpell:'Spell',rvKw:'คีย์เวิร์ด',rvFx:'ผลของความสามารถ',rvClose:'ปิด',rvSeen:'ความสามารถที่เปิดเผยแล้ว',rvNew:'{who} เผยความสามารถ: {n}',rvLost:'ถูกซ่อนอีกครั้ง',rvLv:'เลเวล',rvCan:'Cantrip',rvConc:'ต้องจดจ่อ',rvPreview:'ดูตัวอย่างการ์ด',rvGF:'Features (ความสามารถคลาส/พื้นเพ)',rvGT:'Feats',rvGS:'Spells',rvGOn:'เปิดหมวดนี้',rvGOff:'ซ่อนหมวดนี้',rvNoKw:'ไม่มีคีย์เวิร์ด'},
  en:{rvTitle:'Abilities (hidden from players)',rvOpen:'Reveal',rvHide:'Hide again',rvAll:'Reveal all',rvNone:'Hide all',rvCnt:'{n}/{m} revealed',rvEmpty:'This one has no abilities yet',
-   rvFeature:'Feature',rvFeat:'Feat',rvSpell:'Spell',rvKw:'Keywords',rvFx:'Skill effects',rvClose:'Close',rvSeen:'Revealed abilities',rvNew:'{who} revealed: {n}',rvLost:'Hidden again',rvLv:'Level',rvCan:'Cantrip',rvConc:'Concentration',rvPreview:'Preview the card',rvNoKw:'No keywords'}};
+   rvFeature:'Feature',rvFeat:'Feat',rvSpell:'Spell',rvKw:'Keywords',rvFx:'Skill effects',rvClose:'Close',rvSeen:'Revealed abilities',rvNew:'{who} revealed: {n}',rvLost:'Hidden again',rvLv:'Level',rvCan:'Cantrip',rvConc:'Concentration',rvPreview:'Preview the card',rvGF:'Features',rvGT:'Feats',rvGS:'Spells',rvGOn:'Reveal group',rvGOff:'Hide group',rvNoKw:'No keywords'}};
 Object.assign(TX.th,RVX.th);Object.assign(TX.en,RVX.en);
 let RV_LAST={},RV_CARD=null,RV_OPEN={},RV_NEW={},RV_GONE=[],RV_PREV=null,RV_POP={};
 const rvIsNpc=e=>!!e&&String(e.ref||'').startsWith('npc:');
@@ -26,6 +26,7 @@ function rvAbilities(d){
 const rvEntry=(rid,eid)=>{if(isAdmin()){const rm=rooms.find(r=>r.id===rid);return rm&&rm.init&&rm.init.list.find(e=>e.id===eid)}
   const rm=prooms.find(r=>r.id===rid);return rm&&rm.list.find(e=>e.id===eid)};
 const rvOf=e=>(e&&Array.isArray(e.rv))?e.rv:[];
+const RV_GROUPS=[{k:'feature',s:'rvGF'},{k:'feat',s:'rvGT'},{k:'spell',s:'rvGS'}];
 const rvKindIcon=k=>k==='spell'?'✦':k==='feat'?'★':'◆';
 /* the card: keyword box on the left, effect text on the right */
 function rvText(desc){
@@ -52,11 +53,16 @@ function rvGmBox(rm,e){
   if(!rvIsNpc(e))return'';const c=iniChar(e);if(!c)return'';const L=rvAbilities(c),on=new Set(rvOf(e).map(x=>x.id)),n=L.filter(a=>on.has(a.id)).length,key=rm.id+':'+e.id;
   return`<details class="rvbox" data-rvk="${esc(key)}" ${RV_OPEN[key]?'open':''}><summary>🔒 ${t('rvTitle')} <span class="pill">${fill(t('rvCnt'),{n,m:L.length})}</span></summary>
    ${L.length?`<div class="rv-bar"><button class="btn small" data-act="rv-all" data-eid="${e.id}">${t('rvAll')}</button><button class="btn small" data-act="rv-none" data-eid="${e.id}">${t('rvNone')}</button></div>
-   <ul class="rvlist">${L.map(a=>{const o=on.has(a.id),pop=RV_POP[e.id+'|'+a.id];return`<li class="rvrow ${o?'on':''} ${pop?'pop-'+pop:''}"><button class="rvlock" data-act="rv-tg" data-eid="${e.id}" data-id="${esc(a.id)}" aria-pressed="${o}" aria-label="${o?t('rvHide'):t('rvOpen')}: ${esc(a.n)}"><span class="rvlk">${o?'🔓':'🔒'}</span></button>
-    <button class="rvname" data-act="rv-open" data-eid="${e.id}" data-id="${esc(a.id)}" title="${t('rvPreview')}"><span class="rv-ic">${rvKindIcon(a.k)}</span><b>${esc(a.n)}</b><small>${t('rv'+a.k[0].toUpperCase()+a.k.slice(1))}${a.sub?' · '+esc(a.sub):''}</small></button></li>`}).join('')}</ul>`:`<p class="note">${t('rvEmpty')}</p>`}</details>`}
+   ${RV_GROUPS.map(g=>{const G=L.filter(a=>a.k===g.k);if(!G.length)return'';const gn=G.filter(a=>on.has(a.id)).length;
+    return`<section class="rvgrp k-${g.k}"><div class="rvgh"><h4><span class="rv-ic">${rvKindIcon(g.k)}</span> ${t(g.s)} <span class="pill">${gn}/${G.length}</span></h4>
+     <span class="rvgb"><button class="btn small" data-act="rv-gon" data-eid="${e.id}" data-g="${g.k}">${t('rvGOn')}</button><button class="btn small" data-act="rv-goff" data-eid="${e.id}" data-g="${g.k}">${t('rvGOff')}</button></span></div>
+     <ul class="rvlist">${G.map(a=>{const o=on.has(a.id),pop=RV_POP[e.id+'|'+a.id];return`<li class="rvrow ${o?'on':''} ${pop?'pop-'+pop:''}"><button class="rvlock" data-act="rv-tg" data-eid="${e.id}" data-id="${esc(a.id)}" aria-pressed="${o}" aria-label="${o?t('rvHide'):t('rvOpen')}: ${esc(a.n)}"><span class="rvlk">${o?'🔓':'🔒'}</span></button>
+      <button class="rvname" data-act="rv-open" data-eid="${e.id}" data-id="${esc(a.id)}" title="${t('rvPreview')}"><b>${esc(a.n)}</b>${a.sub?`<small>${esc(a.sub)}</small>`:''}</button></li>`}).join('')}</ul></section>`}).join('')}`:`<p class="note">${t('rvEmpty')}</p>`}</details>`}
 /* players: chips of what the GM has opened on a combatant */
-function rvChips(rid,e){const L=rvOf(e);const gone=RV_GONE.filter(g=>g.eid===e.id);if(!L.length&&!gone.length)return'';
-  return`<div class="rvchips" aria-label="${t('rvSeen')}">${L.map(a=>`<button class="rvchip k-${a.k} ${RV_NEW[e.id+'|'+a.id]?'new':''}" data-act="rv-open" data-rid="${esc(rid)}" data-eid="${e.id}" data-id="${esc(a.id)}"><span class="rv-ic" aria-hidden="true">${rvKindIcon(a.k)}</span>${esc(a.n)}</button>`).join('')}${gone.map(g=>`<span class="rvchip gone" aria-hidden="true">${esc(g.n)}</span>`).join('')}</div>`}
+function rvChips(rid,e){const L=rvOf(e),gone=RV_GONE.filter(g=>g.eid===e.id);if(!L.length&&!gone.length)return'';
+  const chip=a=>`<button class="rvchip k-${a.k} ${RV_NEW[e.id+'|'+a.id]?'new':''}" data-act="rv-open" data-rid="${esc(rid)}" data-eid="${e.id}" data-id="${esc(a.id)}"><span class="rv-ic" aria-hidden="true">${rvKindIcon(a.k)}</span>${esc(a.n)}</button>`;
+  return`<div class="rvgroups" aria-label="${t('rvSeen')}">${RV_GROUPS.map(g=>{const G=L.filter(a=>a.k===g.k),X=gone.filter(x=>(x.k||'feature')===g.k);if(!G.length&&!X.length)return'';
+    return`<div class="rvpg k-${g.k}"><span class="rvpl">${rvKindIcon(g.k)} ${t(g.s)}</span><div class="rvchips">${G.map(chip).join('')}${X.map(x=>`<span class="rvchip gone" aria-hidden="true">${esc(x.n)}</span>`).join('')}</div></div>`}).join('')}</div>`}
 function rvAction(a,b){
   if(a==='rv-noop')return;
   const rid=b.dataset.rid||(typeof roomOpen!=='undefined'?roomOpen:null),eid=b.dataset.eid,id=b.dataset.id;
@@ -66,6 +72,7 @@ function rvAction(a,b){
   const L=rvAbilities(c);e.rv=rvOf(e).filter(x=>L.some(y=>y.id===x.id));
   const open=a=>{if(!e.rv.some(x=>x.id===a.id))e.rv.push(a);RV_POP[e.id+'|'+a.id]='on'},shut=a=>{e.rv=e.rv.filter(x=>x.id!==a.id);RV_POP[e.id+'|'+a.id]='off'};
   if(a==='rv-tg'){const ab=L.find(x=>x.id===id);if(!ab)return;e.rv.some(x=>x.id===id)?shut(ab):open(ab)}
+  else if(a==='rv-gon'||a==='rv-goff'){L.filter(x=>x.k===b.dataset.g).forEach(a==='rv-gon'?open:shut)}
   else if(a==='rv-all')L.forEach(open);else if(a==='rv-none')L.forEach(shut);
   RV_OPEN[rm.id+':'+e.id]=1;saveRooms();render();setTimeout(()=>{RV_POP={};render()},700)}
 document.addEventListener('toggle',ev=>{const d=ev.target;if(d&&d.classList&&d.classList.contains('rvbox')){RV_OPEN[d.dataset.rvk]=d.open?1:0}},true);
@@ -77,7 +84,7 @@ function rvWatch(){
   for(const k in now){const was=new Set(prev[k]||[]),[rid,eid]=k.split('|'),rm=prooms.find(r=>r.id===rid),e=rm&&rm.list.find(x=>x.id===eid);if(!e)continue;
     rvOf(e).forEach(a=>{if(!was.has(a.id)){RV_NEW[eid+'|'+a.id]=1;ch=true;try{turnBanner(fill(t('rvNew'),{who:e.name,n:a.n}));0}catch(x){}setTimeout(()=>{delete RV_NEW[eid+'|'+a.id];render()},2200)}});
     (prev[k]||[]).forEach(id=>{if(!now[k].includes(id)){
-      const old=(RV_LAST[k]||[]).find(a=>a.id===id);if(old){RV_GONE.push({eid,id,n:old.n});ch=true;setTimeout(()=>{RV_GONE=RV_GONE.filter(g=>!(g.eid===eid&&g.id===id));render()},900)}
+      const old=(RV_LAST[k]||[]).find(a=>a.id===id);if(old){RV_GONE.push({eid,id,n:old.n,k:old.k});ch=true;setTimeout(()=>{RV_GONE=RV_GONE.filter(g=>!(g.eid===eid&&g.id===id));render()},900)}
       if(RV_CARD&&RV_CARD.eid===eid&&RV_CARD.id===id){RV_CARD.out=1;setTimeout(()=>{RV_CARD=null;render()},260)}}})}
   RV_LAST={};prooms.forEach(rm=>rm.list.forEach(e=>{RV_LAST[rm.id+'|'+e.id]=rvOf(e)}));
   if(ch)setTimeout(render,0)}
