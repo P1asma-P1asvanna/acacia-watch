@@ -53,7 +53,7 @@ function rxOpts(d,th,self){
     if(isSp&&lvl>0&&!rxSlot(d,lvl))return;
     out.push({key:(isSp?'s:':'f:')+name,sp:isSp,name,lvl,c,fx:Object.assign({},c.fx)})};
   (d.spells||[]).forEach(x=>{const sp=spellOf(x.n);if(sp&&sp.timeK==='reaction')add(sp.name||x.n,sp.desc,true,sp.lvl||0,sp)});
-  featList(d).forEach(f=>{if(taFeatKind(f)==='reaction')add(f.name||'—',f.desc,false,0,f)});
+  taFeats(d).forEach(f=>{if(taFeatKind(f)==='reaction'&&fuLeft(d,f)>0)add(f.name||'—',f.desc,false,0,f)});
   return out}
 const rxFxTxt=(fx,dice)=>({ac:`+${fx.v} AC`,sub:dice?t('rxSub'):`−${fx.v} ${t('taToHit')}`,neg:t('rxNeg'),half:t('rxHalf'),res:t('rxRes'),red:dice?t('rxRed'):`−${fx.v} ${t('taDmgN')}`,take:t('rxTake'),dis:t('rxDis'),reroll:t('rxReroll'),note:t('rxNote')})[fx.k]||'';
 /* ---- the outcome after the answers ---- */

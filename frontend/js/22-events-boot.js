@@ -26,12 +26,14 @@ document.addEventListener('click',e=>{
   if(a==='media-del'){mediaDel(b.dataset.id);return}
   if(a.startsWith('ta-')){taClick(a,b);return}
   if(a.startsWith('rx-')){rxClick(a,b);return}
+  if(a.startsWith('rv-')){rvAction(a,b);return}
   if(a.startsWith('ini-')){iniAction(a,id);return}
   if(a.startsWith('cb-')||a.startsWith('fx-')||a.startsWith('q-')){cbAction(a,b);return}
   if(a==='lang'){lang=v;put('dd_lang',lang);render()}
   else if(a==='tab'){authTab=v;authErr='';render()}
   else if(a==='logout'){if(REMOTE){api('POST','api/logout',{}).catch(()=>{});users=[];pcs=[];npcs=[];rooms=[];netBar('')}session=null;put('dd_session',null);edit=null;dedit=null;siteDraft=null;roomOpen=null;roomEdit=null;authTab='signin';render()}
   else if(a==='nav'){condPop=null;view=v;edit=null;dedit=null;delArm=null;dataArm=null;flashMsg='';siteDraft=v==='site'?siteInit():null;adminDraft=v==='adminset'?adminInit():null;adminMsg='';siteMsg='';siteErr='';roomOpen=null;roomEdit=null;location.hash=v;render();pull()}
+  else if(a==='mt-clean'){const n=mtClean();flashMsg=fill(t('mtCleaned'),{n});render()}
   else if(a==='new'){edit={kind:k,draft:blank(k),isNew:true};delArm=null;render()}
   else if(a==='edit'){const r=list(k).find(x=>x.id===id);edit={kind:k,draft:JSON.parse(JSON.stringify(r)),isNew:false};delArm=null;render()}
   else if(a==='back'){edit=null;delArm=null;render()}
@@ -139,7 +141,7 @@ document.addEventListener('input',e=>{
       if(dedit.cat==='armor'&&(f==='slot'||f==='kind')){if(f==='slot')dd.kind='';else{const sl=CAT.slots.find(x=>x.id===dd.slot),ty=sl&&(sl.types||[]).find(x=>x.name===dd.kind);if(ty)dd.pts=Math.max(ty.min,Math.min(ty.max,Math.round(Number(dd.pts))||ty.min))}render();return}
       if(dedit.cat==='spells'){spCompose(dd);const row=el.closest('.spcrow');if(row){const nm=row.querySelector('input[type=number]'),k=dd[f==='timeK'||/^time/.test(f)?'timeK':'durK'];if(nm)nm.hidden=!((/^time/.test(f)?SP_NEED_T:SP_NEED_D).includes(k));const nt=row.parentElement.querySelector('.note');if(nt)nt.textContent=/^time/.test(f)?dd.time:dd.dur}}}
     else if(el.dataset.sf){dd.subs[Number(el.dataset.si)][el.dataset.sf]=el.value}
-    else if(el.dataset.ftf){const f=(dd.feats||[])[Number(el.dataset.fti)];if(f)f[el.dataset.ftf]=el.dataset.ftf==='lvl'?Number(el.value):el.dataset.ftf==='gm'?(el.checked?1:0):el.value}
+    else if(el.dataset.ftf){const f=(dd.feats||[])[Number(el.dataset.fti)];if(f)f[el.dataset.ftf]=el.dataset.ftf==='lvl'||el.dataset.ftf==='uses'?Number(el.value):el.dataset.ftf==='gm'?(el.checked?1:0):el.value}
     else if(el.dataset.tyf){const y=(dd.types||[])[Number(el.dataset.tyi)];if(y)y[el.dataset.tyf]=el.dataset.tyf==='name'?el.value:Number(el.value)}
     else if(el.dataset.bgs){const a=dd.sk=dd.sk||[],k=el.dataset.bgs,ix=a.indexOf(k);if(el.checked&&ix<0)a.push(k);if(!el.checked&&ix>=0)a.splice(ix,1)}
     return;
@@ -162,6 +164,7 @@ document.addEventListener('input',e=>{
 });
 document.addEventListener('change',e=>{
   const el=e.target;
+  if(el.dataset.tf&&edit){mtField(el);return}
   if(el.dataset.rf&&edit){resField(el);return}
   if(el.dataset.wset){if(el.dataset.wset==='room')wRoom=el.value;else wMode=el.value;return}
   if(el.dataset.bk==='file'){const f=el.files&&el.files[0];if(!f)return;const fr=new FileReader();fr.onload=()=>{bkText=String(fr.result||'');bkMsg=fill(t('bkLoaded'),{n:Math.round(bkText.length/1024)});dataArm=null;render()};fr.onerror=()=>{bkMsg=t('bkBad');render()};fr.readAsText(f);return}

@@ -101,6 +101,18 @@ def feed_pub(feed):
     return out
 
 
+def public_rv(rv):
+    """The abilities of a combatant the GM has chosen to show the table (a text snapshot made when the GM opened them). Everything else stays hidden."""
+    out = []
+    for a in (rv if isinstance(rv, list) else [])[:40]:
+        if not isinstance(a, dict) or not str(a.get("n") or "").strip():
+            continue
+        out.append({"id": str(a.get("id") or a.get("n"))[:90], "k": a.get("k") if a.get("k") in ("feature", "feat", "spell") else "feature",
+                    "n": str(a.get("n"))[:80], "sub": str(a.get("sub") or "")[:80], "desc": str(a.get("desc") or "")[:4000],
+                    "meta": [str(m)[:60] for m in (a.get("meta") if isinstance(a.get("meta"), list) else [])[:10]]})
+    return out
+
+
 def player_rooms(c, me):
     """What a player may see of the adventure rooms: only rooms where one of their own characters sits,
     and only the turn order (names, rolled initiative, whose turn). No GM notes, hit points or stats of others."""
@@ -145,7 +157,7 @@ def player_rooms(c, me):
             sv = {k: max(-20, min(30, int(num(sv.get(k))))) for k in ("str", "dex", "con", "int", "wis", "cha")} if sv else None
             entries.append({"id": str(e.get("id")), "ac": ac, "sv": sv, "name": (name or "—")[:80], "init": int(v) if v == int(v) else v,
                             "kind": "pc" if is_pc else "other", "mine": is_pc and cid in mine, "pc": cid if cid in mine else "",
-                            "fx": public_fx(e.get("fx")), "pic": pic_of.get(ref, "") if ref[:3] == "pc:" or ref[:4] == "npc:" else ""})
+                            "fx": public_fx(e.get("fx")), "rv": public_rv(e.get("rv")) if ref.startswith("npc:") else [], "pic": pic_of.get(ref, "") if ref[:3] == "pc:" or ref[:4] == "npc:" else ""})
         seen = {x["id"] for x in entries}
         evt = [{"k": x.get("k"), "eid": str(x.get("eid")), "cid": str(x.get("cid") or "")[:40], "r": clampi(x.get("r"), 1, 9999, 1)}
                for x in (ini.get("evt") if isinstance(ini.get("evt"), list) else [])[:60]

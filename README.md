@@ -498,3 +498,20 @@ Tests: `scratchpad/test/run87–run89.js` (not shipped).
 - The old "stars" and "embers" scenes became the richer **space** and **fire** scenes (saved choices still work).
 - **Custom color** (`bgcc`, `#rrggbb`) builds three shades for any scene; choosing a preset colour or "Back to the scene colors" clears it.
 - Fire is now a drawn flame texture (noise painted once on a canvas, 3 frames that cross-fade, painted in small slices so the page never freezes) tinted by the scene / custom color. Nature is now a flower garden (daisies, sunflowers, tulips, lavender, poppies, bluebells, butterflies, hills, sun).
+
+## จำนวนครั้งใช้ Feature ต่อการพัก (Feature uses)
+- ที่ Game data → Classes / Backgrounds / Feats: แต่ละ Feature ตั้ง "จำนวนครั้ง" (0 = ไม่จำกัด) และ "ฟื้นเมื่อ" (พักสั้น / พักยาว / ไม่ฟื้น) ได้
+- ตัวละครแต่ละตัวนับแยกกัน (`d.fu`) กดใช้ใน Turn panel แล้วจำนวนลดลง หมดแล้วปุ่มใช้ไม่ได้ (รวมถึง Reaction)
+- ปุ่ม Short rest / Long rest ใน Initiative จะฟื้นจำนวนครั้งตามชนิดการพัก
+
+## แม่แบบมอนสเตอร์ (Monster templates, GM)
+- เปิดตัวละคร GM ตั้งสถิติ สเปล Feature ทรัพยากรให้เสร็จ แล้วติ๊ก "แม่แบบ" และตั้งจำนวน Action / Bonus / Reaction / Interaction ต่อเทิร์น
+- หน้า Initiative → "เรียกมอนสเตอร์": เลือกแม่แบบ + จำนวน (1–12) แล้วกด "สร้างลงสนาม" ได้สำเนาชื่อ "ชื่อ 1, 2, 3…" ที่รีเซ็ต HP/ช่องสเปล/จำนวนใช้แล้ว
+- ช่อง Action ของสำเนาถูกตั้งให้อัตโนมัติเมื่อสนามเริ่ม (GM เปิดหน้าไว้)
+- สำเนาที่ถูกลบออกจากสนามเดียวของมันจะถูกลบทิ้งเอง และมีปุ่ม "ลบสำเนาที่ไม่ได้อยู่ในสนาม" ในรายการตัวละคร GM
+
+## ความสามารถของศัตรูที่ซ่อนไว้ (Reveal)
+- Feature / Feat / Spell ของตัวละคร GM ที่อยู่ในสนาม **ซ่อนจากผู้เล่นทั้งหมดเป็นค่าเริ่มต้น**
+- หน้า Initiative ใต้แถวของ GM character มีกล่อง "🔒 ความสามารถ" กดล็อกทีละอย่างเพื่อเปิดเผย (หรือ เปิดทั้งหมด / ซ่อนทั้งหมด) กดชื่อเพื่อดูตัวอย่างการ์ด
+- ผู้เล่นเห็นชิปใต้ชื่อศัตรูเฉพาะที่เปิดแล้ว กดเพื่อดูการ์ด: ช่องคีย์เวิร์ด (ชื่อ Condition ที่อยู่ในคำอธิบาย) ด้านซ้าย + ผลของความสามารถด้านขวา ข้อความ [แท็ก] ในวงเล็บเหลี่ยมจะถูกเน้นสี
+- มีเอฟเฟกต์ตอนเปิด/ปิด และแจ้งเตือนผู้เล่นเมื่อมีการเปิดเผย; เซิร์ฟเวอร์ส่งให้ผู้เล่นเฉพาะข้อความที่เปิดแล้ว (เป็นสำเนา ณ ตอนที่เปิด)

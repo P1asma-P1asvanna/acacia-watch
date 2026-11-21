@@ -26,3 +26,11 @@ def clean_res(d):
                     "used": clampi(r.get("used"), 0, 30, 0),
                     "rest": r.get("rest") if r.get("rest") in RESTS else "long"})
     d["res"] = out
+    # uses spent of class / background features and chosen feats: {"cls:<id>": n}
+    fu = {}
+    for k, v in list((d.get("fu") if isinstance(d.get("fu"), dict) else {}).items())[:120]:
+        if isinstance(k, str) and 1 < len(k) <= 60:
+            n = clampi(v, 0, 30, 0)
+            if n:
+                fu[k] = n
+    d["fu"] = fu

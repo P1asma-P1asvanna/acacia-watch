@@ -15,7 +15,7 @@ function resBody(d){
   return`${rows||`<p class="note" style="padding:0 16px">${t('resEmpty')}</p>`}
    <div class="bar"><div class="field" style="min-width:200px;flex:1"><label for="res_new">${t('resNew')}</label><input id="res_new" maxlength="40" placeholder="${esc(t('resPh'))}"></div><button type="button" class="btn small" data-ra="add" ${d.res.length>=12?'disabled':''}>${t('wAdd')}</button></div>
    <p class="note" style="margin:0;padding:0 16px 14px">${t('resHint')}</p>`}
-const resPanel=d=>`<section class="panel"><div class="ph"><h2>${t('resTitle')}</h2></div><div id="resbody">${resBody(d)}</div></section>`;
+const resPanel=d=>`<section class="panel"><div class="ph"><h2>${t('resTitle')}</h2></div><div id="resbody">${resBody(d)}</div>${d.kind==='npc'&&typeof mtBlock==='function'?mtBlock(d):''}</section>`;
 function refreshRes(){const b=document.getElementById('resbody');if(b&&edit)b.innerHTML=resBody(edit.draft)}
 function resAction(a,el){
   const d=edit.draft;d.res=d.res||[];const i=Number(el.dataset.i),r=d.res[i];
@@ -29,6 +29,6 @@ function resField(el){const d=edit.draft,r=(d.res||[])[Number(el.dataset.i)];if(
   else if(k==='max')r.max=Math.max(1,Math.min(30,Math.round(num(el.value))||1));
   else{r[k]=el.value;if(k==='mab'||k==='rest'){const open=document.querySelector('#resbody details[open] [data-i="'+el.dataset.i+'"]');refreshRes();const dt=document.querySelectorAll('#resbody .resedit')[Number(el.dataset.i)];if(dt)dt.open=true}}}
 /* rests: short refills "short" resources, long refills both */
-function resRest(d,kind){(d.res||[]).forEach(r=>{if(r.rest==='short'||(kind==='long'&&r.rest==='long'))r.used=0})}
+function resRest(d,kind){(d.res||[]).forEach(r=>{if(r.rest==='short'||(kind==='long'&&r.rest==='long'))r.used=0});if(typeof fuRest==='function')fuRest(d,kind)}
 Object.assign(TX.th,{resTitle:'ทรัพยากรคลาส',resEmpty:'ยังไม่มีทรัพยากร (เช่น Rage, Ki, Bardic Inspiration)',resNew:'เพิ่มทรัพยากร',resPh:'เช่น Rage',resMax:'จำนวนสูงสุด',resAb:'หรือตามค่าพลัง (ขั้นต่ำ 1)',resRest:'ฟื้นเมื่อ',res_short:'พักสั้น',res_long:'พักยาว',res_none:'ไม่ฟื้นเอง',resEdit:'แก้ไขทรัพยากร',resHint:'กดวงกลมเพื่อใช้/คืนทีละครั้ง ฟื้นเองเมื่อพักสั้น/พักยาวตามที่ตั้งไว้ (พักยาวฟื้นทั้งสองแบบ) ใช้ค่าพลังเมื่อจำนวนขึ้นกับโมดิฟายเออร์ เช่น Bardic Inspiration = CHA'});
 Object.assign(TX.en,{resTitle:'Class resources',resEmpty:'No resources yet (for example Rage, Ki, Bardic Inspiration)',resNew:'Add a resource',resPh:'e.g. Rage',resMax:'Maximum uses',resAb:'Or follow an ability (at least 1)',resRest:'Refills on',res_short:'Short rest',res_long:'Long rest',res_none:'Never by itself',resEdit:'Edit resource',resHint:'Tap a circle to spend or give back one use. They refill by themselves on a short or long rest as set (a long rest refills both kinds). Use the ability option when the number follows a modifier, such as Bardic Inspiration = CHA.'});

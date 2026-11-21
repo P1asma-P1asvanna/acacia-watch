@@ -21,8 +21,8 @@ function iniPanel(rm){
      <input type="number" aria-label="${t('iniInit')}: ${esc(iniName(e))}" data-ini="init" data-id="${e.id}" value="${e.init==null?'':e.init}" placeholder="${t('iniNoRoll')}">
      <span class="ini-hp">${t('iniHpF')} ${hp}</span>
      <span class="ini-ac">${t('iniAc')} ${c?`<b>${iniAcOf(e)}</b>`:`<input type="number" min="0" max="60" aria-label="${t('iniAc')}" data-ini="ac" data-id="${e.id}" value="${e.ac==null?'':esc(e.ac)}" placeholder="AC">`}</span>
-     <div class="ini-act"><button class="btn small" data-act="ini-roll" data-id="${e.id}">${t('iniRoll')}</button><button class="btn small danger" data-act="ini-del" data-id="${e.id}" aria-label="${t('iniDel')} ${esc(iniName(e))}">✕</button></div>${cbSub(e)}</li>`}).join('');
-  return`<section class="panel ini"><div class="ph"><h2>${t('iniTab')}</h2></div>
+     <div class="ini-act"><button class="btn small" data-act="ini-roll" data-id="${e.id}">${t('iniRoll')}</button><button class="btn small danger" data-act="ini-del" data-id="${e.id}" aria-label="${t('iniDel')} ${esc(iniName(e))}">✕</button></div>${cbSub(e)}${rvGmBox(rm,e)}</li>`}).join('');
+  return`${rvCardHtml()}<section class="panel ini"><div class="ph"><h2>${t('iniTab')}</h2></div>
    <div class="ini-top"><span class="ini-round">${t('iniRound')} ${I.round}</span>
     <button class="btn" data-act="ini-prev" ${act.length?'':'disabled'}>← ${t('iniPrev')}</button>
     <button class="btn primary" data-act="ini-next" ${act.length?'':'disabled'}>${started?t('iniNext')+' →':t('iniStart')}</button>
@@ -34,6 +34,7 @@ function iniPanel(rm){
     <button class="btn" data-act="ini-addgm">${t('iniAddGm')}</button>
     <button class="btn" data-act="ini-rollall">${t('iniRollAll')}</button>
     <label class="chk"><input type="checkbox" data-ini-room="hideAc" ${I.hideAc?'checked':''}> ${t('iniHideAc')}</label></div>
+   ${mtSpawnHtml()}
    <div class="ini-add"><span class="note" style="width:100%">${t('iniCustom')}</span>
     <div class="field"><label for="ini_name">${t('iniName')}</label><input id="ini_name" placeholder="Goblin 1"></div>
     <div class="field sm"><label for="ini_mod">${t('iniMod')}</label><input id="ini_mod" type="number" value="0"></div>
@@ -51,12 +52,13 @@ function iniAction(a,id){
   else if(a==='ini-addgm'){const g=document.getElementById('ini_gm').value;if(g&&!has('npc:'+g))add({ref:'npc:'+g})}
   else if(a==='ini-addcustom'){const n=document.getElementById('ini_name').value.trim();if(!n){iniErr=t('iniNeedName');render();return}
     const hpv=document.getElementById('ini_hp').value;add({name:n,mod:Math.round(num(document.getElementById('ini_mod').value)),ac:document.getElementById('ini_ac').value===''?null:Math.max(0,Math.min(60,Math.round(num(document.getElementById('ini_ac').value)))),svm:Math.round(num(document.getElementById('ini_sv').value)),hp:hpv===''?null:Math.max(0,Math.round(num(hpv))),hpMax:hpv===''?null:Math.max(0,Math.round(num(hpv)))})}
+  else if(a==='ini-spawn'){mtSpawn(I)}
   else if(a==='ini-rollall'){I.list.forEach(e=>{if(e.init==null)iniRollOne(e)})}
   else if(a==='ini-roll'){const e=I.list.find(x=>x.id===id);if(e)iniRollOne(e)}
   else if(a==='ini-del'){
     const act=iniActive(I),i=act.findIndex(x=>x.id===id);
     if(I.cur===id){const nx=act[i+1]||act[0];I.cur=nx&&nx.id!==id?nx.id:null}
-    I.list=I.list.filter(x=>x.id!==id);I.q=(I.q||[]).filter(x=>x.eid!==id)}
+    const gone=I.list.find(x=>x.id===id);I.list=I.list.filter(x=>x.id!==id);I.q=(I.q||[]).filter(x=>x.eid!==id);if(gone&&String(gone.ref||'').startsWith('npc:'))setTimeout(()=>{mtDrop(gone.ref.slice(4))},0)}
   else if(a==='ini-clear'){if(dataArm!=='iniclear'){dataArm='iniclear';render();return}dataArm=null;I.list=[];I.cur=null;I.round=1;I.q=[];I.log=[]}
   else if(a==='ini-next')cbNext(I);
   else if(a==='ini-prev')cbPrev(I);

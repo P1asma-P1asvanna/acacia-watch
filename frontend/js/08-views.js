@@ -20,7 +20,7 @@ function table(kind){
   if(!rows.length)return`<div class="empty"><div>${t('noRows')}</div><button class="btn" data-act="sample" data-k="${kind}">${t('addSample')}</button><div class="note">${t('sampleNote')}</div></div>`;
   const typeLbl={ally:t('tAlly'),neutral:t('tNeutral'),villain:t('tVillain')};
   return`<div class="scroll"><table><thead><tr><th>${t('colChar')}</th><th>${kind==='pc'?t('colPlayer'):t('colType')}</th><th>${t('colRace')}</th><th>${t('colClass')}</th><th class="num">${t('colHp')}</th><th class="num">${t('colAc')}</th><th></th></tr></thead><tbody>
-  ${rows.map(r=>`<tr><td><div class="cname">${cpicHtml(r,'sm')}<div><b>${esc(r.name)||'—'}</b><span class="sub">${esc(r.bg)}</span></div></div></td>
+  ${rows.map(r=>`<tr><td><div class="cname">${cpicHtml(r,'sm')}<div><b>${esc(r.name)||'—'}</b>${r.tpl?` <span class="pill">📋 ${t('mtTag')}</span>`:r.from?` <span class="pill">${t('mtCopy')}</span>`:''}<span class="sub">${esc(r.bg)}</span></div></div></td>
    <td>${kind==='pc'?(esc(ownerName(r.owner))||'<span class="muted">'+t('unassigned')+'</span>'):`<span class="pill">${esc(typeLbl[r.type]||'')}</span>`}</td>
    <td>${esc(r.race)}</td><td>${clsLabel(r)}<span class="sub">${esc(r.sub)}</span></td>
    <td class="num">${curHp(r)} / ${r.hp}${num(r.hpTemp)?' <span class="tt">+'+num(r.hpTemp)+'</span>':''}</td><td class="num">${r.ac}</td>
@@ -40,7 +40,7 @@ function renderPlayers(){
 }
 function renderNpcs(){
   if(edit&&edit.kind==='npc')return renderEditor();
-  return head(t('npcs'),t('npcsSub'),`<button class="btn primary" data-act="new" data-k="npc">+ ${t('add')}</button>`)+`<section class="panel">${table('npc')}</section>`;
+  return head(t('npcs'),t('npcsSub'),`${npcs.some(c=>c.from)?`<button class="btn" data-act="mt-clean">${t('mtClean')}</button>`:''}<button class="btn primary" data-act="new" data-k="npc">+ ${t('add')}</button>`)+`<section class="panel">${table('npc')}</section>`;
 }
 const opt=(arr,sel)=>arr.map(v=>`<option value="${esc(v)}" ${v===sel?'selected':''}>${esc(v)}</option>`).join('');
 const optCur=(arr,cur)=>opt(arr,cur)+(cur&&!arr.includes(cur)?`<option value="${esc(cur)}" selected>${esc(cur)} ${t('removed')}</option>`:'');

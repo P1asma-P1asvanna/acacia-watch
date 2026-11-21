@@ -18,6 +18,8 @@ function turnEndWatch(){
 function turnWatch(){
   setTimeout(()=>{try{rxDock()}catch(e){}},0);   /* reaction box: shown on every page, as soon as the new state is in */
   try{turnEndWatch()}catch(e){}
+  try{rvWatch()}catch(e){}
+  setTimeout(()=>{try{mtCapSync()}catch(e){}},300);
   try{
     const now={};(prooms||[]).forEach(rm=>{const c=rm.cur?(rm.list||[]).find(e=>e.id===rm.cur):null;now[rm.id]=!!(c&&c.mine)?c.id:''});
     const prev=TURNSEEN;TURNSEEN=now;if(!prev||!turnOn())return;

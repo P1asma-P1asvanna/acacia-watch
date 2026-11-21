@@ -86,6 +86,14 @@ def clean_record(rec, kind, existing, actor_is_admin, actor_id, user_ids, cat, o
     feats.clean_picks(d, cat)
     spells.clean_casting(d)
     resources.clean_res(d)
+    # GM-only: a saved monster template, its copies, and how many actions it gets per turn
+    if kind == "npc":
+        d["tpl"] = 1 if d.get("tpl") in (1, True, "1") else 0
+        d["from"] = str(d.get("from") or "")[:16] if ID_RE.match(str(d.get("from") or "")) else ""
+        ac = d.get("acap") if isinstance(d.get("acap"), dict) else None
+        d["acap"] = {k: clampi(ac.get(k), 0, 9, 1) for k in ("act", "bon", "rea", "int")} if ac else None
+    else:
+        d["tpl"], d["from"], d["acap"] = 0, "", None
     d["xp"] = clampi(d.get("xp"), 0, 10_000_000, 0)
     d["name"] = str(d.get("name") or "")[:120]
     if kind == "pc":

@@ -5,6 +5,10 @@ function featList(d){
   clsRows(d).forEach(r=>{const c=CAT.classes.find(x=>x.name===r.cls);if(c)(c.feats||[]).filter(f=>(f.lvl||1)<=r.level).forEach(f=>out.push({...f,kind:'cls',from:c.name}))});
   return out;
 }
+/* everything a character can actually use in a fight: class / background features plus the catalog feats it picked that cost something or carry effects */
+function taFeats(d){const L=featList(d),seen=new Set(L.filter(f=>f.kind==='feat').map(f=>f.name));
+  const picked=[...Object.values(d.asi||{}).filter(p=>p&&p.t==='feat'&&p.f).map(p=>p.f),...(Array.isArray(d.xf)?d.xf:[]).map(p=>p&&p.f).filter(Boolean)];
+  [...new Set(picked)].forEach(n=>{const f=CAT.feats.find(x=>x.name===n);if(f&&!seen.has(n)&&(f.tk||f.uses||(f.rules||[]).length))L.push({...f,kind:'feat',from:t('fFeatSrc')})});return L}
 const featBody=d=>{const L=featList(d);return L.length?L.map(f=>`<details class="feat"><summary><b>${esc(f.name||'—')}</b> <span class="pill">${t(f.kind==='bg'?'fBg':'fClass')} · ${esc(f.from)}${f.kind==='cls'?' · Lv '+(f.lvl||1):''}</span></summary><div class="featd">${esc(f.desc||'').replace(/\n/g,'<br>')}</div></details>`).join(''):`<p class="note" style="margin:0">${t('featNoneP')}</p>`};
 const featPanel=d=>`<section class="panel"><div class="ph"><h2>${t('featTitleP')}</h2></div><div class="featwrap" id="featbody">${featBody(d)}</div></section>`;
 function refreshFeat(){const b=document.getElementById('featbody');if(!b||!edit)return;const open=[...b.querySelectorAll('details')].map(x=>x.open);b.innerHTML=featBody(edit.draft);b.querySelectorAll('details').forEach((x,i)=>{if(open[i])x.open=true})}

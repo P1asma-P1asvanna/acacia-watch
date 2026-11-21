@@ -116,7 +116,8 @@ function taSection(rid,eid,slot,d){
     SP.forEach(x=>rows.push(spRow(x)));
     if(allSp.length&&!SP.length)rows.push(`<li class="ta-gl ta-none">${t('taNoSpellHere')}</li>`);
     if(slot!=='act'&&allSp.length>SP.length)other=`<details class="ta-std"><summary>${t('taOtherSp')}</summary><ul class="ta-list">${allSp.filter(x=>!fits(x)).map(spRow).join('')}</ul></details>`;
-    if(typeof featList==='function')featList(d).filter(f=>slot==='act'?f.tk==='action':taFeatKind(f)===(slot==='bon'?'bonus':'reaction')).forEach(f=>rows.push(`<li><span class="ta-ic">★</span><div class="ta-nm"><b>${esc(f.name)}</b>${(f.rules||[]).length?`<small>⚙ ${esc(f.from||'')}</small>`:''}</div><div class="ta-bt">${(f.rules||[]).length?btn('ta-feat',t('taUse'),`data-v="${esc(f.id||f.name)}" data-k="${slot}"`,'primary'):btn('ta-free',t('taUse'),`data-v="${esc(f.name)}" data-k="${slot}"`,'primary')}</div></li>`));
+    if(typeof taFeats==='function')taFeats(d).filter(f=>slot==='act'?f.tk==='action':taFeatKind(f)===(slot==='bon'?'bonus':'reaction')).forEach(f=>{const left=fuLeft(d,f),sub=[(f.rules||[]).length?'⚙':'',fuLabel(d,f),(f.rules||[]).length?'':''].filter(Boolean).join(' ');
+      rows.push(`<li><span class="ta-ic">★</span><div class="ta-nm"><b>${esc(f.name)}</b>${sub||f.from?`<small>${esc([sub,f.from].filter(Boolean).join(' · '))}</small>`:''}</div><div class="ta-bt">${btn('ta-feat',t('taUse'),`data-v="${esc(fuKey(f))}" data-k="${slot}" ${left<=0?'disabled':''}`,'primary')}</div></li>`)});
     (d.res||[]).forEach(r=>{const mx=resMax(d,r),u=Math.min(mx,Math.max(0,Math.round(num(r.used))));
       rows.push(`<li><span class="ta-ic">◆</span><div class="ta-nm"><b>${esc(r.name)}</b><small>${mx-u}/${mx}</small></div><div class="ta-bt"><button type="button" class="btn small primary" data-act="ta-res" ${eidA} data-v="${esc(r.id)}" data-k="${slot}" ${u>=mx||TA.busy?'disabled':''}>${t('taUse')}</button></div></li>`)})}
   let h='';
@@ -166,7 +167,11 @@ function taClick(a,b){
   const slot=TA.open.startsWith('rea:')?'rea':(TA.open||k);
   if(a==='ta-w'){taWeapon(rid,eid,v,k);return}
   if(a==='ta-cast'){taCast(rid,eid,k,v);return}
-  if(a==='ta-feat'){if(TA.busy)return;const d=taDoc(rid,eid),f=d&&featList(d).find(x=>(x.id||x.name)===v);if(f)taSpellFlow(rid,eid,k||slot,f.name||'—','',0,'',Object.assign({},f,{lvl:0,conc:0,desc:f.desc||''}));return}
+  if(a==='ta-feat'){if(TA.busy)return;const d=taDoc(rid,eid),f=d&&taFeats(d).find(x=>fuKey(x)===v);if(!f)return;
+    if(!fuSpend(d,f)){TA.err=t('taFeatOut');render();return}
+    commit(taKind(taEnts(rid).find(x=>x.id===eid).ref));
+    if((f.rules||[]).length)taSpellFlow(rid,eid,k||slot,f.name||'—',fuMax(f)?` (${fuLeft(d,f)}/${fuMax(f)})`:'',0,'',Object.assign({},f,{lvl:0,conc:0,desc:f.desc||''}));
+    else taUse(rid,eid,k||slot,`${t('taUse')} ${f.name}${fuMax(f)?` (${fuLeft(d,f)}/${fuMax(f)})`:''}${taTarget(rid,eid)}`);return}
   if(a==='ta-satk'){taSpellAtk(rid,eid,v);return}
   if(a==='ta-res'){taResUse(rid,eid,k,v);return}
   if(a==='ta-xroll'){taExtra(rid,eid);return}
