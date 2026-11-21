@@ -234,3 +234,9 @@ button.ta-dot{cursor:pointer}
 .rvgrp.k-spell .rv-ic{color:var(--temp)}
 .rvgroups{display:grid;gap:4px;margin:4px 0}.rvpg{display:grid;gap:2px}
 .rvpl{font-size:.74rem;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+
+/* one switch per ability: icon + the word for its state */
+.rvlock{flex:0 0 92px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;padding:4px 6px}
+.rvst{font-size:.72rem;font-weight:700;color:var(--muted);line-height:1.1}
+.rvrow.on .rvst{color:var(--gold)}
+.rvrow.on .rvlock{background:color-mix(in srgb,var(--gold) 14%,transparent)}
